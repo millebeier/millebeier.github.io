@@ -144,7 +144,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px}
 <script>
 /* Adresse des Cloudflare-Workers. Leer = Probe-Modus (alles nur auf diesem Handy). */
 const WORKER_URL = "https://millebeier.rjtp6r9s9h.workers.dev/";
-const FASSUNG = "13.11.2026 o";
+const FASSUNG = "13.11.2026 p";
 
 /* === Logik === (kein DOM; test/logik.mjs schneidet diesen Block aus) */
 const LAGER = "Lager";
@@ -445,7 +445,7 @@ function renderSync() {
   let t = "";
   if (PROBE) t = "Prouf-Modus";
   else if (STATUS.fehler) t = "⚠️ " + STATUS.fehler;
-  else if (STATUS.zuletzt) t = "✓ aktuell";
+  else if (STATUS.zuletzt) t = "✓ synchroniséiert";
   if (AUSGANG.length) t += `<br>⏳ ${AUSGANG.length} nach net geschéckt`;
   el.innerHTML = t;
   el.classList.toggle("fehler", !!STATUS.fehler || AUSGANG.length > 0);
