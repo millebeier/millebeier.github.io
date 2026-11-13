@@ -140,7 +140,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px}
 <script>
 /* Adresse des Cloudflare-Workers. Leer = Probe-Modus (alles nur auf diesem Handy). */
 const WORKER_URL = "https://millebeier.rjtp6r9s9h.workers.dev/";
-const FASSUNG = "13.11.2026 f";
+const FASSUNG = "13.11.2026 g";
 
 /* === Logik === (kein DOM; test/logik.mjs schneidet diesen Block aus) */
 const LAGER = "Lager";
@@ -302,8 +302,8 @@ function erinnerung(K) {
   const offene = K.verkaeufe.filter(v => v.offen > 0);
   const posten = {};
   for (const v of offene) for (const p of v.posten) posten[p.sorte] = (posten[p.sorte] || 0) + p.n;
-  const was = Object.entries(posten).map(([s, n]) => `${n} × ${s}`).join(", ");
-  return `Moien ${K.name}, fir d'Millebéier (${was}) sinn nach ${euro(K.offen)} op. Merci & Prost! 🍺`;
+  const was = Object.entries(posten).map(([s, n]) => `${n}x ${s}`).join(", ");
+  return `Moien ${K.name}, vir den Millebéier (${was}) stinn nach ${euro(K.offen)} op. Merci & Prost! 🍺`;
 }
 
 function csv(Z, zeitText) {

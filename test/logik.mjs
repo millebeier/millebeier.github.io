@@ -49,7 +49,7 @@ ein.push(...vt.zahlungen.map(z => E("zahlung", z)));
 Z = L.rechne(ein);
 ist("nach Teilzahlung offen", Z.offen, 4);
 ist("nach Teilzahlung Kasse", Z.kasse, 35);
-ist("Erinnerung", L.erinnerung(Z.kaeufer.find(x => x.name === "Paul")), "Moien Paul, fir d'Millebéier (2 × NEIPA) sinn nach 4 € op. Merci & Prost! 🍺");
+ist("Erinnerung", L.erinnerung(Z.kaeufer.find(x => x.name === "Paul")), "Moien Paul, vir den Millebéier (2x NEIPA) stinn nach 4 € op. Merci & Prost! 🍺");
 
 // Rückgängig: Verkauf weg → Flaschen zurück, seine Zahlung zählt nicht mehr
 const s1 = E("storno", { ref: v2.id });
