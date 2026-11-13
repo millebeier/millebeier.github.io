@@ -61,23 +61,23 @@ export default {
   async fetch(req, env) {
     if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: CORS });
     if (req.method !== "POST") return antwort({ ok: true, app: "millebeier", db: !!env.DB, code: !!env.CODE });
-    if (!env.DB) return antwort({ fehler: "Server: Datenbank nicht verbunden (Binding DB fehlt)." }, 500);
-    if (!env.CODE) return antwort({ fehler: "Server: kein Code eingerichtet (Secret CODE fehlt)." }, 500);
+    if (!env.DB) return antwort({ fehler: "Server: Datebank net verbonnen (Binding DB feelt)." }, 500);
+    if (!env.CODE) return antwort({ fehler: "Server: kee Code ageriicht (Secret CODE feelt)." }, 500);
 
     let b;
-    try { b = JSON.parse(await req.text()); } catch { return antwort({ fehler: "Ungültige Anfrage." }, 400); }
+    try { b = JSON.parse(await req.text()); } catch { return antwort({ fehler: "Ongëlteg Ufro." }, 400); }
     if (!b || typeof b.code !== "string" || !gleich(b.code.trim(), String(env.CODE).trim())) {
       await new Promise(r => setTimeout(r, 700)); // Raten bremsen
-      return antwort({ fehler: "Falscher Code." }, 401);
+      return antwort({ fehler: "Falsche Code." }, 401);
     }
 
     await tabelle(env.DB);
 
     if (b.aktion === "neu") {
-      if (!Array.isArray(b.eintraege) || b.eintraege.length > 50) return antwort({ fehler: "Ungültige Einträge." }, 400);
+      if (!Array.isArray(b.eintraege) || b.eintraege.length > 50) return antwort({ fehler: "Ongëlteg Agaben." }, 400);
       for (const e of b.eintraege) {
         const f = pruefe(e);
-        if (f) return antwort({ fehler: "Ungültiger Eintrag: " + f }, 400);
+        if (f) return antwort({ fehler: "Ongëlteg Agab: " + f }, 400);
       }
       const jetzt = Date.now();
       const st = env.DB.prepare("INSERT OR IGNORE INTO eintraege (id, zeit, daten, angekommen) VALUES (?, ?, ?, ?)");
@@ -85,6 +85,6 @@ export default {
       return antwort({ eintraege: await alle(env.DB) });
     }
     if (b.aktion === "liste") return antwort({ eintraege: await alle(env.DB) });
-    return antwort({ fehler: "Unbekannte Aktion." }, 400);
+    return antwort({ fehler: "Onbekannt Aktioun." }, 400);
   },
 };

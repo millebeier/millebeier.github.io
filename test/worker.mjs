@@ -17,7 +17,7 @@ const post = async (body, e = env) => { const r = await worker.fetch(new Request
 const e1 = { id: "aaaaaaaa-1", zeit: 2, art: "abfuellung", sorte: "NEIPA", n: 24 };
 const e0 = { id: "aaaaaaaa-0", zeit: 1, art: "abfuellung", sorte: "NEIPA", n: 1 };
 let [s, j, cors] = await post({ code: "falsch", aktion: "liste" });
-ist("falscher Code", [s, j.fehler, cors], [401, "Falscher Code.", "*"]);
+ist("falscher Code", [s, j.fehler, cors], [401, "Falsche Code.", "*"]);
 [s, j] = await post({ code: "hopfen", aktion: "neu", eintraege: [e1, e0] });
 ist("neu", [s, j.eintraege.map(e => e.id)], [200, ["aaaaaaaa-0", "aaaaaaaa-1"]]);
 [s, j] = await post({ code: " hopfen ", aktion: "neu", eintraege: [e1] });

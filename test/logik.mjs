@@ -49,7 +49,7 @@ ein.push(...vt.zahlungen.map(z => E("zahlung", z)));
 Z = L.rechne(ein);
 ist("nach Teilzahlung offen", Z.offen, 4);
 ist("nach Teilzahlung Kasse", Z.kasse, 35);
-ist("Erinnerung", L.erinnerung(Z.kaeufer.find(x => x.name === "Paul")), "Hallo Paul, für die Millebéier (2 × NEIPA) sind noch 4 € offen. Merci & Prost! 🍺");
+ist("Erinnerung", L.erinnerung(Z.kaeufer.find(x => x.name === "Paul")), "Moien Paul, fir d'Millebéier (2 × NEIPA) sinn nach 4 € op. Merci & Prost! 🍺");
 
 // Rückgängig: Verkauf weg → Flaschen zurück, seine Zahlung zählt nicht mehr
 const s1 = E("storno", { ref: v2.id });
@@ -84,7 +84,7 @@ ist("Ungültiges ignoriert", [Z.flaschen.da, Z.kasse], [58, 35]);
 
 ist("euro", [L.euro(3), L.euro(4.5), L.euro(0.1 + 0.2)], ["3 €", "4,50 €", "0,30 €"]);
 const c = L.csv(L.rechne(ein), t => "T" + t);
-ist("CSV Kopf", c.split("\r\n")[0], '﻿"Datum";"Verkäufer";"Käufer";"NEIPA";"White IPA";"Brown Porter";"Flaschen";"Betrag";"Bezahlt";"Offen"');
+ist("CSV Kopf", c.split("\r\n")[0], '﻿"Datum";"Verkeefer";"Keefer";"NEIPA";"White IPA";"Brown Porter";"Fläschen";"Betrag";"Bezuelt";"Op"');
 ist("CSV Zeilen", c.trim().split("\r\n").length, 4);
 
 console.log(fehler ? `${fehler} von ${n} Prüfungen fehlgeschlagen` : `Alle ${n} Prüfungen bestanden`);

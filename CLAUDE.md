@@ -1,7 +1,7 @@
 # millebeier
 
 Bestands- und Kassen-App für **Millebéier** (so geschrieben wie im Logo; Repo, Dateien und Speicherschlüssel ohne é), die kleine Brauerei von Laurent, Jeff, Marc und Claude
-(Luxemburg). Deutsch, Du-Form. Angelegt 13.11.2026.
+(Luxemburg). **App-Texte auf Luxemburgisch** (vom Nutzer, 13.11.2026; Reiter Iwwersiicht/Verkafen/Ausstoend/Stock/Verlaf); mit dem Nutzer und in Code/Doku Deutsch, Du-Form. Angelegt 13.11.2026.
 
 ## Was die App macht
 Flaschen werden abgefüllt (→ Lager), an die vier verteilt, von ihnen verkauft. Jeder trägt auf seinem
@@ -29,6 +29,7 @@ Brown Porter, 3 € je Flasche; Sorten, Preise und Leute sind in der App (⚙️
 - Käufernamen: gleiche Schreibweise ohne Groß/klein wird zusammengefasst, beim Eintragen der
   bekannte Name übernommen.
 - Logo vom Nutzer (13.11.2026): `bilder/icon-180.png` (Home-Bildschirm, schwarzer Grund), `icon-512.png`, `logo-96.png` (Kopf, durchsichtig).
+- **Name im Kopf** ganz weiß, nur der Akzent auf dem é rot wie im Logo: weißes „e“ mit rotem Strich darüber (`.akz::after`), weil sich ein Akzent nicht einzeln einfärben lässt.
 - **Farben wie im Logo** (vom Nutzer, 13.11.2026): schwarz, weiß, Rot `--akzent` (#e3141b) für Knöpfe und markierte Reiter, Kopf mit rotem Strich und grauer Linie wie der Logo-Ring. Grün (bezahlt) und Gelb (offen) bleiben als Bedeutungsfarben.
 - iPhone-Regeln wie in den anderen Apps des Nutzers: kein `viewport-fit=cover`, Kasten mit
   fokussiertem Feld nie neu bauen (`tipptIn`), Zahlenfelder mit `inputmode`, Teilen über
