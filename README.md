@@ -1,6 +1,6 @@
-# Millebeier 🍺
+# Millebéier 🍺
 
-Wer hat wie viele Flaschen, was ist verkauft, was ist bezahlt — für die vier von Millebeier,
+Wer hat wie viele Flaschen, was ist verkauft, was ist bezahlt — für die vier von Millebéier,
 jeder auf seinem Handy, alle sehen denselben Stand.
 
 App: https://strakekine.github.io/millebeier/  (Safari → Teilen → „Zum Home-Bildschirm“)

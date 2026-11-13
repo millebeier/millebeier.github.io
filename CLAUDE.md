@@ -1,12 +1,12 @@
 # millebeier
 
-Bestands- und Kassen-App für **Millebeier**, die kleine Brauerei von Laurent, Jeff, Marc und Claude
+Bestands- und Kassen-App für **Millebéier** (so geschrieben wie im Logo; Repo, Dateien und Speicherschlüssel ohne é), die kleine Brauerei von Laurent, Jeff, Marc und Claude
 (Luxemburg). Deutsch, Du-Form. Angelegt 13.11.2026.
 
 ## Was die App macht
 Flaschen werden abgefüllt (→ Lager), an die vier verteilt, von ihnen verkauft. Jeder trägt auf seinem
 Handy ein, wer wie viele Flaschen gekauft hat und ob bezahlt ist. Die App zeigt Bestand (Lager und je
-Person), Verkauft, Kasse und Offen. **Geld geht immer sofort in die Millebeier-Kasse** (vom Nutzer) —
+Person), Verkauft, Kasse und Offen. **Geld geht immer sofort in die Millebéier-Kasse** (vom Nutzer) —
 es gibt also nur eine Schuld: Käufer → Kasse. Kein Pfand. Sorten zum Start: NEIPA, White IPA,
 Brown Porter, 3 € je Flasche; Sorten, Preise und Leute sind in der App (⚙️) für alle änderbar.
 
@@ -28,6 +28,7 @@ Brown Porter, 3 € je Flasche; Sorten, Preise und Leute sind in der App (⚙️
 - `WORKER_URL` leer = Probe-Modus (alles nur im localStorage des Handys).
 - Käufernamen: gleiche Schreibweise ohne Groß/klein wird zusammengefasst, beim Eintragen der
   bekannte Name übernommen.
+- Logo vom Nutzer (13.11.2026): `bilder/icon-180.png` (Home-Bildschirm, schwarzer Grund), `icon-512.png`, `logo-96.png` (Kopf, durchsichtig).
 - iPhone-Regeln wie in den anderen Apps des Nutzers: kein `viewport-fit=cover`, Kasten mit
   fokussiertem Feld nie neu bauen (`tipptIn`), Zahlenfelder mit `inputmode`, Teilen über
   `navigator.share`.

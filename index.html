@@ -4,9 +4,9 @@
 <meta charset="utf-8">
 <!-- Kein viewport-fit=cover (Lehre aus den anderen Apps: iOS legt die Seite dann selbst in den sicheren Bereich). -->
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Millebeier</title>
+<title>Millebéier</title>
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Millebeier">
+<meta name="apple-mobile-web-app-title" content="Millebéier">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#14110d">
 <link rel="apple-touch-icon" sizes="180x180" href="bilder/icon-180.png">
@@ -25,8 +25,9 @@ body{margin:0;background:var(--bg);color:var(--text);
 .wrap{max-width:640px;margin:0 auto;padding:0 16px}
 header{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:1px solid var(--line);padding:10px 0 8px}
 .kopf{display:flex;align-items:center;gap:10px}
-.kopf h1{font-size:22px;margin:0;flex:1;letter-spacing:.3px}
-.kopf h1 span{color:var(--amber)}
+.kopf h1{font-size:22px;margin:0;flex:1;letter-spacing:.3px;display:flex;align-items:center;gap:8px}
+.kopf h1 img{width:36px;height:36px;display:block}
+.kopf h1 b{color:var(--amber)}
 #sync{font-size:13px;color:var(--muted);text-align:right}
 #sync.fehler{color:var(--gelb)}
 .zahnrad{background:none;border:0;color:var(--text);font-size:22px;padding:4px 2px;cursor:pointer}
@@ -110,7 +111,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px}
 <body>
 <header><div class="wrap">
   <div class="kopf">
-    <h1>🍺 Mille<span>beier</span></h1>
+    <h1><img src="bilder/logo-96.png" alt=""><span>Mille<b>béier</b></span></h1>
     <div id="sync"></div>
     <button class="zahnrad" id="zahnrad" aria-label="Einstellungen">⚙️</button>
   </div>
@@ -138,7 +139,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px}
 <script>
 /* Adresse des Cloudflare-Workers. Leer = Probe-Modus (alles nur auf diesem Handy). */
 const WORKER_URL = "";
-const FASSUNG = "13.11.2026 a";
+const FASSUNG = "13.11.2026 b";
 
 /* === Logik === (kein DOM; test/logik.mjs schneidet diesen Block aus) */
 const LAGER = "Lager";
@@ -301,7 +302,7 @@ function erinnerung(K) {
   const posten = {};
   for (const v of offene) for (const p of v.posten) posten[p.sorte] = (posten[p.sorte] || 0) + p.n;
   const was = Object.entries(posten).map(([s, n]) => `${n} × ${s}`).join(", ");
-  return `Hallo ${K.name}, für die Millebeier (${was}) sind noch ${euro(K.offen)} offen. Merci & Prost! 🍺`;
+  return `Hallo ${K.name}, für die Millebéier (${was}) sind noch ${euro(K.offen)} offen. Merci & Prost! 🍺`;
 }
 
 function csv(Z, zeitText) {
@@ -442,7 +443,7 @@ function renderStart() {
   if (tipptIn(box)) return;
   const brauchtCode = !PROBE && !EIN.code;
   box.innerHTML = `<div class="card">
-    <h2>Willkommen bei Millebeier 🍺</h2>
+    <h2>Willkommen bei Millebéier 🍺</h2>
     ${PROBE ? `<div class="probe">Probe-Modus: Es ist noch kein Server eingerichtet. Alles, was du einträgst, bleibt nur auf diesem Handy.</div>` : ""}
     ${brauchtCode ? `<label for="sCode">Gemeinsamer Code</label>
       <input id="sCode" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
