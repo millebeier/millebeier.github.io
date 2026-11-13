@@ -8,14 +8,14 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Millebéier">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="theme-color" content="#14110d">
+<meta name="theme-color" content="#000000">
 <link rel="apple-touch-icon" sizes="180x180" href="bilder/icon-180.png">
 <link rel="icon" type="image/png" href="bilder/icon-180.png">
 <style>
 :root{
-  --bg:#14110d; --card:#1f1a14; --card2:#2a231b; --line:#3a3026;
-  --text:#f3ece2; --muted:#b3a593; --amber:#f2a33a; --amber2:#ffcf7a;
-  --gruen:#7cc47f; --rot:#ef6f5e; --gelb:#e8c547;
+  --bg:#000000; --card:#151515; --card2:#232323; --line:#353535;
+  --text:#ffffff; --muted:#a8a8a8; --akzent:#e3141b; --akzent2:#ff6b6f; --weissgrau:#dcdcdc;
+  --gruen:#7cc47f; --rot:#ff5a52; --gelb:#e8c547;
 }
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
@@ -23,23 +23,23 @@ body{margin:0;background:var(--bg);color:var(--text);
   font:16px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
   padding:0 0 40px}
 .wrap{max-width:640px;margin:0 auto;padding:0 16px}
-header{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:1px solid var(--line);padding:10px 0 8px}
+header{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:3px solid var(--akzent);box-shadow:0 1px 0 var(--weissgrau);padding:10px 0 8px}
 .kopf{display:flex;align-items:center;gap:10px}
 .kopf h1{font-size:22px;margin:0;flex:1;letter-spacing:.3px;display:flex;align-items:center;gap:8px}
 .kopf h1 img{width:36px;height:36px;display:block}
-.kopf h1 b{color:var(--amber)}
+.kopf h1 b{color:var(--akzent)}
 #sync{font-size:13px;color:var(--muted);text-align:right}
 #sync.fehler{color:var(--gelb)}
 .zahnrad{background:none;border:0;color:var(--text);font-size:22px;padding:4px 2px;cursor:pointer}
 nav{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin-top:8px}
 nav button{background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:10px;
   padding:8px 2px;font-size:13px;font-weight:600;cursor:pointer;position:relative}
-nav button.an{background:var(--amber);color:#1b1206;border-color:var(--amber)}
+nav button.an{background:var(--akzent);color:#fff;border-color:var(--akzent)}
 nav .badge{position:absolute;top:-6px;right:-4px;background:var(--rot);color:#fff;border-radius:9px;
   font-size:11px;padding:1px 6px;font-weight:700}
 .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin:12px 0}
 .card h2{font-size:17px;margin:0 0 10px}
-.card h3{font-size:15px;margin:14px 0 6px;color:var(--amber2)}
+.card h3{font-size:15px;margin:14px 0 6px;color:var(--akzent2)}
 .muted{color:var(--muted)} small{font-size:13px}
 .kacheln{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .kachel{background:var(--card2);border-radius:12px;padding:10px 12px}
@@ -71,10 +71,10 @@ select{background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),
 .seg.drei{grid-template-columns:1fr 1fr 1fr}
 .seg button{padding:12px 4px;border-radius:12px;border:1px solid var(--line);background:var(--card2);color:var(--text);
   font-size:15px;font-weight:600;cursor:pointer}
-.seg button.an{background:var(--amber);color:#1b1206;border-color:var(--amber)}
-.seg button.an.gruen{background:var(--gruen);border-color:var(--gruen)}
-.seg button.an.gelb{background:var(--gelb);border-color:var(--gelb)}
-.haupt{width:100%;margin-top:14px;padding:14px;border:0;border-radius:12px;background:var(--amber);color:#1b1206;
+.seg button.an{background:var(--akzent);color:#fff;border-color:var(--akzent)}
+.seg button.an.gruen{background:var(--gruen);border-color:var(--gruen);color:#0d1f0e}
+.seg button.an.gelb{background:var(--gelb);border-color:var(--gelb);color:#231d05}
+.haupt{width:100%;margin-top:14px;padding:14px;border:0;border-radius:12px;background:var(--akzent);color:#fff;
   font-size:17px;font-weight:700;cursor:pointer}
 .haupt:disabled{opacity:.45}
 .knopf{padding:9px 12px;border-radius:10px;border:1px solid var(--line);background:var(--card2);color:var(--text);
@@ -139,7 +139,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px}
 <script>
 /* Adresse des Cloudflare-Workers. Leer = Probe-Modus (alles nur auf diesem Handy). */
 const WORKER_URL = "";
-const FASSUNG = "13.11.2026 b";
+const FASSUNG = "13.11.2026 c";
 
 /* === Logik === (kein DOM; test/logik.mjs schneidet diesen Block aus) */
 const LAGER = "Lager";
