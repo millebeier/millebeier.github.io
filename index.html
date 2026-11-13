@@ -144,7 +144,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px}
 <script>
 /* Adresse des Cloudflare-Workers. Leer = Probe-Modus (alles nur auf diesem Handy). */
 const WORKER_URL = "https://millebeier.rjtp6r9s9h.workers.dev/";
-const FASSUNG = "13.11.2026 n";
+const FASSUNG = "13.11.2026 o";
 
 /* === Logik === (kein DOM; test/logik.mjs schneidet diesen Block aus) */
 const LAGER = "Lager";
@@ -840,6 +840,27 @@ document.addEventListener("click", e => {
   if (k === LETZTER_TIPP.k && jetzt - LETZTER_TIPP.t < 800) { e.preventDefault(); e.stopImmediatePropagation(); return; }
   LETZTER_TIPP = { k, t: jetzt };
 }, true);
+
+/* Doppeltipp-Zoom, Stufe 2: touch-action allein hat am iPhone nicht gereicht (Fassung n, gemeldet
+   13.11.2026 — in der Koeppchen-App reicht es, Ursache unbekannt). Ein zweiter Ein-Finger-Tipp innerhalb
+   von 350 ms wird abgefangen, bevor iOS zoomt. Zwei-Finger-Zoom bleibt (nur changedTouches = 1, und
+   nur wenn kein zweiter Finger liegt). −/+ bekommt den Tipp trotzdem (click() von Hand);
+   Eingabefelder bleiben unberührt (Doppeltipp markiert dort ein Wort). */
+let LETZTES_ENDE = { t: 0, x: 0, y: 0 };
+document.addEventListener("touchend", e => {
+  const jetzt = Date.now();
+  const z = e.target;
+  const einFinger = e.changedTouches.length === 1 && e.touches.length === 0;
+  const p = e.changedTouches[0];
+  // Zoom-Doppeltipp = zweimal dieselbe Stelle. Zwei verschiedene Knöpfe schnell hintereinander gehen durch.
+  const nah = p && Math.abs(p.clientX - LETZTES_ENDE.x) < 40 && Math.abs(p.clientY - LETZTES_ENDE.y) < 40;
+  if (einFinger && nah && jetzt - LETZTES_ENDE.t < 350 && !(z.closest && z.closest("input,select,textarea"))) {
+    e.preventDefault();
+    const knopf = z.closest && z.closest(".stepper button");
+    if (knopf) knopf.click();
+  }
+  LETZTES_ENDE = einFinger && p ? { t: jetzt, x: p.clientX, y: p.clientY } : { t: 0, x: 0, y: 0 };
+}, { passive: false });
 
 /* ---------- Start ---------- */
 document.querySelectorAll("#nav button").forEach(b => b.onclick = () => {
