@@ -1,7 +1,7 @@
 # millebeier
 
 Bestands- und Kassen-App für **Millebéier** (so geschrieben wie im Logo; Repo, Dateien und Speicherschlüssel ohne é), die kleine Brauerei von Laurent, Jeff, Marc und Claude
-(Luxemburg). **App-Texte auf Luxemburgisch** (vom Nutzer, 13.11.2026; Reiter Iwwersiicht/Verkafen/Ausstoend/Stock/Verlaf); mit dem Nutzer und in Code/Doku Deutsch, Du-Form. Angelegt 13.11.2026.
+(Luxemburg). **App-Texte auf Luxemburgisch** (vom Nutzer, 13.11.2026). **Reiter nach dem Ablauf** (vom Nutzer gewählt): Stock · Verkafen · Ausstoend · Iwwersiicht · Verlaf; mit dem Nutzer und in Code/Doku Deutsch, Du-Form. Angelegt 13.11.2026.
 
 ## Was die App macht
 Flaschen werden abgefüllt (→ Lager), an die vier verteilt, von ihnen verkauft. Jeder trägt auf seinem
