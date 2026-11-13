@@ -25,7 +25,7 @@ Brown Porter, 3 € je Flasche; Sorten, Preise und Leute sind in der App (⚙️
 - Bestand hängt am **Namen** — Leute nicht umbenennen, wenn sie Flaschen haben.
 - Offline: neue Einträge liegen in `millebeier_v1_ausgang`, bis der Worker sie hat; Einfügen ist
   idempotent (`INSERT OR IGNORE` über die id).
-- `WORKER_URL` leer = Probe-Modus (alles nur im localStorage des Handys).
+- `WORKER_URL` = https://millebeier.rjtp6r9s9h.workers.dev/ (Cloudflare-Konto des Nutzers, eingerichtet 13.11.2026). Leer = Probe-Modus (alles nur im localStorage des Handys). Die Domain ist in der Cloud-Umgebung nicht freigegeben — prüfen kann nur der Nutzer.
 - Käufernamen: gleiche Schreibweise ohne Groß/klein wird zusammengefasst, beim Eintragen der
   bekannte Name übernommen.
 - Logo vom Nutzer (13.11.2026): `bilder/icon-180.png` (Home-Bildschirm, schwarzer Grund), `icon-512.png`, `logo-96.png` (Kopf, durchsichtig).

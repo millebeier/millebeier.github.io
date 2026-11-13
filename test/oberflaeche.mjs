@@ -5,7 +5,7 @@ const pw = await import(process.env.PLAYWRIGHT || "/opt/node22/lib/node_modules/
 import worker from "../worker.js";
 
 const URL_W = "https://worker.test/";
-const html = readFileSync(new URL("../index.html", import.meta.url), "utf8").replace('const WORKER_URL = "";', `const WORKER_URL = "${URL_W}";`);
+const html = readFileSync(new URL("../index.html", import.meta.url), "utf8").replace(/const WORKER_URL = "[^"]*";/, `const WORKER_URL = "${URL_W}";`);
 const icon = readFileSync(new URL("../bilder/icon-180.png", import.meta.url));
 const rows = new Map();
 const DB = {
