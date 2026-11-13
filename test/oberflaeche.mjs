@@ -51,6 +51,7 @@ await A.fill("#sCode", "hopfen"); await A.click("#sCodeOk");
 await A.click('[data-ich="Laurent"]');
 ist("Verkaufen offen", await A.locator("#t-verkaufen").isVisible(), true);
 
+ist("Fußzeile mit Artikel", await txt(A, "#fuss"), s => s.includes("Du bass de Laurent"));
 // Bestand: abfüllen und zuteilen
 await A.click('[data-tab="bestand"]');
 await A.click('[data-m="abfuellung"]');

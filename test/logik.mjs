@@ -82,6 +82,7 @@ Z = L.rechne([...ein, { id: "kaputt-1", zeit: 1, art: "verkauf", verkaeufer: "Je
   E("zahlung", { ref: "gibtsnicht", betrag: 100 })]);
 ist("Ungültiges ignoriert", [Z.flaschen.da, Z.kasse], [58, 35]);
 
+ist("Artikel vor Verkäufern", [L.beschreibe({ art: "abgang", n: 2, sorte: "NEIPA", wer: "Jeff", grund: "kaputt" }), L.beschreibe({ art: "abgang", n: 1, sorte: "NEIPA", wer: "Lager", grund: "kaputt" })], ["🗑️ 2 × NEIPA beim Jeff: futti", "🗑️ 1 × NEIPA am Lager: futti"]);
 ist("euro", [L.euro(3), L.euro(4.5), L.euro(0.1 + 0.2)], ["3 €", "4,50 €", "0,30 €"]);
 const c = L.csv(L.rechne(ein), t => "T" + t);
 ist("CSV Kopf", c.split("\r\n")[0], '﻿"Datum";"Verkeefer";"Keefer";"NEIPA";"White IPA";"Brown Porter";"Fläschen";"Betrag";"Bezuelt";"Op"');
