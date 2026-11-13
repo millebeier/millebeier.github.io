@@ -5,7 +5,7 @@ const pw = await import(process.env.PLAYWRIGHT || "/opt/node22/lib/node_modules/
 import worker from "../worker.js";
 
 const URL_W = "https://worker.test/";
-const html = readFileSync(new URL("../index.html", import.meta.url), "utf8").replace(/const WORKER_URL = "[^"]*";/, `const WORKER_URL = "${URL_W}";`);
+let html = readFileSync(new URL("../index.html", import.meta.url), "utf8").replace(/const WORKER_URL = "[^"]*";/, `const WORKER_URL = "${URL_W}";`);
 const icon = readFileSync(new URL("../bilder/icon-180.png", import.meta.url));
 const rows = new Map();
 const DB = {
@@ -123,6 +123,20 @@ await A.click("#zahnrad");
 await A.fill('[data-sp="2"]', "3,50"); await A.click("#eSpeichern"); await warte(300);
 await B.evaluate(() => abgleichen()); await warte(300);
 ist("neuer Preis bei Jeff", await B.evaluate(() => Z.cfg.sorten[2].preis), 3.5);
+// Neue Fassung: ohne laufenden Eintrag lädt die App selbst neu, mitten im Eintrag nur ein Knopf.
+html = html.replace(/const FASSUNG = "[^"]+";/, 'const FASSUNG = "TEST-NEU";');
+await A.click('[data-tab="verlauf"]');
+await Promise.all([A.waitForEvent("load"), A.evaluate(() => updatePruefen())]);
+ist("neue Fassung von selbst geladen", await txt(A, "#fuss"), s => s.includes("TEST-NEU"));
+await B.click('[data-tab="verkaufen"]');
+await B.fill("#vKaeufer", "Lisa");
+await B.evaluate(() => document.activeElement.blur());
+await B.evaluate(() => updatePruefen());
+ist("mitten im Eintrag: Knopf statt Neuladen", [await B.locator("#neu").isVisible(), await B.inputValue("#vKaeufer")], [true, "Lisa"]);
+await Promise.all([B.waitForEvent("load"), B.click("#neu")]);
+ist("Knopf lädt neu", await txt(B, "#fuss"), s => s.includes("TEST-NEU"));
+await B.evaluate(() => updatePruefen()); await warte(300);
+ist("gleiche Fassung: nichts passiert", await B.locator("#neu").isVisible(), false);
 ist("keine Fehler in der Konsole", [...A.konsole, ...B.konsole].filter(s => !s.includes("ERR_INTERNET_DISCONNECTED") && !s.includes("Failed to load resource")), []);
 
 await browser.close();
