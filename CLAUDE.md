@@ -11,7 +11,7 @@ es gibt also nur eine Schuld: Käufer → Kasse. Kein Pfand. Sorten zum Start: N
 Brown Porter, 3 € je Flasche; Sorten, Preise und Leute sind in der App (⚙️) für alle änderbar.
 
 ## Aufbau
-- `index.html` — Einzeldatei, kein Build, kein Framework. GitHub Pages.
+- `index.html` — Einzeldatei, kein Build, kein Framework. GitHub Pages: Organisation `millebeier`, Repo `millebeier.github.io` → https://millebeier.github.io/ (wie beim FC Koeppchen, vom Nutzer 13.11.2026).
 - `worker.js` — Cloudflare Worker + D1 (Binding `DB`, Secret `CODE`). Speichert nur Einträge,
   rechnet nichts. Tabelle `eintraege` legt er selbst an.
 - **Datenmodell = Buchungsliste.** Nichts wird überschrieben; jeder Eintrag
