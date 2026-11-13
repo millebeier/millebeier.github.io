@@ -59,6 +59,7 @@ await A.selectOption("#bSorte", "NEIPA"); await A.fill("#bN", "48"); await A.cli
 await A.click('[data-m="bewegung"]');
 await A.selectOption("#bVon", "Lager"); await A.selectOption("#bAn", "Laurent"); await A.selectOption("#bSorte", "NEIPA");
 await A.fill("#bN", "12"); await A.click("#bOk");
+await warte(900); // ein Mensch braucht länger als die 800-ms-Sperre für denselben Knopf
 await A.selectOption("#bAn", "Jeff"); await A.fill("#bN", "12"); await A.click("#bOk");
 await warte(300);
 ist("Tabelle zeigt Lager 24", await txt(A, "#bTabelle"), s => /Lager\s+24/.test(s));
@@ -124,6 +125,28 @@ await A.click("#zahnrad");
 await A.fill('[data-sp="2"]', "3,50"); await A.click("#eSpeichern"); await warte(300);
 await B.evaluate(() => abgleichen()); await warte(300);
 ist("neuer Preis bei Jeff", await B.evaluate(() => Z.cfg.sorten[2].preis), 3.5);
+// Doppeltipp: Speichern zweimal schnell → ein Verkauf; Abfüllen doppelt → einmal; −/+ zählt jeden Tipp.
+await A.click('[data-tab="verkaufen"]');
+const vorher = await A.evaluate(() => Z.verkaeufe.length);
+await A.fill("#vKaeufer", "Doppelt"); await A.click('[data-plus="0"]'); await A.click('[data-plus="0"]');
+ist("−/+ zählt beide Tipps", await A.inputValue("#vN0"), "2");
+await A.click('[data-bez="1"]');
+await A.dblclick("#vSpeichern");
+await A.click("#vSpeichern");
+await warte(300);
+ist("Doppeltipp: ein Verkauf", await A.evaluate(() => Z.verkaeufe.length - 0), vorher + 1);
+ist("Doppeltipp: keine Fehlermeldung", await txt(A, "#vMeldung"), s => s.includes("Agedroen"));
+await A.click('[data-tab="bestand"]');
+await A.click('[data-m="abfuellung"]');
+const abf = await A.evaluate(() => Z.flaschen.abgefuellt);
+await A.fill("#bN", "5"); await A.dblclick("#bOk"); await warte(300);
+ist("Doppeltipp: einmal abgefüllt", await A.evaluate(() => Z.flaschen.abgefuellt), abf + 5);
+await warte(900);
+await A.fill("#bN", "5"); await A.click("#bOk"); await warte(300);
+ist("gleicher Inhalt nach 1 s: Sicherheitsnetz hält", await A.evaluate(() => Z.flaschen.abgefuellt), abf + 5);
+await warte(3100);
+await A.fill("#bN", "5"); await A.click("#bOk"); await warte(300);
+ist("gleicher Inhalt nach 4 s: zählt (gewollt zweimal)", await A.evaluate(() => Z.flaschen.abgefuellt), abf + 10);
 // Neue Fassung: ohne laufenden Eintrag lädt die App selbst neu, mitten im Eintrag nur ein Knopf.
 html = html.replace(/const FASSUNG = "[^"]+";/, 'const FASSUNG = "TEST-NEU";');
 await A.click('[data-tab="verlauf"]');

@@ -19,6 +19,7 @@
 }
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
+button,select,input,a{touch-action:manipulation} /* kein Zoom beim Doppeltippen */
 body{margin:0;background:var(--bg);color:var(--text);
   font:16px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
   padding:0 0 40px}
@@ -142,7 +143,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px}
 <script>
 /* Adresse des Cloudflare-Workers. Leer = Probe-Modus (alles nur auf diesem Handy). */
 const WORKER_URL = "https://millebeier.rjtp6r9s9h.workers.dev/";
-const FASSUNG = "13.11.2026 k";
+const FASSUNG = "13.11.2026 l";
 
 /* === Logik === (kein DOM; test/logik.mjs schneidet diesen Block aus) */
 const LAGER = "Lager";
@@ -401,8 +402,13 @@ async function abgleichen() {
   }
 }
 
+/* Doppeltipp-Schutz, Stufe 2: derselbe Inhalt innerhalb von 3 s wird nicht noch einmal gespeichert. */
+let LETZTER_EINTRAG = { sig: "", t: 0 };
 function eintragen(teile) {
   const jetzt = Date.now();
+  const sig = JSON.stringify([EIN.ich, teile]);
+  if (sig === LETZTER_EINTRAG.sig && jetzt - LETZTER_EINTRAG.t < 3000) return [];
+  LETZTER_EINTRAG = { sig, t: jetzt };
   const neu = teile.map((t, i) => ({ ...t, id: neueId(), zeit: jetzt + i, durch: EIN.ich }));
   AUSGANG.push(...neu);
   merke(SP_AUSGANG, AUSGANG);
@@ -601,6 +607,7 @@ function vSpeichern() {
   const bekannt = Z.kaeufer.find(k => k.name.toLowerCase() === kaeufer.toLowerCase());
   const name = bekannt ? bekannt.name : kaeufer;
   const [v] = eintragen([{ art: "verkauf", verkaeufer: FORM.verkaeufer, kaeufer: name, posten, betrag }]);
+  if (!v) return; // gerade eben schon gespeichert (Doppeltipp)
   if (FORM.bezahlt && betrag > 0) eintragen([{ art: "zahlung", ref: v.id, betrag }]);
   const verk = FORM.verkaeufer, bez = FORM.bezahlt;
   FORM = leeresFormular(); FORM.verkaeufer = verk;
@@ -817,6 +824,21 @@ function renderEinst() {
   };
   $("#eZurueck").onclick = () => { TAB = EIN.tab || "verkaufen"; EFORM = null; render(); };
 }
+
+/* ---------- Doppeltipp-Schutz, Stufe 1 ----------
+   Ein zweiter Tipp auf denselben Knopf innerhalb von 800 ms wird verschluckt. „Derselbe“ heißt gleiche
+   id, gleiche data-Werte und gleicher Text — gilt also auch, wenn der Knopf inzwischen neu gebaut
+   wurde (sonst träfe der zweite Tipp z. B. den nächsten Käufer, der in der Liste nachrückt).
+   Verschiedene Knöpfe schnell hintereinander gehen durch. Ausnahme: −/+ beim Verkaufen. */
+let LETZTER_TIPP = { k: "", t: 0 };
+document.addEventListener("click", e => {
+  const b = e.target.closest && e.target.closest("button");
+  if (!b || b.closest(".stepper")) return;
+  const jetzt = Date.now();
+  const k = b.id + "|" + JSON.stringify(b.dataset) + "|" + b.textContent.trim();
+  if (k === LETZTER_TIPP.k && jetzt - LETZTER_TIPP.t < 800) { e.preventDefault(); e.stopImmediatePropagation(); return; }
+  LETZTER_TIPP = { k, t: jetzt };
+}, true);
 
 /* ---------- Start ---------- */
 document.querySelectorAll("#nav button").forEach(b => b.onclick = () => {
