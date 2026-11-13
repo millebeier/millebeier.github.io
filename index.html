@@ -1,0 +1,829 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<!-- Kein viewport-fit=cover (Lehre aus den anderen Apps: iOS legt die Seite dann selbst in den sicheren Bereich). -->
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Millebeier</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Millebeier">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#14110d">
+<link rel="apple-touch-icon" sizes="180x180" href="bilder/icon-180.png">
+<link rel="icon" type="image/png" href="bilder/icon-180.png">
+<style>
+:root{
+  --bg:#14110d; --card:#1f1a14; --card2:#2a231b; --line:#3a3026;
+  --text:#f3ece2; --muted:#b3a593; --amber:#f2a33a; --amber2:#ffcf7a;
+  --gruen:#7cc47f; --rot:#ef6f5e; --gelb:#e8c547;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--text);
+  font:16px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  padding:0 0 40px}
+.wrap{max-width:640px;margin:0 auto;padding:0 16px}
+header{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:1px solid var(--line);padding:10px 0 8px}
+.kopf{display:flex;align-items:center;gap:10px}
+.kopf h1{font-size:22px;margin:0;flex:1;letter-spacing:.3px}
+.kopf h1 span{color:var(--amber)}
+#sync{font-size:13px;color:var(--muted);text-align:right}
+#sync.fehler{color:var(--gelb)}
+.zahnrad{background:none;border:0;color:var(--text);font-size:22px;padding:4px 2px;cursor:pointer}
+nav{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin-top:8px}
+nav button{background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:10px;
+  padding:8px 2px;font-size:13px;font-weight:600;cursor:pointer;position:relative}
+nav button.an{background:var(--amber);color:#1b1206;border-color:var(--amber)}
+nav .badge{position:absolute;top:-6px;right:-4px;background:var(--rot);color:#fff;border-radius:9px;
+  font-size:11px;padding:1px 6px;font-weight:700}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin:12px 0}
+.card h2{font-size:17px;margin:0 0 10px}
+.card h3{font-size:15px;margin:14px 0 6px;color:var(--amber2)}
+.muted{color:var(--muted)} small{font-size:13px}
+.kacheln{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.kachel{background:var(--card2);border-radius:12px;padding:10px 12px}
+.kachel b{display:block;font-size:26px;line-height:1.15}
+.kachel span{font-size:13px;color:var(--muted)}
+.kachel.geld b{color:var(--gruen)} .kachel.offen b{color:var(--gelb)}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{padding:6px 4px;text-align:right;border-bottom:1px solid var(--line)}
+th:first-child,td:first-child{text-align:left}
+th{color:var(--muted);font-weight:600;font-size:12px}
+tr.summe td{font-weight:700;border-bottom:0}
+.tabwrap{overflow-x:auto}
+label{display:block;font-size:13px;color:var(--muted);margin:12px 0 4px}
+input,select{width:100%;font-size:16px;padding:10px;border-radius:10px;border:1px solid var(--line);
+  background:var(--bg);color:var(--text);-webkit-appearance:none;appearance:none}
+select{background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);
+  background-position:calc(100% - 18px) 55%,calc(100% - 12px) 55%;background-size:6px 6px;background-repeat:no-repeat;padding-right:30px}
+.zeile{display:flex;gap:8px;align-items:center}
+.zeile > *{flex:1}
+.posten{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}
+.posten:last-child{border-bottom:0}
+.posten .pn{flex:1;min-width:0}
+.posten .pn b{display:block}
+.stepper{display:flex;align-items:center;gap:6px}
+.stepper button{width:44px;height:44px;border-radius:12px;border:1px solid var(--line);background:var(--card2);
+  color:var(--text);font-size:24px;line-height:1;cursor:pointer;touch-action:manipulation}
+.stepper input{width:56px;text-align:center;font-size:20px;font-weight:700;padding:8px 2px}
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:12px}
+.seg.drei{grid-template-columns:1fr 1fr 1fr}
+.seg button{padding:12px 4px;border-radius:12px;border:1px solid var(--line);background:var(--card2);color:var(--text);
+  font-size:15px;font-weight:600;cursor:pointer}
+.seg button.an{background:var(--amber);color:#1b1206;border-color:var(--amber)}
+.seg button.an.gruen{background:var(--gruen);border-color:var(--gruen)}
+.seg button.an.gelb{background:var(--gelb);border-color:var(--gelb)}
+.haupt{width:100%;margin-top:14px;padding:14px;border:0;border-radius:12px;background:var(--amber);color:#1b1206;
+  font-size:17px;font-weight:700;cursor:pointer}
+.haupt:disabled{opacity:.45}
+.knopf{padding:9px 12px;border-radius:10px;border:1px solid var(--line);background:var(--card2);color:var(--text);
+  font-size:14px;font-weight:600;cursor:pointer}
+.knopf.gruen{background:var(--gruen);color:#10200f;border-color:var(--gruen)}
+.knopfe{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.meldung{margin-top:10px;padding:10px 12px;border-radius:10px;font-size:14px}
+.meldung.ok{background:#20331f;color:#bfe8c0}
+.meldung.warn{background:#3a3115;color:#f4e2a0}
+.meldung.fehler{background:#3d1c18;color:#ffc2b8}
+.leer{color:var(--muted);text-align:center;padding:12px 0}
+.kunde .kopfz{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.kunde .betrag{font-size:22px;font-weight:700;color:var(--gelb);white-space:nowrap}
+.vk{font-size:14px;padding:6px 0;border-top:1px dashed var(--line);display:flex;justify-content:space-between;gap:8px}
+.vk span:last-child{white-space:nowrap}
+.log{padding:10px 0;border-bottom:1px solid var(--line);display:flex;gap:10px;align-items:flex-start}
+.log:last-child{border-bottom:0}
+.log .lt{flex:1;min-width:0}
+.log .lt small{display:block;color:var(--muted)}
+.log.weg .lt > div{text-decoration:line-through;color:var(--muted)}
+.log .zurueck{background:none;border:1px solid var(--line);color:var(--muted);border-radius:8px;padding:4px 8px;font-size:13px;cursor:pointer}
+.hinweis{font-size:13px;color:var(--muted);margin-top:8px}
+.probe{background:#3a3115;color:#f4e2a0;border-radius:10px;padding:8px 12px;font-size:13px;margin-top:10px}
+.sorte-ed{display:grid;grid-template-columns:1fr 84px 44px 32px;gap:6px;align-items:center;margin-bottom:6px}
+.sorte-ed input[type=checkbox]{width:22px;height:22px;-webkit-appearance:checkbox;appearance:auto}
+.sorte-ed button,.person-ed button{background:none;border:0;color:var(--muted);font-size:20px;cursor:pointer}
+.person-ed{display:grid;grid-template-columns:1fr 32px;gap:6px;margin-bottom:6px}
+.ichwahl{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.ichwahl button{padding:16px 8px;font-size:18px;font-weight:700;border-radius:12px;border:1px solid var(--line);background:var(--card2);color:var(--text);cursor:pointer}
+footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px}
+.versteckt{display:none !important}
+</style>
+</head>
+<body>
+<header><div class="wrap">
+  <div class="kopf">
+    <h1>🍺 Mille<span>beier</span></h1>
+    <div id="sync"></div>
+    <button class="zahnrad" id="zahnrad" aria-label="Einstellungen">⚙️</button>
+  </div>
+  <nav id="nav">
+    <button data-tab="uebersicht">Überblick</button>
+    <button data-tab="verkaufen">Verkaufen</button>
+    <button data-tab="offen">Offen</button>
+    <button data-tab="bestand">Bestand</button>
+    <button data-tab="verlauf">Verlauf</button>
+  </nav>
+</div></header>
+
+<main class="wrap">
+  <section id="t-start" class="versteckt"></section>
+  <section id="t-uebersicht" class="versteckt"></section>
+  <section id="t-verkaufen" class="versteckt"><div id="vForm"></div></section>
+  <section id="t-offen" class="versteckt"></section>
+  <section id="t-bestand" class="versteckt"><div id="bTabelle"></div><div id="bForm"></div></section>
+  <section id="t-verlauf" class="versteckt"></section>
+  <section id="t-einst" class="versteckt"></section>
+  <footer id="fuss"></footer>
+</main>
+<datalist id="kaeuferListe"></datalist>
+
+<script>
+/* Adresse des Cloudflare-Workers. Leer = Probe-Modus (alles nur auf diesem Handy). */
+const WORKER_URL = "";
+const FASSUNG = "13.11.2026 a";
+
+/* === Logik === (kein DOM; test/logik.mjs schneidet diesen Block aus) */
+const LAGER = "Lager";
+const STANDARD = {
+  sorten: [{ name: "NEIPA", preis: 3 }, { name: "White IPA", preis: 3 }, { name: "Brown Porter", preis: 3 }],
+  leute: ["Jeff", "Marc", "Claude", "Laurent"],
+};
+const GRUENDE = { getrunken: "selbst getrunken", verschenkt: "verschenkt / Probe", kaputt: "kaputt", sonst: "sonstiges" };
+const ARTEN = ["abfuellung", "bewegung", "abgang", "verkauf", "zahlung", "einstellungen", "storno"];
+
+const ganz = n => Number.isInteger(n) && n > 0 && n <= 100000;
+const geld = x => typeof x === "number" && isFinite(x) && x >= 0 && x <= 1000000;
+const text = (s, max = 60) => typeof s === "string" && s.trim().length > 0 && s.length <= max;
+const runde = x => Math.round(x * 100) / 100;
+
+function euro(x) {
+  const r = runde(x || 0);
+  return (Number.isInteger(r) ? String(r) : r.toFixed(2).replace(".", ",")) + " €";
+}
+
+function gueltig(e) {
+  if (!e || typeof e !== "object" || typeof e.id !== "string" || typeof e.zeit !== "number") return false;
+  switch (e.art) {
+    case "abfuellung": return text(e.sorte) && ganz(e.n);
+    case "bewegung": return text(e.sorte) && ganz(e.n) && text(e.von) && text(e.an) && e.von !== e.an;
+    case "abgang": return text(e.sorte) && ganz(e.n) && text(e.wer) && e.grund in GRUENDE;
+    case "verkauf":
+      return text(e.verkaeufer) && text(e.kaeufer) && geld(e.betrag) && Array.isArray(e.posten) &&
+        e.posten.length > 0 && e.posten.every(p => p && text(p.sorte) && ganz(p.n));
+    case "zahlung": return typeof e.ref === "string" && geld(e.betrag) && e.betrag > 0;
+    case "einstellungen":
+      return Array.isArray(e.sorten) && e.sorten.length > 0 && e.sorten.length <= 30 &&
+        e.sorten.every(s => s && text(s.name, 30) && geld(s.preis)) &&
+        Array.isArray(e.leute) && e.leute.length > 0 && e.leute.length <= 30 && e.leute.every(p => text(p, 30) && p !== LAGER);
+    case "storno": return typeof e.ref === "string";
+  }
+  return false;
+}
+
+const ordnung = (a, b) => a.zeit - b.zeit || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
+
+/* Rechnet aus allen Einträgen den Stand. Nichts wird gespeichert außer den Einträgen selbst. */
+function rechne(eintraege) {
+  const gesehen = new Set();
+  const liste = [];
+  for (const e of eintraege || []) {
+    if (!gueltig(e) || gesehen.has(e.id)) continue;
+    gesehen.add(e.id); liste.push(e);
+  }
+  liste.sort(ordnung);
+  const nachId = new Map(liste.map(e => [e.id, e]));
+  // Rückgängig nur für echte Einträge, nie für ein Rückgängig selbst.
+  const storniert = new Map();
+  for (const e of liste) {
+    const ziel = e.art === "storno" && nachId.get(e.ref);
+    if (ziel && ziel.art !== "storno" && !storniert.has(ziel.id)) storniert.set(ziel.id, e);
+  }
+  const aktiv = liste.filter(e => e.art !== "storno" && !storniert.has(e.id));
+
+  let cfg = { sorten: STANDARD.sorten.map(s => ({ ...s })), leute: [...STANDARD.leute] };
+  for (const e of aktiv) if (e.art === "einstellungen")
+    cfg = { sorten: e.sorten.map(s => ({ name: s.name.trim(), preis: runde(s.preis), aus: !!s.aus })), leute: e.leute.map(p => p.trim()) };
+
+  const bestand = {};
+  const add = (h, s, n) => { (bestand[h] ||= {}); bestand[h][s] = (bestand[h][s] || 0) + n; };
+  const sorten = {};
+  const st = s => (sorten[s] ||= { abgefuellt: 0, verkauft: 0, abgang: 0, da: 0 });
+  for (const s of cfg.sorten) st(s.name);
+  const personen = {};
+  const pe = p => (personen[p] ||= { verkauft: 0, umsatz: 0, bezahlt: 0, offen: 0 });
+  for (const p of cfg.leute) pe(p);
+  const vk = new Map();
+
+  for (const e of aktiv) {
+    if (e.art === "abfuellung") { add(LAGER, e.sorte, e.n); st(e.sorte).abgefuellt += e.n; }
+    else if (e.art === "bewegung") { add(e.von, e.sorte, -e.n); add(e.an, e.sorte, e.n); st(e.sorte); }
+    else if (e.art === "abgang") { add(e.wer, e.sorte, -e.n); st(e.sorte).abgang += e.n; }
+    else if (e.art === "verkauf") {
+      let n = 0;
+      for (const p of e.posten) { add(e.verkaeufer, p.sorte, -p.n); st(p.sorte).verkauft += p.n; n += p.n; }
+      vk.set(e.id, { ...e, flaschen: n, bezahlt: 0, offen: 0 });
+      const P = pe(e.verkaeufer); P.verkauft += n; P.umsatz += e.betrag;
+    }
+  }
+  let kasse = 0;
+  for (const e of aktiv) if (e.art === "zahlung") {
+    const v = vk.get(e.ref);
+    if (!v) continue; // Verkauf rückgängig gemacht → Zahlung zählt nicht mehr
+    v.bezahlt = runde(v.bezahlt + e.betrag);
+    kasse = runde(kasse + e.betrag);
+  }
+  let offen = 0;
+  const kaeufer = new Map();
+  for (const v of vk.values()) {
+    v.offen = runde(Math.max(0, v.betrag - v.bezahlt));
+    offen = runde(offen + v.offen);
+    const P = pe(v.verkaeufer); P.bezahlt = runde(P.bezahlt + Math.min(v.bezahlt, v.betrag)); P.offen = runde(P.offen + v.offen);
+    const k = v.kaeufer.trim();
+    const K = kaeufer.get(k.toLowerCase()) || { name: k, offen: 0, verkaeufe: [] };
+    K.offen = runde(K.offen + v.offen); K.verkaeufe.push(v);
+    kaeufer.set(k.toLowerCase(), K);
+  }
+  for (const h in bestand) for (const s in bestand[h]) st(s).da += bestand[h][s];
+
+  const halter = [LAGER, ...cfg.leute];
+  for (const h in bestand) if (!halter.includes(h) && Object.values(bestand[h]).some(n => n !== 0)) halter.push(h);
+  const sortenNamen = [...cfg.sorten.map(s => s.name), ...Object.keys(sorten).filter(s => !cfg.sorten.some(c => c.name === s))];
+  const summe = f => sortenNamen.reduce((a, s) => a + sorten[s][f], 0);
+
+  return {
+    cfg, liste, aktiv, storniert, nachId, bestand, halter, sorten, sortenNamen, personen,
+    verkaeufe: [...vk.values()],
+    vkNachId: vk,
+    kaeufer: [...kaeufer.values()].sort((a, b) => b.offen - a.offen || a.name.localeCompare(b.name, "de")),
+    kasse, offen,
+    umsatz: runde([...vk.values()].reduce((a, v) => a + v.betrag, 0)),
+    flaschen: { abgefuellt: summe("abgefuellt"), verkauft: summe("verkauft"), abgang: summe("abgang"), da: summe("da") },
+  };
+}
+
+const hat = (Z, wer, sorte) => (Z.bestand[wer] && Z.bestand[wer][sorte]) || 0;
+const preisVon = (cfg, sorte) => { const s = cfg.sorten.find(x => x.name === sorte); return s ? s.preis : 0; };
+const postenText = posten => posten.map(p => `${p.n} × ${p.sorte}`).join(", ");
+
+function beschreibe(e, Z) {
+  switch (e.art) {
+    case "abfuellung": return `🍺 ${e.n} × ${e.sorte} abgefüllt (ins Lager)`;
+    case "bewegung": return `➡️ ${e.n} × ${e.sorte}: ${e.von} → ${e.an}`;
+    case "abgang": return `🗑️ ${e.n} × ${e.sorte} bei ${e.wer}: ${GRUENDE[e.grund]}`;
+    case "verkauf": return `💶 ${e.verkaeufer} an ${e.kaeufer}: ${postenText(e.posten)} · ${euro(e.betrag)}`;
+    case "zahlung": {
+      const v = Z && Z.nachId.get(e.ref);
+      return `✓ ${euro(e.betrag)} bezahlt` + (v ? ` von ${v.kaeufer} (an ${v.verkaeufer})` : "");
+    }
+    case "einstellungen": return `⚙️ Sorten/Preise/Leute geändert: ${e.sorten.filter(s => !s.aus).map(s => `${s.name} ${euro(s.preis)}`).join(", ")}`;
+    case "storno": {
+      const z = Z && Z.nachId.get(e.ref);
+      return "↶ Rückgängig: " + (z ? beschreibe(z, Z) : "?");
+    }
+  }
+  return "?";
+}
+
+/* Teilbetrag auf die ältesten offenen Verkäufe verteilen. */
+function verteile(verkaeufe, betrag) {
+  const out = [];
+  let rest = runde(betrag);
+  for (const v of [...verkaeufe].sort(ordnung)) {
+    if (rest <= 0) break;
+    if (v.offen <= 0) continue;
+    const b = runde(Math.min(rest, v.offen));
+    out.push({ art: "zahlung", ref: v.id, betrag: b });
+    rest = runde(rest - b);
+  }
+  return { zahlungen: out, rest };
+}
+
+function erinnerung(K) {
+  const offene = K.verkaeufe.filter(v => v.offen > 0);
+  const posten = {};
+  for (const v of offene) for (const p of v.posten) posten[p.sorte] = (posten[p.sorte] || 0) + p.n;
+  const was = Object.entries(posten).map(([s, n]) => `${n} × ${s}`).join(", ");
+  return `Hallo ${K.name}, für die Millebeier (${was}) sind noch ${euro(K.offen)} offen. Merci & Prost! 🍺`;
+}
+
+function csv(Z, zeitText) {
+  const q = s => `"${String(s).replace(/"/g, '""')}"`;
+  const zeilen = [["Datum", "Verkäufer", "Käufer", ...Z.sortenNamen, "Flaschen", "Betrag", "Bezahlt", "Offen"].map(q).join(";")];
+  for (const v of [...Z.verkaeufe].sort(ordnung)) {
+    const n = Z.sortenNamen.map(s => v.posten.filter(p => p.sorte === s).reduce((a, p) => a + p.n, 0));
+    zeilen.push([zeitText(v.zeit), v.verkaeufer, v.kaeufer, ...n, v.flaschen,
+      String(v.betrag).replace(".", ","), String(v.bezahlt).replace(".", ","), String(v.offen).replace(".", ",")].map(q).join(";"));
+  }
+  return "﻿" + zeilen.join("\r\n") + "\r\n";
+}
+
+function neueId() {
+  if (typeof crypto !== "undefined" && crypto.randomUUID) return crypto.randomUUID();
+  return "x" + Date.now().toString(36) + Math.random().toString(36).slice(2, 12);
+}
+/* === Oberfläche === */
+
+const SP = "millebeier_v1";              // {code, ich, tab}
+const SP_DATEN = "millebeier_v1_daten";  // letzter Stand vom Server (offline lesbar)
+const SP_AUSGANG = "millebeier_v1_ausgang"; // Einträge, die noch nicht beim Server sind
+const SP_PROBE = "millebeier_v1_probe";  // Probe-Modus: die „Datenbank“ auf dem Handy
+
+const lade = (k, d) => { try { const v = JSON.parse(localStorage.getItem(k)); return v == null ? d : v; } catch { return d; } };
+const merke = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
+const PROBE = !WORKER_URL;
+
+let EIN = lade(SP, {});
+let SERVER = lade(SP_DATEN, []);
+let AUSGANG = lade(SP_AUSGANG, []);
+let Z = rechne([]);
+let TAB = EIN.tab || "verkaufen";
+let STATUS = { zuletzt: 0, fehler: "" };
+let FORM = null, BFORM = null, EFORM = null;
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const TZ = "Europe/Luxembourg";
+const zeitText = t => new Date(t).toLocaleString("de-DE", { timeZone: TZ, weekday: "short", day: "numeric", month: "numeric", hour: "2-digit", minute: "2-digit" });
+const datumText = t => new Date(t).toLocaleDateString("de-DE", { timeZone: TZ, day: "numeric", month: "numeric", year: "2-digit" });
+
+function neuRechnen() {
+  const ids = new Set(SERVER.map(e => e.id));
+  Z = rechne([...SERVER, ...AUSGANG.filter(e => !ids.has(e.id))]);
+  document.getElementById("kaeuferListe").innerHTML = Z.kaeufer.map(k => `<option value="${esc(k.name)}">`).join("");
+}
+
+/* ---------- Server ---------- */
+async function anfrage(daten) {
+  if (PROBE) {
+    const db = lade(SP_PROBE, []);
+    if (daten.aktion === "neu") {
+      const ids = new Set(db.map(e => e.id));
+      for (const e of daten.eintraege) if (!ids.has(e.id)) db.push(e);
+      merke(SP_PROBE, db);
+    }
+    return { eintraege: db };
+  }
+  const r = await fetch(WORKER_URL, { method: "POST", headers: { "Content-Type": "text/plain" }, body: JSON.stringify({ code: EIN.code, ...daten }) });
+  let j = {};
+  try { j = await r.json(); } catch {}
+  if (!r.ok) { const f = new Error(j.fehler || `Fehler ${r.status}`); f.status = r.status; throw f; }
+  return j;
+}
+
+let LAEUFT = false;
+async function abgleichen() {
+  if (LAEUFT || !bereit()) return;
+  LAEUFT = true;
+  try {
+    let antwort;
+    do {
+      if (AUSGANG.length) {
+        antwort = await anfrage({ aktion: "neu", eintraege: AUSGANG.slice(0, 50) });
+      } else antwort = await anfrage({ aktion: "liste" });
+      SERVER = antwort.eintraege || [];
+      const ids = new Set(SERVER.map(e => e.id));
+      AUSGANG = AUSGANG.filter(e => !ids.has(e.id));
+      merke(SP_DATEN, SERVER); merke(SP_AUSGANG, AUSGANG);
+    } while (AUSGANG.length && antwort);
+    STATUS = { zuletzt: Date.now(), fehler: "" };
+  } catch (f) {
+    if (f.status === 401) { EIN.code = ""; merke(SP, EIN); STATUS.fehler = "Code stimmt nicht mehr"; }
+    else STATUS.fehler = navigator.onLine === false ? "offline" : (f.message || "keine Verbindung");
+  } finally {
+    LAEUFT = false;
+    neuRechnen(); render();
+  }
+}
+
+function eintragen(teile) {
+  const jetzt = Date.now();
+  const neu = teile.map((t, i) => ({ ...t, id: neueId(), zeit: jetzt + i, durch: EIN.ich }));
+  AUSGANG.push(...neu);
+  merke(SP_AUSGANG, AUSGANG);
+  neuRechnen(); render();
+  abgleichen();
+  return neu;
+}
+
+/* ---------- Rendern ---------- */
+const bereit = () => !!EIN.ich && (PROBE || !!EIN.code);
+// iPhone-Regel: nie einen Kasten neu bauen, in dem gerade getippt wird.
+function tipptIn(el) {
+  const a = document.activeElement;
+  return !!(a && el && el.contains(a) && /^(INPUT|SELECT|TEXTAREA)$/.test(a.tagName));
+}
+
+function render() {
+  const tab = bereit() ? TAB : "start";
+  document.querySelectorAll("main > section").forEach(s => s.classList.toggle("versteckt", s.id !== "t-" + tab));
+  $("#nav").classList.toggle("versteckt", !bereit());
+  $("#zahnrad").classList.toggle("versteckt", !bereit());
+  document.querySelectorAll("#nav button").forEach(b => b.classList.toggle("an", b.dataset.tab === tab));
+  const nOffen = Z.kaeufer.filter(k => k.offen > 0).length;
+  $('#nav [data-tab="offen"]').innerHTML = "Offen" + (nOffen ? ` <span class="badge">${nOffen}</span>` : "");
+  renderSync();
+  ({ start: renderStart, uebersicht: renderUebersicht, verkaufen: renderVerkaufen, offen: renderOffen,
+     bestand: renderBestand, verlauf: renderVerlauf, einst: renderEinst })[tab]();
+  $("#fuss").innerHTML = `Fassung ${esc(FASSUNG)}` + (EIN.ich ? ` · Du bist ${esc(EIN.ich)}` : "");
+}
+
+function renderSync() {
+  const el = $("#sync");
+  let t = "";
+  if (PROBE) t = "Probe-Modus";
+  else if (STATUS.fehler) t = "⚠️ " + STATUS.fehler;
+  else if (STATUS.zuletzt) t = "✓ aktuell";
+  if (AUSGANG.length) t += `<br>⏳ ${AUSGANG.length} noch nicht gesendet`;
+  el.innerHTML = t;
+  el.classList.toggle("fehler", !!STATUS.fehler || AUSGANG.length > 0);
+}
+
+/* Start: Code und Name */
+function renderStart() {
+  const box = $("#t-start");
+  if (tipptIn(box)) return;
+  const brauchtCode = !PROBE && !EIN.code;
+  box.innerHTML = `<div class="card">
+    <h2>Willkommen bei Millebeier 🍺</h2>
+    ${PROBE ? `<div class="probe">Probe-Modus: Es ist noch kein Server eingerichtet. Alles, was du einträgst, bleibt nur auf diesem Handy.</div>` : ""}
+    ${brauchtCode ? `<label for="sCode">Gemeinsamer Code</label>
+      <input id="sCode" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
+      <button class="haupt" id="sCodeOk">Weiter</button>
+      <div id="sMeld">${STATUS.fehler ? `<div class="meldung fehler">${esc(STATUS.fehler)}</div>` : ""}</div>`
+    : `<p>Wer bist du? Das merkt sich dieses Handy, und deine Verkäufe werden dir zugeordnet.</p>
+      <div class="ichwahl">${Z.cfg.leute.map(p => `<button data-ich="${esc(p)}">${esc(p)}</button>`).join("")}</div>`}
+  </div>`;
+  if (brauchtCode) {
+    const los = async () => {
+      const code = $("#sCode").value.trim();
+      if (!code) return;
+      $("#sCodeOk").disabled = true;
+      try {
+        EIN.code = code;
+        const a = await anfrage({ aktion: "liste" });
+        SERVER = a.eintraege || []; merke(SP_DATEN, SERVER);
+        merke(SP, EIN); STATUS = { zuletzt: Date.now(), fehler: "" };
+        neuRechnen(); document.activeElement.blur(); render();
+      } catch (f) {
+        EIN.code = "";
+        $("#sMeld").innerHTML = `<div class="meldung fehler">${esc(f.status === 401 ? "Der Code stimmt nicht." : f.message)}</div>`;
+        $("#sCodeOk").disabled = false;
+      }
+    };
+    $("#sCodeOk").onclick = los;
+    $("#sCode").onkeydown = e => { if (e.key === "Enter") los(); };
+  } else box.querySelectorAll("[data-ich]").forEach(b => b.onclick = () => {
+    EIN.ich = b.dataset.ich; merke(SP, EIN); FORM = null; render(); abgleichen();
+  });
+}
+
+function renderUebersicht() {
+  const box = $("#t-uebersicht");
+  const F = Z.flaschen;
+  const leute = Z.halter.filter(h => h !== LAGER);
+  const zeilen = Z.sortenNamen.filter(s => { const x = Z.sorten[s]; return x.abgefuellt || x.da || x.verkauft || !(Z.cfg.sorten.find(c => c.name === s) || {}).aus; });
+  box.innerHTML = `
+  ${PROBE ? `<div class="probe">Probe-Modus: Einträge bleiben nur auf diesem Handy.</div>` : ""}
+  <div class="card"><div class="kacheln">
+    <div class="kachel"><b>${F.da}</b><span>Flaschen noch da</span></div>
+    <div class="kachel"><b>${F.verkauft}</b><span>Flaschen verkauft</span></div>
+    <div class="kachel geld"><b>${euro(Z.kasse)}</b><span>in der Kasse</span></div>
+    <div class="kachel offen"><b>${euro(Z.offen)}</b><span>noch offen${Z.kaeufer.filter(k => k.offen > 0).length ? ` (${Z.kaeufer.filter(k => k.offen > 0).length} Leute)` : ""}</span></div>
+  </div></div>
+  <div class="card"><h2>Je Sorte</h2><div class="tabwrap"><table>
+    <tr><th>Sorte</th><th>Abgefüllt</th><th>Verkauft</th><th>Weg</th><th>Noch da</th></tr>
+    ${zeilen.map(s => { const x = Z.sorten[s]; return `<tr><td>${esc(s)}</td><td>${x.abgefuellt}</td><td>${x.verkauft}</td><td>${x.abgang}</td><td><b>${x.da}</b></td></tr>`; }).join("")}
+    <tr class="summe"><td>Gesamt</td><td>${F.abgefuellt}</td><td>${F.verkauft}</td><td>${F.abgang}</td><td>${F.da}</td></tr>
+  </table></div>
+  <div class="hinweis">„Weg“ = selbst getrunken, verschenkt oder kaputt.</div></div>
+  <div class="card"><h2>Je Person</h2><div class="tabwrap"><table>
+    <tr><th></th><th>Hat noch</th><th>Verkauft</th><th>Umsatz</th><th>Offen</th></tr>
+    ${leute.map(p => { const P = Z.personen[p] || { verkauft: 0, umsatz: 0, offen: 0 };
+      const n = Object.values(Z.bestand[p] || {}).reduce((a, b) => a + b, 0);
+      return `<tr><td>${esc(p)}</td><td>${n}</td><td>${P.verkauft}</td><td>${euro(P.umsatz)}</td><td>${P.offen ? euro(P.offen) : "–"}</td></tr>`; }).join("")}
+    <tr><td>Lager</td><td>${Object.values(Z.bestand[LAGER] || {}).reduce((a, b) => a + b, 0)}</td><td></td><td></td><td></td></tr>
+  </table></div></div>
+  ${F.abgefuellt === 0 ? `<div class="card"><b>Los geht's:</b> Unter <b>Bestand</b> die abgefüllten Flaschen ins Lager eintragen und dann an Jeff, Marc, Claude und dich verteilen.</div>` : ""}`;
+}
+
+/* ---------- Verkaufen ---------- */
+function leeresFormular() {
+  return { verkaeufer: EIN.ich, kaeufer: "", n: {}, betrag: null, bezahlt: null, meldung: FORM && FORM.meldung };
+}
+function vSorten() { return Z.cfg.sorten.filter(s => !s.aus); }
+function vAutoBetrag() { return runde(vSorten().reduce((a, s) => a + (FORM.n[s.name] || 0) * s.preis, 0)); }
+function vFlaschen() { return vSorten().reduce((a, s) => a + (FORM.n[s.name] || 0), 0); }
+
+function renderVerkaufen() {
+  if (!FORM) FORM = leeresFormular();
+  const box = $("#vForm");
+  if (tipptIn(box)) { vHinweise(); return; }
+  const leute = Z.cfg.leute.includes(FORM.verkaeufer) ? Z.cfg.leute : [...Z.cfg.leute, FORM.verkaeufer];
+  box.innerHTML = `<div class="card">
+    <h2>Verkauf eintragen</h2>
+    <label for="vVerk">Wer verkauft?</label>
+    <select id="vVerk">${leute.map(p => `<option ${p === FORM.verkaeufer ? "selected" : ""}>${esc(p)}</option>`).join("")}</select>
+    <label for="vKaeufer">An wen?</label>
+    <input id="vKaeufer" list="kaeuferListe" autocomplete="off" autocapitalize="words" placeholder="Name des Käufers" value="${esc(FORM.kaeufer)}">
+    <label>Wie viele Flaschen?</label>
+    ${vSorten().map((s, i) => `<div class="posten">
+      <div class="pn"><b>${esc(s.name)}</b><small class="muted" id="vHat${i}"></small></div>
+      <div class="stepper"><button data-minus="${i}" aria-label="weniger">−</button>
+        <input id="vN${i}" data-i="${i}" inputmode="numeric" pattern="[0-9]*" value="${FORM.n[s.name] || ""}" placeholder="0">
+        <button data-plus="${i}" aria-label="mehr">+</button></div></div>`).join("")}
+    <label for="vBetrag">Betrag (€)</label>
+    <div class="zeile"><input id="vBetrag" inputmode="decimal" value="${FORM.betrag != null ? String(FORM.betrag).replace(".", ",") : (vAutoBetrag() ? String(vAutoBetrag()).replace(".", ",") : "")}" placeholder="0">
+      <small class="muted" id="vAuto" style="flex:1.4"></small></div>
+    <div class="seg">
+      <button data-bez="1" class="${FORM.bezahlt === true ? "an gruen" : ""}">Bezahlt ✓</button>
+      <button data-bez="0" class="${FORM.bezahlt === false ? "an gelb" : ""}">Zahlt später</button>
+    </div>
+    <button class="haupt" id="vSpeichern">Verkauf eintragen</button>
+    <div id="vMeldung">${FORM.meldung ? `<div class="meldung ${FORM.meldung.art}">${esc(FORM.meldung.text)}</div>` : ""}</div>
+  </div>`;
+  vHinweise();
+
+  $("#vVerk").onchange = e => { FORM.verkaeufer = e.target.value; vHinweise(); };
+  $("#vKaeufer").oninput = e => { FORM.kaeufer = e.target.value; };
+  const setzeN = (i, n) => {
+    const s = vSorten()[i]; FORM.n[s.name] = Math.max(0, Math.min(9999, n | 0));
+    const inp = $("#vN" + i); if (document.activeElement !== inp) inp.value = FORM.n[s.name] || "";
+    vHinweise();
+  };
+  box.querySelectorAll("[data-plus]").forEach(b => b.onclick = () => setzeN(+b.dataset.plus, (FORM.n[vSorten()[+b.dataset.plus].name] || 0) + 1));
+  box.querySelectorAll("[data-minus]").forEach(b => b.onclick = () => setzeN(+b.dataset.minus, (FORM.n[vSorten()[+b.dataset.minus].name] || 0) - 1));
+  box.querySelectorAll("[data-i]").forEach(inp => inp.oninput = () => setzeN(+inp.dataset.i, parseInt(inp.value, 10) || 0));
+  $("#vBetrag").oninput = e => {
+    const v = e.target.value.trim().replace(",", ".");
+    FORM.betrag = v === "" ? null : (isFinite(+v) ? runde(+v) : FORM.betrag);
+    vHinweise();
+  };
+  box.querySelectorAll("[data-bez]").forEach(b => b.onclick = () => {
+    FORM.bezahlt = b.dataset.bez === "1";
+    box.querySelectorAll("[data-bez]").forEach(x => x.className = "");
+    b.className = "an " + (FORM.bezahlt ? "gruen" : "gelb");
+  });
+  $("#vSpeichern").onclick = vSpeichern;
+}
+
+function vHinweise() {
+  vSorten().forEach((s, i) => {
+    const el = $("#vHat" + i); if (!el) return;
+    const n = hat(Z, FORM.verkaeufer, s.name);
+    el.textContent = `${euro(s.preis)} · ${FORM.verkaeufer} hat noch ${n}`;
+    el.style.color = (FORM.n[s.name] || 0) > n ? "var(--gelb)" : "";
+  });
+  const auto = vAutoBetrag();
+  const inp = $("#vBetrag");
+  if (inp && FORM.betrag == null && document.activeElement !== inp) inp.value = auto ? String(auto).replace(".", ",") : "";
+  const a = $("#vAuto");
+  if (a) a.textContent = FORM.betrag != null && FORM.betrag !== auto
+    ? `statt ${euro(auto)} (${vFlaschen()} Flaschen)` : (vFlaschen() ? `${vFlaschen()} Flaschen` : "");
+}
+
+function vSpeichern() {
+  const zeige = (art, t) => { FORM.meldung = { art, text: t }; $("#vMeldung").innerHTML = `<div class="meldung ${art}">${esc(t)}</div>`; };
+  const kaeufer = FORM.kaeufer.trim().replace(/\s+/g, " ");
+  const posten = vSorten().filter(s => FORM.n[s.name] > 0).map(s => ({ sorte: s.name, n: FORM.n[s.name] }));
+  if (!kaeufer) return zeige("fehler", "An wen? Bitte einen Namen eintragen.");
+  if (!posten.length) return zeige("fehler", "Wie viele Flaschen? Mindestens eine.");
+  if (FORM.bezahlt == null) return zeige("fehler", "Bezahlt oder zahlt später? Bitte eins antippen.");
+  const betrag = FORM.betrag != null ? FORM.betrag : vAutoBetrag();
+  const zuWenig = posten.filter(p => p.n > hat(Z, FORM.verkaeufer, p.sorte));
+  if (zuWenig.length && !confirm(`Laut App hat ${FORM.verkaeufer} nur ${zuWenig.map(p => `${hat(Z, FORM.verkaeufer, p.sorte)} × ${p.sorte}`).join(", ")}.\n\nTrotzdem eintragen?`)) return;
+  // Gleicher Name in anderer Schreibweise? Dann den bekannten nehmen.
+  const bekannt = Z.kaeufer.find(k => k.name.toLowerCase() === kaeufer.toLowerCase());
+  const name = bekannt ? bekannt.name : kaeufer;
+  const [v] = eintragen([{ art: "verkauf", verkaeufer: FORM.verkaeufer, kaeufer: name, posten, betrag }]);
+  if (FORM.bezahlt && betrag > 0) eintragen([{ art: "zahlung", ref: v.id, betrag }]);
+  const verk = FORM.verkaeufer, bez = FORM.bezahlt;
+  FORM = leeresFormular(); FORM.verkaeufer = verk;
+  FORM.meldung = { art: "ok", text: `✓ Eingetragen: ${name}, ${postenText(posten)}, ${euro(betrag)} — ${bez ? "bezahlt" : "steht unter „Offen“"}` };
+  if (document.activeElement) document.activeElement.blur();
+  renderVerkaufen();
+}
+
+/* ---------- Offen ---------- */
+let NUR_MEINE = false;
+function renderOffen() {
+  const box = $("#t-offen");
+  const liste = Z.kaeufer.map(K => {
+    const vs = K.verkaeufe.filter(v => v.offen > 0 && (!NUR_MEINE || v.verkaeufer === EIN.ich));
+    return { ...K, sicht: vs, sichtOffen: runde(vs.reduce((a, v) => a + v.offen, 0)) };
+  }).filter(K => K.sicht.length);
+  box.innerHTML = `<div class="card">
+    <div class="kopfz" style="display:flex;justify-content:space-between;align-items:center">
+      <h2 style="margin:0">Noch nicht bezahlt</h2><b style="color:var(--gelb);font-size:20px">${euro(liste.reduce((a, K) => a + K.sichtOffen, 0))}</b></div>
+    <div class="seg"><button data-meine="0" class="${NUR_MEINE ? "" : "an"}">Alle</button><button data-meine="1" class="${NUR_MEINE ? "an" : ""}">Nur meine</button></div>
+  </div>
+  ${liste.length ? liste.map((K, i) => `<div class="card kunde">
+    <div class="kopfz"><h2 style="margin:0">${esc(K.name)}</h2><span class="betrag">${euro(K.sichtOffen)}</span></div>
+    ${K.sicht.map(v => `<div class="vk"><span>${datumText(v.zeit)} · ${esc(postenText(v.posten))}<br><small class="muted">bei ${esc(v.verkaeufer)}${v.bezahlt ? ` · ${euro(v.bezahlt)} schon bezahlt` : ""}</small></span><span>${euro(v.offen)}</span></div>`).join("")}
+    <div class="knopfe">
+      <button class="knopf gruen" data-alles="${i}">Alles bezahlt ✓</button>
+      <button class="knopf" data-teil="${i}">Teilbetrag…</button>
+      <button class="knopf" data-erinnern="${i}">Erinnern 💬</button>
+    </div></div>`).join("") : `<div class="card leer">Alles bezahlt. 🎉</div>`}`;
+  box.querySelectorAll("[data-meine]").forEach(b => b.onclick = () => { NUR_MEINE = b.dataset.meine === "1"; renderOffen(); });
+  box.querySelectorAll("[data-alles]").forEach(b => b.onclick = () => {
+    const K = liste[+b.dataset.alles];
+    if (!confirm(`${K.name} hat ${euro(K.sichtOffen)} bezahlt?`)) return;
+    eintragen(K.sicht.map(v => ({ art: "zahlung", ref: v.id, betrag: v.offen })));
+  });
+  box.querySelectorAll("[data-teil]").forEach(b => b.onclick = () => {
+    const K = liste[+b.dataset.teil];
+    const t = prompt(`Wie viel hat ${K.name} bezahlt? (offen: ${euro(K.sichtOffen)})`, "");
+    if (t == null) return;
+    const x = runde(+t.trim().replace(",", ".").replace("€", ""));
+    if (!(x > 0)) return alert("Das ist kein Betrag.");
+    const { zahlungen, rest } = verteile(K.sicht, x);
+    if (rest > 0 && !confirm(`Das sind ${euro(rest)} mehr als offen. Eingetragen werden nur ${euro(x - rest)}. Ok?`)) return;
+    eintragen(zahlungen);
+  });
+  box.querySelectorAll("[data-erinnern]").forEach(b => b.onclick = async () => {
+    const K = liste[+b.dataset.erinnern];
+    const t = erinnerung({ ...K, verkaeufe: K.sicht, offen: K.sichtOffen });
+    try { if (navigator.share) { await navigator.share({ text: t }); return; } } catch (f) { if (f && f.name === "AbortError") return; }
+    try { await navigator.clipboard.writeText(t); alert("Text kopiert:\n\n" + t); } catch { prompt("Text zum Kopieren:", t); }
+  });
+}
+
+/* ---------- Bestand ---------- */
+function renderBestand() {
+  const tab = $("#bTabelle");
+  const sorten = Z.sortenNamen.filter(s => Z.halter.some(h => hat(Z, h, s) !== 0) || !(Z.cfg.sorten.find(c => c.name === s) || {}).aus);
+  tab.innerHTML = `<div class="card"><h2>Wer hat was?</h2><div class="tabwrap"><table>
+    <tr><th></th>${sorten.map(s => `<th>${esc(s)}</th>`).join("")}<th>Σ</th></tr>
+    ${Z.halter.map(h => `<tr><td>${h === LAGER ? "📦 Lager" : esc(h)}</td>${sorten.map(s => { const n = hat(Z, h, s); return `<td style="${n < 0 ? "color:var(--rot)" : ""}">${n || "–"}</td>`; }).join("")}<td><b>${sorten.reduce((a, s) => a + hat(Z, h, s), 0)}</b></td></tr>`).join("")}
+    <tr class="summe"><td>Gesamt</td>${sorten.map(s => `<td>${Z.sorten[s].da}</td>`).join("")}<td>${Z.flaschen.da}</td></tr>
+  </table></div>
+  ${Z.halter.some(h => sorten.some(s => hat(Z, h, s) < 0)) ? `<div class="meldung warn">Rote Zahlen: Da wurde mehr verkauft oder weitergegeben, als laut App da war. Fehlt vermutlich eine Zuteilung.</div>` : ""}
+  </div>`;
+  renderBForm();
+}
+
+function renderBForm() {
+  const box = $("#bForm");
+  if (tipptIn(box)) return;
+  if (!BFORM) BFORM = { modus: "bewegung", sorte: (vSorten()[0] || Z.cfg.sorten[0]).name, n: "", von: LAGER, an: EIN.ich, wer: EIN.ich, grund: "getrunken" };
+  const B = BFORM;
+  const halter = [LAGER, ...Z.cfg.leute];
+  const opt = (liste, wert, txt = x => x) => liste.map(x => `<option value="${esc(x)}" ${x === wert ? "selected" : ""}>${esc(txt(x))}</option>`).join("");
+  const nameH = h => h === LAGER ? "📦 Lager" : h;
+  const sorten = Z.cfg.sorten.filter(s => !s.aus).map(s => s.name);
+  box.innerHTML = `<div class="card"><h2>Flaschen bewegen</h2>
+    <div class="seg drei">
+      <button data-m="abfuellung" class="${B.modus === "abfuellung" ? "an" : ""}">Abgefüllt</button>
+      <button data-m="bewegung" class="${B.modus === "bewegung" ? "an" : ""}">Weitergeben</button>
+      <button data-m="abgang" class="${B.modus === "abgang" ? "an" : ""}">Weg</button>
+    </div>
+    <div class="hinweis">${{ abfuellung: "Neue Flaschen kommen ins Lager.", bewegung: "Vom Lager an jemanden, zwischen zwei Leuten oder zurück ins Lager.", abgang: "Selbst getrunken, verschenkt, kaputt — zählt nicht als Verkauf." }[B.modus]}</div>
+    ${B.modus === "bewegung" ? `<div class="zeile"><div><label>Von</label><select id="bVon">${opt(halter, B.von, nameH)}</select></div>
+      <div><label>An</label><select id="bAn">${opt(halter, B.an, nameH)}</select></div></div>` : ""}
+    ${B.modus === "abgang" ? `<div class="zeile"><div><label>Bei wem?</label><select id="bWer">${opt(halter, B.wer, nameH)}</select></div>
+      <div><label>Was ist passiert?</label><select id="bGrund">${opt(Object.keys(GRUENDE), B.grund, g => GRUENDE[g])}</select></div></div>` : ""}
+    <div class="zeile"><div><label>Sorte</label><select id="bSorte">${opt(sorten, B.sorte)}</select></div>
+      <div><label>Flaschen</label><input id="bN" inputmode="numeric" pattern="[0-9]*" value="${esc(B.n)}" placeholder="0"></div></div>
+    <button class="haupt" id="bOk">Eintragen</button>
+    <div id="bMeld"></div></div>`;
+  box.querySelectorAll("[data-m]").forEach(b => b.onclick = () => { B.modus = b.dataset.m; renderBForm(); });
+  const bind = (id, k) => { const el = $(id); if (el) el.oninput = el.onchange = () => { B[k] = el.value; }; };
+  bind("#bVon", "von"); bind("#bAn", "an"); bind("#bWer", "wer"); bind("#bGrund", "grund"); bind("#bSorte", "sorte"); bind("#bN", "n");
+  $("#bOk").onclick = () => {
+    const meld = (art, t) => $("#bMeld").innerHTML = `<div class="meldung ${art}">${esc(t)}</div>`;
+    const n = parseInt(B.n, 10);
+    if (!ganz(n)) return meld("fehler", "Wie viele Flaschen?");
+    let e;
+    if (B.modus === "abfuellung") e = { art: "abfuellung", sorte: B.sorte, n };
+    else if (B.modus === "bewegung") {
+      if (B.von === B.an) return meld("fehler", "Von und An sind gleich.");
+      if (n > hat(Z, B.von, B.sorte) && !confirm(`Laut App hat ${nameH(B.von)} nur ${hat(Z, B.von, B.sorte)} × ${B.sorte}. Trotzdem?`)) return;
+      e = { art: "bewegung", sorte: B.sorte, n, von: B.von, an: B.an };
+    } else {
+      if (n > hat(Z, B.wer, B.sorte) && !confirm(`Laut App hat ${nameH(B.wer)} nur ${hat(Z, B.wer, B.sorte)} × ${B.sorte}. Trotzdem?`)) return;
+      e = { art: "abgang", sorte: B.sorte, n, wer: B.wer, grund: B.grund };
+    }
+    B.n = "";
+    if (document.activeElement) document.activeElement.blur();
+    eintragen([e]);
+    meld("ok", "✓ " + beschreibe(e, Z));
+  };
+}
+
+/* ---------- Verlauf ---------- */
+let VERLAUF_MAX = 100;
+function renderVerlauf() {
+  const box = $("#t-verlauf");
+  const offenIds = new Set(AUSGANG.map(e => e.id));
+  const alle = [...Z.liste].reverse();
+  const zeige = alle.slice(0, VERLAUF_MAX);
+  box.innerHTML = `<div class="card"><h2>Verlauf</h2>
+    ${zeige.length ? zeige.map(e => {
+      const weg = Z.storniert.get(e.id);
+      const kann = e.art !== "storno" && !weg;
+      return `<div class="log ${weg ? "weg" : ""}"><div class="lt"><div>${esc(beschreibe(e, Z))}</div>
+        <small>${zeitText(e.zeit)} · ${esc(e.durch || "?")}${offenIds.has(e.id) ? " · ⏳ noch nicht gesendet" : ""}${weg ? ` · rückgängig von ${esc(weg.durch || "?")}` : ""}</small></div>
+        ${kann ? `<button class="zurueck" data-storno="${esc(e.id)}">↶</button>` : ""}</div>`;
+    }).join("") : `<div class="leer">Noch nichts eingetragen.</div>`}
+    ${alle.length > VERLAUF_MAX ? `<button class="knopf" id="mehr" style="width:100%;margin-top:10px">Ältere zeigen</button>` : ""}
+  </div>`;
+  box.querySelectorAll("[data-storno]").forEach(b => b.onclick = () => {
+    const e = Z.nachId.get(b.dataset.storno);
+    if (!e) return;
+    let frage = `Rückgängig machen?\n\n${beschreibe(e, Z)}`;
+    if (e.art === "verkauf" && (Z.vkNachId.get(e.id) || {}).bezahlt) frage += "\n\nDie Zahlung dazu zählt dann auch nicht mehr.";
+    if (!confirm(frage)) return;
+    eintragen([{ art: "storno", ref: e.id }]);
+  });
+  const m = $("#mehr"); if (m) m.onclick = () => { VERLAUF_MAX += 200; renderVerlauf(); };
+}
+
+/* ---------- Einstellungen ---------- */
+function renderEinst() {
+  const box = $("#t-einst");
+  if (tipptIn(box)) return;
+  if (!EFORM) EFORM = { sorten: Z.cfg.sorten.map(s => ({ ...s })), leute: [...Z.cfg.leute] };
+  const E = EFORM;
+  box.innerHTML = `<div class="card"><h2>Dieses Handy</h2>
+    <label for="eIch">Ich bin</label>
+    <select id="eIch">${Z.cfg.leute.map(p => `<option ${p === EIN.ich ? "selected" : ""}>${esc(p)}</option>`).join("")}</select>
+  </div>
+  <div class="card"><h2>Sorten und Preise</h2>
+    <div class="hinweis" style="margin:0 0 8px">Preis je Flasche. Haken weg = wird nicht mehr verkauft (bleibt in der Statistik).</div>
+    ${E.sorten.map((s, i) => `<div class="sorte-ed">
+      <input data-sn="${i}" value="${esc(s.name)}" placeholder="Name">
+      <input data-sp="${i}" inputmode="decimal" value="${String(s.preis).replace(".", ",")}">
+      <input type="checkbox" data-sa="${i}" ${s.aus ? "" : "checked"} aria-label="wird verkauft">
+      <button data-sx="${i}" aria-label="entfernen">✕</button></div>`).join("")}
+    <button class="knopf" id="eSorteNeu">+ Sorte</button>
+    <h3>Wer verkauft?</h3>
+    ${E.leute.map((p, i) => `<div class="person-ed"><input data-pn="${i}" value="${esc(p)}"><button data-px="${i}" aria-label="entfernen">✕</button></div>`).join("")}
+    <button class="knopf" id="ePersonNeu">+ Person</button>
+    <div class="hinweis">Namen nicht umbenennen, wenn jemand schon Flaschen hat — der Bestand hängt am Namen.</div>
+    <button class="haupt" id="eSpeichern">Für alle speichern</button>
+    <div id="eMeld"></div>
+  </div>
+  <div class="card"><h2>Daten</h2>
+    <div class="knopfe">
+      <button class="knopf" id="eCsv">Verkäufe als Tabelle (CSV)</button>
+      <button class="knopf" id="eNeu">Jetzt abgleichen</button>
+      ${PROBE ? `<button class="knopf" id="eProbeWeg">Probedaten löschen</button>` : `<button class="knopf" id="eAbmelden">Code neu eingeben</button>`}
+    </div>
+    <div class="hinweis">${PROBE ? "Probe-Modus: noch kein Server eingerichtet." : `Zuletzt abgeglichen: ${STATUS.zuletzt ? zeitText(STATUS.zuletzt) : "noch nie"}`}</div>
+  </div>
+  <button class="haupt" id="eZurueck" style="background:var(--card2);color:var(--text)">Zurück</button>`;
+  $("#eIch").onchange = e => { EIN.ich = e.target.value; merke(SP, EIN); FORM = null; BFORM = null; render(); };
+  box.querySelectorAll("[data-sn]").forEach(el => el.oninput = () => { E.sorten[+el.dataset.sn].name = el.value; });
+  box.querySelectorAll("[data-sp]").forEach(el => el.oninput = () => { E.sorten[+el.dataset.sp].preis = el.value; });
+  box.querySelectorAll("[data-sa]").forEach(el => el.onchange = () => { E.sorten[+el.dataset.sa].aus = !el.checked; });
+  box.querySelectorAll("[data-sx]").forEach(el => el.onclick = () => { E.sorten.splice(+el.dataset.sx, 1); renderEinst(); });
+  box.querySelectorAll("[data-pn]").forEach(el => el.oninput = () => { E.leute[+el.dataset.pn] = el.value; });
+  box.querySelectorAll("[data-px]").forEach(el => el.onclick = () => { E.leute.splice(+el.dataset.px, 1); renderEinst(); });
+  $("#eSorteNeu").onclick = () => { E.sorten.push({ name: "", preis: 3 }); renderEinst(); };
+  $("#ePersonNeu").onclick = () => { E.leute.push(""); renderEinst(); };
+  $("#eSpeichern").onclick = () => {
+    const meld = (art, t) => $("#eMeld").innerHTML = `<div class="meldung ${art}">${esc(t)}</div>`;
+    const sorten = E.sorten.map(s => ({ name: String(s.name).trim(), preis: runde(+String(s.preis).replace(",", ".")), ...(s.aus ? { aus: true } : {}) })).filter(s => s.name);
+    const leute = E.leute.map(p => String(p).trim()).filter(Boolean);
+    if (!sorten.length || sorten.some(s => !geld(s.preis))) return meld("fehler", "Jede Sorte braucht einen Preis.");
+    if (new Set(sorten.map(s => s.name)).size !== sorten.length) return meld("fehler", "Zwei Sorten heißen gleich.");
+    if (!leute.length || new Set(leute).size !== leute.length || leute.includes(LAGER)) return meld("fehler", "Namen fehlen oder sind doppelt.");
+    const e = { art: "einstellungen", sorten, leute };
+    if (!gueltig({ ...e, id: "x", zeit: 0 })) return meld("fehler", "Ein Name ist zu lang.");
+    eintragen([e]);
+    EFORM = null; FORM = null; BFORM = null;
+    renderEinst(); meld("ok", "✓ Gespeichert — gilt für alle.");
+  };
+  $("#eCsv").onclick = async () => {
+    const inhalt = csv(Z, t => new Date(t).toLocaleString("de-DE", { timeZone: TZ }));
+    const name = `millebeier-verkaeufe-${new Date().toISOString().slice(0, 10)}.csv`;
+    const datei = new File([inhalt], name, { type: "text/csv" });
+    try { if (navigator.canShare && navigator.canShare({ files: [datei] })) { await navigator.share({ files: [datei] }); return; } }
+    catch (f) { if (f && f.name === "AbortError") return; }
+    const a = document.createElement("a"); a.href = URL.createObjectURL(datei); a.download = name; a.click();
+  };
+  $("#eNeu").onclick = () => abgleichen();
+  const ab = $("#eAbmelden"); if (ab) ab.onclick = () => { if (confirm("Code auf diesem Handy löschen?")) { EIN.code = ""; merke(SP, EIN); render(); } };
+  const pw = $("#eProbeWeg"); if (pw) pw.onclick = () => {
+    if (!confirm("Alle Probedaten auf diesem Handy löschen?")) return;
+    merke(SP_PROBE, []); SERVER = []; AUSGANG = []; merke(SP_DATEN, []); merke(SP_AUSGANG, []);
+    EFORM = FORM = BFORM = null; neuRechnen(); render();
+  };
+  $("#eZurueck").onclick = () => { TAB = EIN.tab || "verkaufen"; EFORM = null; render(); };
+}
+
+/* ---------- Start ---------- */
+document.querySelectorAll("#nav button").forEach(b => b.onclick = () => {
+  TAB = b.dataset.tab; EIN.tab = TAB; merke(SP, EIN);
+  if (TAB === "verkaufen" && FORM) FORM.meldung = null;
+  EFORM = null; render(); window.scrollTo(0, 0);
+});
+$("#zahnrad").onclick = () => { TAB = "einst"; EFORM = null; render(); window.scrollTo(0, 0); };
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") abgleichen(); });
+window.addEventListener("online", abgleichen);
+setInterval(() => { if (document.visibilityState === "visible") abgleichen(); }, 20000);
+
+neuRechnen();
+render();
+abgleichen();
+</script>
+</body>
+</html>
