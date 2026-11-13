@@ -19,7 +19,8 @@
 }
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
-*{touch-action:manipulation} /* kein Zoom beim Doppeltippen, überall (nur auf Knöpfen reichte nicht); Zwei-Finger-Zoom bleibt */
+html{touch-action:manipulation} /* wie in der Koeppchen-App: kein Zoom beim Doppeltippen, zwei Finger zoomen weiter */
+*{touch-action:manipulation}
 body{margin:0;background:var(--bg);color:var(--text);
   font:16px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
   padding:0 0 40px}
@@ -143,7 +144,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px}
 <script>
 /* Adresse des Cloudflare-Workers. Leer = Probe-Modus (alles nur auf diesem Handy). */
 const WORKER_URL = "https://millebeier.rjtp6r9s9h.workers.dev/";
-const FASSUNG = "13.11.2026 m";
+const FASSUNG = "13.11.2026 n";
 
 /* === Logik === (kein DOM; test/logik.mjs schneidet diesen Block aus) */
 const LAGER = "Lager";
