@@ -4,7 +4,7 @@ const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
 const a = html.indexOf("/* === Logik ===");
 const b = html.indexOf("/* === Oberfläche ===");
 if (a < 0 || b < 0) { console.error("Marken nicht gefunden"); process.exit(1); }
-const L = new Function(html.slice(a, b) + "; return {rechne, gueltig, euro, verteile, erinnerung, csv, beschreibe, hat, LAGER, STANDARD, proSorte, exportBlaetter, anteil, dateienVon, altImport};")();
+const L = new Function(html.slice(a, b) + "; return {rechne, gueltig, euro, verteile, erinnerung, csv, beschreibe, hat, LAGER, STANDARD, proSorte, exportBlaetter, anteil, dateienVon, altImport, frei, zuWenig, preisVon, fassKey, artikelVon};")();
 
 let fehler = 0, n = 0;
 const ist = (was, wert, soll) => { n++; const ok = JSON.stringify(wert) === JSON.stringify(soll); if (!ok) { fehler++; console.log(`✗ ${was}: ${JSON.stringify(wert)} statt ${JSON.stringify(soll)}`); } };
@@ -122,7 +122,7 @@ ist("CSV Zeilen", c.trim().split("\r\n").length, 4);
   ist("pro Sorte: Rechnung und Anlass", [ps[2].rechnung, ps[2].remarque], ["gemaach", "Kiermes"]);
   const bl = L.exportBlaetter(Y, t => "T");
   ist("Export: Blätter", bl.map(b => b.name), ["NEIPA", "Brown Porter", "Livraisons", "Stock"]);
-  ist("Export: Summe NEIPA ohne geplant", bl[0].summe.slice(0, 6), ["Total", "", "", 27, "", 66]);
+  ist("Export: Summe NEIPA ohne geplant", bl[0].summe.slice(0, 7), ["Total", "", "", 27, "Fläschen", "", 66]);
   ist("Export: Livraisons", bl[2].zeilen.map(z => [z[1], z[6], z[7], z[8]]), [["Ferro Forum", "Jo", "gemaach", "Nee"], ["BEST", "geplangt", "", "–"]]);
   ist("Export: Stock Lager", bl[3].zeilen[0].slice(0, 3), ["Lager", 66, 0]);
   ist("Livraison ungültig ohne Datum", L.gueltig({ ...L2, datum: "20.12." }), false);
@@ -191,10 +191,11 @@ ist("CSV Zeilen", c.trim().split("\r\n").length, 4);
   ist("Rusty: 288 = 285 verkaaft + 3 fort", [ru.abgefuellt, ru.verkauft, ru.abgang, ru.da], [288, 285, 3, 0]);
   ist("Fässer: 2 BP-Keg und 1 Rusty-20l-Keg noch am Lager", [L.hat(Y, "Lager", "Brown Porter 01/2026 Keg 30l"), L.hat(Y, "Lager", "Rusty 02/2026 Keg 30l"), L.hat(Y, "Lager", "Rusty 02/2026 Keg 20l")], [2, 0, 1]);
   const z = L.proSorte(Y, "Rusty 02/2026");
-  ist("pro Bier Rusty: Zeilen und Recetten", [z.length, z.reduce((a, r) => a + r.recetten, 0)], [9, 627]);
+  ist("pro Bier Rusty mit Fässern: Zeilen und Recetten", [z.length, z.reduce((a, r) => a + r.recetten, 0), z.filter(r => r.geb !== "Fläsch").map(r => r.geb + ":" + r.recetten).sort()], [11, 957, ["Fass 20 l:150", "Fass 30 l:180"]]);
   ist("Gambrinuskelle als Verkauf zu 3 €", z.find(r => r.kunde === "Gambrinuskelle").recetten, 72);
   ist("alte Zeile: bezuel? –, Bemerkung", [z.find(r => r.kunde === "Rock Solid").bezuelt, z.find(r => r.kunde === "Rock Solid").remarque, z.find(r => r.kunde === "Rock Solid").datum], ["–", "2,50 €/Fl", "2026-05-09"]);
-  ist("Excel: Blätter für die alten Biere", L.exportBlaetter(Y, () => "").map(b => b.name).filter(n => n.includes("2026")), ["Brown Porter 01/2026", "Brown Porter 01/2026 Keg 30l", "Rusty 02/2026", "Rusty 02/2026 Keg 30l", "Rusty 02/2026 Keg 20l"]);
+  ist("Excel: ein Blatt je altes Bier, Fässer darin", L.exportBlaetter(Y, () => "").map(b => b.name).filter(n => n.includes("2026")), ["Brown Porter 01/2026", "Rusty 02/2026"]);
+  ist("Excel Rusty: Fass-Info", L.exportBlaetter(Y, () => "").find(b => b.name === "Rusty 02/2026").info.filter(i => i.startsWith("Fass")), ["Fass 20 l — ofgefëllt: 2 · verkaaft: 1 · fort: 0 · nach do: 1", "Fass 30 l — ofgefëllt: 1 · verkaaft: 1 · fort: 0 · nach do: 0"]);
   ist("alte Zeile ohne Datum: im Excel leer statt erfundenem Tag", L.exportBlaetter(Y, () => "ERFUNDEN").find(b => b.name === "Rusty 02/2026").zeilen.find(r => r[1] === "Brennerdag")[0], "");
   ist("doppelt importiert = einmal", L.rechne([...alt, ...alt]).sorten["Rusty 02/2026"].verkauft, 285);
   // neben neuen Verkäufen: Kasse nur aus den neuen
@@ -202,6 +203,38 @@ ist("CSV Zeilen", c.trim().split("\r\n").length, 4);
   const neuZ = { id: "neu-2", zeit: Date.now() + 1, art: "zahlung", ref: "neu-1", betrag: 6 };
   const Y2 = L.rechne([...alt, neuV, neuZ]);
   ist("mit neuen Verkäufen: Kasse nur neu", [Y2.kasse, Y2.personen.Jeff.verkauft, Y2.kaeufer.map(k => k.name)], [6, 2, ["Paul"]]);
+}
+
+// Fässer als Gebinde, Reservierungen, Zahlungsarten
+{
+  let k5 = 0, t5 = 300000;
+  const E5 = (art, x) => ({ id: "fz-" + String(++k5).padStart(5, "0"), zeit: t5 += 1000, art, durch: "Jeff", ...x });
+  const ne = E5("bier", { name: "NEIPA", preis: 3, preis20: 140 });
+  const ab = [E5("abfuellung", { sorte: "NEIPA", n: 100 }), E5("abfuellung", { sorte: L.fassKey("NEIPA", 20), n: 3 }), E5("abfuellung", { sorte: L.fassKey("NEIPA", 30), n: 1 })];
+  let Y = L.rechne([ne, ...ab]);
+  ist("Fässer kein eigenes Bier", Y.cfg.sorten.some(c => c.name.includes("Keg")), false);
+  ist("Fässer am Bier", L.artikelVon(Y, "NEIPA"), ["NEIPA", "NEIPA Keg 20l", "NEIPA Keg 30l"]);
+  ist("Fasspreise: eigener und Vorgabe", [L.preisVon(Y.cfg, "NEIPA Keg 20l"), L.preisVon(Y.cfg, "NEIPA Keg 30l")], [140, 180]);
+  ist("Flaschen-Summe ohne Fässer", Y.flaschen.da, 100);
+  // Altbestand: Fass als eigenes Bier → Preis wandert ans Bier, Bier verschwindet aus der Liste
+  const altF = E5("bier", { name: "NEIPA Keg 30l", preis: 175 });
+  Y = L.rechne([ne, ...ab, altF]);
+  ist("altes Fass-Bier: kein eigenes Bier, Preis am Bier", [Y.cfg.sorten.map(c => c.name).includes("NEIPA Keg 30l"), L.preisVon(Y.cfg, "NEIPA Keg 30l")], [false, 175]);
+  // Reservierung durch geplante Livraison
+  const L1 = E5("livraison", { kunde: "BEST", kontakt: "Jeff", aus: "Lager", datum: "2026-12-01", posten: [{ sorte: "NEIPA", n: 60 }, { sorte: "NEIPA Keg 20l", n: 2 }], betrag: 460, rechnung: true });
+  Y = L.rechne([ne, ...ab, L1]);
+  ist("reserviert", [L.frei(Y, "Lager", "NEIPA"), L.frei(Y, "Lager", "NEIPA Keg 20l"), L.hat(Y, "Lager", "NEIPA")], [40, 1, 100]);
+  ist("zweite Livraison reicht nicht: Warnung", L.zuWenig(Y, "Lager", [{ sorte: "NEIPA", n: 50 }, { sorte: "NEIPA Keg 20l", n: 1 }]).map(p => [p.sorte, p.n, p.frei, p.res]), [["NEIPA", 50, 40, 60]]);
+  const v1 = E5("verkauf", { verkaeufer: "Jeff", kaeufer: "BEST", posten: L1.posten, betrag: 460, aus: "Lager", liv: L1.id });
+  Y = L.rechne([ne, ...ab, L1, v1]);
+  ist("geliefert: Reservierung weg, Bestand runter", [L.frei(Y, "Lager", "NEIPA"), L.reserviertBei ? 0 : 0, L.hat(Y, "Lager", "NEIPA Keg 20l")], [40, 0, 1]);
+  // Zahlungsarten
+  const z1 = E5("zahlung", { ref: v1.id, betrag: 400, wie: "bank" }), z2 = E5("zahlung", { ref: v1.id, betrag: 60, wie: "bar" });
+  Y = L.rechne([ne, ...ab, L1, v1, z1, z2]);
+  ist("Kasse nach Art", Y.kasseNach, { bank: 400, bar: 60 });
+  ist("bezuel? mit Art", L.proSorte(Y, "NEIPA")[0].bezuelt, "Jo (Iwwerweisung, Bar)");
+  ist("Zahlung: unbekannte Art ungültig", L.gueltig({ ...z1, wie: "paypal" }), false);
+  ist("Verlauf: Zahlart", L.beschreibe(z2, Y), "✓ 60 € bezuelt per Bar: BEST (beim Jeff)");
 }
 
 console.log(fehler ? `${fehler} von ${n} Prüfungen fehlgeschlagen` : `Alle ${n} Prüfungen bestanden`);

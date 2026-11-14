@@ -37,7 +37,7 @@ ist("geliwwert: aus dem Lager", await p.evaluate(() => [hat(Z, "Lager", "NEIPA")
 ist("geliwwert: Rechnung offen, Betrag offen", await p.locator("#lListe").innerText(), s => s.includes("Rechnung nach ze maachen") && s.includes("90 € op"));
 ist("steht unter Ausstoend", await p.evaluate(() => Z.kaeufer.find(k => k.name === "Ferro Forum").offen), 90);
 await p.click("[data-rechnung]"); await warte(900);
-await p.click("[data-lbezuelt]"); await warte(200);
+await p.click("[data-lbezuelt]"); await p.click("#zahlWahl [data-wie=\"bank\"]"); await warte(200);
 ist("Rechnung gemaach und bezuelt", await p.locator("#lListe").innerText(), s => s.includes("Rechnung gemaach") && s.includes("✓ bezuelt"));
 ist("Kasse", await p.evaluate(() => Z.kasse), 90);
 
@@ -62,13 +62,13 @@ if (XLSX_JS && existsSync(XLSX_JS)) {
   ist("Excel: Blätter", wb.SheetNames, ["NEIPA", "Brown Porter", "Livraisons", "Stock"]);
   const neipa = X.utils.sheet_to_json(wb.Sheets.NEIPA, { header: 1, defval: "" });
   const kopf = neipa.findIndex(r => r[0] === "Datum");
-  ist("Excel NEIPA: Kopf", neipa[kopf].slice(0, 8), ["Datum", "Client", "Kontakt", "Unzuel", "Präis/Fl", "Recetten", "geliwwert?", "bezuel?"]);
-  ist("Excel NEIPA: Ferro Forum", neipa[kopf + 1].slice(0, 8), ["5.12.2026", "Ferro Forum", "Marc", 24, 2.5, 60, "Jo", "Jo"]);
-  ist("Excel NEIPA: BEST geplant", neipa[kopf + 2].slice(1, 7), ["BEST", "Marc", 1, 3, 3, "geplangt 20.12.2026"]);
-  ist("Excel NEIPA: Total ohne geplant", neipa[neipa.length - 1].slice(0, 6), ["Total", "", "", 24, "", 60]);
+  ist("Excel NEIPA: Kopf", neipa[kopf].slice(0, 9), ["Datum", "Client", "Kontakt", "Unzuel", "Gebinde", "Präis", "Recetten", "geliwwert?", "bezuel?"]);
+  ist("Excel NEIPA: Ferro Forum", neipa[kopf + 1].slice(0, 9), ["5.12.2026", "Ferro Forum", "Marc", 24, "Fläsch", 2.5, 60, "Jo", "Jo (Iwwerweisung)"]);
+  ist("Excel NEIPA: BEST geplant", neipa[kopf + 2].slice(1, 8), ["BEST", "Marc", 1, "Fläsch", 3, 3, "geplangt 20.12.2026"]);
+  ist("Excel NEIPA: Total ohne geplant", neipa[neipa.length - 1].slice(0, 7), ["Total", "", "", 24, "Fläschen", "", 60]);
   ist("Excel: Euro-Format", wb.Sheets.NEIPA[X.utils.encode_cell({ r: kopf + 1, c: 5 })].z, '#,##0.00 "€"');
   const liv = X.utils.sheet_to_json(wb.Sheets.Livraisons, { header: 1, defval: "" });
-  ist("Excel Livraisons", liv.filter(r => r[1] === "Ferro Forum" || r[1] === "BEST").map(r => [r[1], r[6], r[7], r[8]]), [["Ferro Forum", "Jo", "gemaach", "Jo"], ["BEST", "geplangt", "nach ze maachen", "–"]]);
+  ist("Excel Livraisons", liv.filter(r => r[1] === "Ferro Forum" || r[1] === "BEST").map(r => [r[1], r[6], r[7], r[8]]), [["Ferro Forum", "Jo", "gemaach", "Jo (Iwwerweisung)"], ["BEST", "geplangt", "nach ze maachen", "–"]]);
 } else console.log("– Excel-Teil übersprungen (XLSX_JS nicht gesetzt)");
 // Alter Worker (kennt „livraison“ nicht): normale Verkäufe dürfen nicht hängen bleiben.
 {

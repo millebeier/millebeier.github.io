@@ -15,7 +15,7 @@ for (let i = 0; i < 4; i++) await p.tap('[data-plus="0"]');
 ist("4 schnelle Tipps auf + zählen", await p.inputValue("#vN0"), "4");
 await p.tap("#vKaeufer"); await p.keyboard.type("Ann");
 ist("Tippen im Feld", await p.inputValue("#vKaeufer"), "Ann");
-await p.tap('[data-bez="1"]'); await p.tap("#vSpeichern"); await p.waitForTimeout(200);
+await p.tap('[data-bez="bar"]'); await p.tap("#vSpeichern"); await p.waitForTimeout(200);
 ist("Bezuelt und gleich Speichern", await p.evaluate(() => Z.verkaeufe.length), 1);
 const touch = (punkte, liegen = []) => p.evaluate(([punkte, liegen]) => {
   const ziel = document.querySelector("#fuss");

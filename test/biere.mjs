@@ -76,7 +76,7 @@ await p.click("#zahnrad");
 ist("Import: Knopf danach weg", await p.locator("#eAlt").count(), 0);
 ist("Import: Kasse unverändert", await p.evaluate(() => [Z.kasse, Z.offen]), [0, 0]);
 await p.evaluate(() => { TAB = "uebersicht"; ARCHIV_UEB = false; OFFEN_SORTE = ""; render(); });
-ist("Import: im Archiv", await p.evaluate(() => document.querySelector("tr[data-archiv]").cells[0].textContent), s => /Archiv \((6|7)\)/.test(s));
+ist("Import: im Archiv", await p.evaluate(() => document.querySelector("tr[data-archiv]").cells[0].textContent), s => /Archiv \((3|4)\)/.test(s)); // Fässer sind seit Fassung i kein eigenes Bier mehr
 await p.evaluate(() => altEinspielen()); await warte(200);
 ist("Import zweimal: nichts doppelt", await p.evaluate(() => Z.sorten["Rusty 02/2026"].verkauft), 285);
 ist("keine Seitenfehler", seitenfehler, []);

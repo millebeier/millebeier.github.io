@@ -78,6 +78,7 @@ select{background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),
   font-size:15px;font-weight:600;cursor:pointer}
 .seg button.an{background:var(--akzent);color:#fff;border-color:var(--akzent)}
 .seg button.an.gruen{background:var(--gruen);border-color:var(--gruen);color:#0d1f0e}
+.seg.zahl{grid-template-columns:1fr 1fr;margin-top:4px} .seg button.breit{grid-column:1/-1}
 .seg button.an.gelb{background:var(--gelb);border-color:var(--gelb);color:#231d05}
 .haupt{width:100%;margin-top:14px;padding:14px;border:0;border-radius:12px;background:var(--akzent);color:#fff;
   font-size:17px;font-weight:700;cursor:pointer}
@@ -125,6 +126,8 @@ tr.klick.auf td:first-child::before{content:"▼"}
 tr.klick.klein td{font-size:13px;color:var(--muted)} tr.klick.klein td:first-child{padding-left:38px}
 tr.klick.klein td:first-child::before{font-size:11px;left:20px;top:9px}
 tr.archivzeile td{border-top:1px solid var(--line)}
+tr.fass td{font-size:12px;color:var(--muted);border-bottom-style:dashed} tr.fass td:first-child{padding-left:30px}
+tr.klick.klein + tr.fass td:first-child, tr.fass + tr.fass.unter td:first-child{padding-left:46px}
 @media (max-width:350px){table{font-size:12px} th{font-size:10px} th,td{padding:6px 2px} .wrap{padding:0 10px}}
 .bier{border-top:1px solid var(--line);padding:12px 0}
 .bier:first-of-type{border-top:0}
@@ -151,6 +154,9 @@ textarea{width:100%;font:16px/1.4 inherit;padding:10px;border-radius:10px;border
 .dok .txt span{display:block;font-size:13px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .dok .knopf{padding:7px 9px;font-size:13px}
 .dok-titel{font-size:13px;color:var(--muted);margin:14px 0 2px;text-transform:uppercase;letter-spacing:.5px}
+#zahlWahl{position:fixed;inset:0;z-index:25;background:rgba(0,0,0,.75);display:flex;align-items:flex-end;justify-content:center;padding:16px}
+#zahlWahl .card{width:100%;max-width:520px;margin:0}
+#zahlWahl .seg button{padding:16px 4px;font-size:17px}
 #ansicht{position:fixed;inset:0;z-index:20;background:#000;overflow:auto;-webkit-overflow-scrolling:touch}
 .ansicht-kopf{position:sticky;top:0;display:flex;gap:8px;align-items:center;padding:10px 12px;background:#111;border-bottom:2px solid var(--akzent)}
 .ansicht-kopf b{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -191,6 +197,9 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px}
 </main>
 <datalist id="kaeuferListe"></datalist>
 <input type="file" id="dateiWahl" class="versteckt">
+<div id="zahlWahl" class="versteckt"><div class="card"><h2 id="zahlTitel"></h2>
+  <div class="seg zahl"></div>
+  <button class="haupt" id="zahlZu" style="background:var(--card2);color:var(--text)">Ofbriechen</button></div></div>
 <div id="ansicht" class="versteckt"><div class="ansicht-kopf"><b id="ansichtName"></b>
   <button class="knopf" id="ansichtTeilen">⬆️ Deelen</button><button class="knopf rot" id="ansichtZu" aria-label="Zoumaachen">✕</button></div>
   <div id="ansichtInhalt"></div></div>
@@ -198,7 +207,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px}
 <script>
 /* Adresse des Cloudflare-Workers. Leer = Probe-Modus (alles nur auf diesem Handy). */
 const WORKER_URL = "https://millebeier.rjtp6r9s9h.workers.dev/";
-const FASSUNG = "14.11.2026 h";
+const FASSUNG = "14.11.2026 i";
 
 /* === Logik === (kein DOM; test/logik.mjs schneidet diesen Block aus) */
 const LAGER = "Lager";
@@ -208,6 +217,14 @@ const STANDARD = {
 };
 const GRUENDE = { getrunken: "selwer gedronk", verschenkt: "verschenkt / Prouf", kaputt: "futti", sonst: "soss eppes" };
 const ARTEN = ["abfuellung", "bewegung", "abgang", "verkauf", "zahlung", "einstellungen", "storno", "livraison", "rechnung", "bier", "bierstatus", "datei"];
+/* Gebinde: Fässer sind kein eigenes Bier, sondern „<Bier> Keg 20l“ / „<Bier> Keg 30l“ als Schlüssel im Bestand
+   (so hießen die Fass-Biere vorher schon — Altbestand ordnet sich damit von selbst seinem Bier zu). */
+const FAESSER = [{ l: 20, std: 150 }, { l: 30, std: 180 }];
+const fassKey = (bier, l) => `${bier} Keg ${l}l`;
+const zerlege = key => { const m = /^(.*) Keg (20|30)l$/.exec(key); return m ? { bier: m[1], l: +m[2] } : { bier: key, l: 0 }; };
+const istFass = key => zerlege(key).l > 0;
+const gebindeText = key => { const l = zerlege(key).l; return l ? `Fass ${l} l` : "Fläsch"; };
+const ZAHLARTEN = { wero: "WERO", sumup: "SumUp", bank: "Iwwerweisung", bar: "Bar" };
 const FELDER = { etikett: "Etikett", rezept: "Rezept", protokoll: "Brauprotokoll", anner: "Aner Dateien" };
 
 const ganz = n => Number.isInteger(n) && n > 0 && n <= 100000;
@@ -243,13 +260,14 @@ function gueltig(e) {
     case "rechnung": return typeof e.ref === "string";
     case "bier":
       return text(e.name, 30) && e.name !== LAGER && geld(e.preis) && optDatum(e.braudatum) && optDatum(e.mhd) &&
-        optZahl(e.alk, 0, 30) && optZahl(e.liter, 0, 100000) && optText(e.stil, 40) && optText(e.notiz, 300);
+        optZahl(e.alk, 0, 30) && optZahl(e.liter, 0, 100000) && optText(e.stil, 40) && optText(e.notiz, 300) &&
+        (e.preis20 === undefined || geld(e.preis20)) && (e.preis30 === undefined || geld(e.preis30));
     case "bierstatus": return text(e.name, 30) && ["aktiv", "archiv", "weg"].includes(e.status);
     case "datei":
       return typeof e.fid === "string" && /^[A-Za-z0-9_-]{8,80}$/.test(e.fid) && text(e.name, 120) && optText(e.typ, 100) &&
         Number.isInteger(e.groesse) && e.groesse > 0 && Number.isInteger(e.teile) && e.teile >= 1 && e.teile <= 200 &&
         typeof e.bier === "string" && e.bier.length <= 30 && e.feld in FELDER;
-    case "zahlung": return typeof e.ref === "string" && geld(e.betrag) && e.betrag > 0;
+    case "zahlung": return typeof e.ref === "string" && geld(e.betrag) && e.betrag > 0 && (e.wie === undefined || e.wie in ZAHLARTEN);
     case "einstellungen":
       return Array.isArray(e.sorten) && e.sorten.length > 0 && e.sorten.length <= 30 &&
         e.sorten.every(s => s && text(s.name, 30) && geld(s.preis)) &&
@@ -292,12 +310,24 @@ function rechne(eintraege) {
   for (const e of aktiv) {
     if (e.art === "bier") {
       biere.set(e.name, { name: e.name, preis: runde(e.preis), stil: e.stil || "", braudatum: e.braudatum || "", alk: e.alk ?? null,
-        liter: e.liter ?? null, mhd: e.mhd || "", notiz: e.notiz || "", id: e.id, zeit: e.zeit });
+        liter: e.liter ?? null, mhd: e.mhd || "", notiz: e.notiz || "", id: e.id, zeit: e.zeit,
+        preis20: e.preis20 ?? null, preis30: e.preis30 ?? null });
       if (status.get(e.name) === "weg") status.delete(e.name);
     } else if (e.art === "bierstatus") status.set(e.name, e.status);
   }
-  const sl = cfg.sorten.map(x => ({ ...x }));
-  for (const b of biere.values()) { const x = sl.find(y => y.name === b.name); if (x) x.preis = b.preis; else sl.push({ name: b.name, preis: b.preis }); }
+  const sl = cfg.sorten.filter(x => !istFass(x.name)).map(x => ({ ...x }));
+  const altFass = []; // früher als eigenes Bier angelegte Fässer („Rusty Keg 30l“): nur ihr Preis zählt, fürs Bier
+  for (const b of biere.values()) {
+    if (istFass(b.name)) { altFass.push(b); continue; }
+    const x = sl.find(y => y.name === b.name); if (x) x.preis = b.preis; else sl.push({ name: b.name, preis: b.preis });
+  }
+  for (const x of sl) {
+    const m = biere.get(x.name) || {};
+    for (const F of FAESSER) {
+      const alt = altFass.find(b => zerlege(b.name).bier === x.name && zerlege(b.name).l === F.l);
+      x["preis" + F.l] = m["preis" + F.l] != null ? m["preis" + F.l] : alt ? alt.preis : F.std;
+    }
+  }
   for (const x of sl) {
     x.meta = biere.get(x.name) || null;
     const stt = status.get(x.name);
@@ -305,7 +335,7 @@ function rechne(eintraege) {
     if (stt === "aktiv") { x.aus = false; x.archiv = false; }
     if (stt === "weg") x.weg = true;
   }
-  const geloescht = new Set(sl.filter(x => x.weg).map(x => x.name));
+  const geloescht = new Set(sl.filter(x => x.weg).flatMap(x => [x.name, ...FAESSER.map(F => fassKey(x.name, F.l))]));
   cfg = { ...cfg, sorten: sl.filter(x => !x.weg) };
 
   const bestand = {};
@@ -330,7 +360,9 @@ function rechne(eintraege) {
       // zählen im Bestand und in der Liste pro Bier, nie in Kasse, Ausstoend oder Umsatz je Person.
       if (e.alt) { altVk.push({ ...e, flaschen: n }); continue; }
       vk.set(e.id, { ...e, flaschen: n, bezahlt: 0, offen: 0 });
-      const P = pe(e.verkaeufer); P.verkauft += n; P.umsatz += e.betrag;
+      // Je Person: Flaschen und Fässer getrennt zählen (nie zusammen in einer Zahl).
+      const P = pe(e.verkaeufer); P.umsatz += e.betrag;
+      for (const p of e.posten) if (istFass(p.sorte)) P.faesser = (P.faesser || 0) + p.n; else P.verkauft += p.n;
     }
   }
   // Livraisons: geplant, bis ein (nicht rückgängig gemachter) Verkauf mit liv = ihre id existiert.
@@ -343,6 +375,7 @@ function rechne(eintraege) {
     const v = vk.get(e.ref);
     if (!v) continue; // Verkauf rückgängig gemacht → Zahlung zählt nicht mehr
     v.bezahlt = runde(v.bezahlt + e.betrag);
+    if (e.wie) (v.wie ||= []).includes(e.wie) || v.wie.push(e.wie);
     kasse = runde(kasse + e.betrag);
   }
   let offen = 0;
@@ -360,11 +393,21 @@ function rechne(eintraege) {
 
   const halter = [LAGER, ...cfg.leute];
   for (const h in bestand) if (!halter.includes(h) && Object.values(bestand[h]).some(n => n !== 0)) halter.push(h);
-  const sortenNamen = [...cfg.sorten.map(s => s.name), ...Object.keys(sorten).filter(s => !cfg.sorten.some(c => c.name === s) && !geloescht.has(s))];
+  // sortenNamen = Biere (Flaschen-Schlüssel). Fässer hängen am Bier: fassNamen(bier).
+  const sortenNamen = [...cfg.sorten.map(s => s.name), ...Object.keys(sorten).filter(s => !istFass(s) && !cfg.sorten.some(c => c.name === s) && !geloescht.has(s))];
+  for (const k of Object.keys(sorten)) if (istFass(k) && !geloescht.has(k) && !sortenNamen.includes(zerlege(k).bier)) sortenNamen.push(zerlege(k).bier);
+  for (const s of sortenNamen) st(s);
   const summe = f => sortenNamen.reduce((a, s) => a + sorten[s][f], 0);
+  // Reserviert: geplante Livraisons belegen den Bestand dort, wo sie herkommen (vom Nutzer, 14.11.2026).
+  const reserviert = {};
+  for (const L of liv.values()) if (!L.verkauf) for (const p of L.posten) {
+    (reserviert[L.aus] ||= {}); reserviert[L.aus][p.sorte] = (reserviert[L.aus][p.sorte] || 0) + p.n;
+  }
+  const kasseNach = {};
+  for (const e of aktiv) if (e.art === "zahlung" && vk.has(e.ref)) kasseNach[e.wie || "?"] = runde((kasseNach[e.wie || "?"] || 0) + e.betrag);
 
   return {
-    cfg, basisSorten, geloescht, liste, aktiv, storniert, nachId, bestand, halter, sorten, sortenNamen, personen,
+    reserviert, kasseNach, cfg, basisSorten, geloescht, liste, aktiv, storniert, nachId, bestand, halter, sorten, sortenNamen, personen,
     verkaeufe: [...vk.values()],
     altVerkaeufe: altVk,
     vkNachId: vk,
@@ -382,8 +425,20 @@ function rechne(eintraege) {
 const de = h => h === LAGER ? "d'Lager" : "de " + h;
 const beim = h => h === LAGER ? "am Lager" : "beim " + h;
 const hat = (Z, wer, sorte) => (Z.bestand[wer] && Z.bestand[wer][sorte]) || 0;
-const preisVon = (cfg, sorte) => { const s = cfg.sorten.find(x => x.name === sorte); return s ? s.preis : 0; };
-const postenText = posten => posten.map(p => `${p.n} × ${p.sorte}`).join(", ");
+const reserviertBei = (Z, wer, sorte) => (Z.reserviert[wer] && Z.reserviert[wer][sorte]) || 0;
+const frei = (Z, wer, sorte) => hat(Z, wer, sorte) - reserviertBei(Z, wer, sorte);
+const preisVon = (cfg, key) => {
+  const { bier, l } = zerlege(key);
+  const s = cfg.sorten.find(x => x.name === bier);
+  if (!s) return l ? FAESSER.find(F => F.l === l).std : 0;
+  return l ? s["preis" + l] : s.preis;
+};
+/* Schlüssel eines Biers: Flaschen immer, Fässer nur, wenn es sie gibt oder gab. */
+const fassNamen = (Z, bier) => FAESSER.map(F => fassKey(bier, F.l)).filter(k => Z.sorten[k] && (Z.sorten[k].abgefuellt || Z.sorten[k].da || Z.sorten[k].verkauft || Z.sorten[k].abgang || Z.halter.some(h => reserviertBei(Z, h, k))));
+const artikelVon = (Z, bier) => [bier, ...fassNamen(Z, bier)];
+/* Was eine Menge braucht und was fehlt: [{sorte, n, frei}] für alle Posten mit n > frei. */
+const zuWenig = (Z, wer, posten) => posten.map(p => ({ ...p, frei: frei(Z, wer, p.sorte), hat: hat(Z, wer, p.sorte), res: reserviertBei(Z, wer, p.sorte) })).filter(p => p.n > p.frei);
+const postenText = posten => posten.map(p => istFass(p.sorte) ? `${p.n} × ${zerlege(p.sorte).bier} (Fass ${zerlege(p.sorte).l} l)` : `${p.n} × ${p.sorte}`).join(", ");
 
 function beschreibe(e, Z) {
   switch (e.art) {
@@ -393,7 +448,7 @@ function beschreibe(e, Z) {
     case "verkauf": return `${e.alt ? "📜 Al Tabell:" : e.liv ? "🚚 Geliwwert" : "💶"} ${e.verkaeufer} → ${e.kaeufer}: ${postenText(e.posten)} · ${euro(e.betrag)}`;
     case "zahlung": {
       const v = Z && Z.nachId.get(e.ref);
-      return `✓ ${euro(e.betrag)} bezuelt` + (v ? `: ${v.kaeufer} (${beim(v.verkaeufer)})` : "");
+      return `✓ ${euro(e.betrag)} bezuelt${e.wie ? " per " + ZAHLARTEN[e.wie] : ""}` + (v ? `: ${v.kaeufer} (${beim(v.verkaeufer)})` : "");
     }
     case "livraison": return `🚚 Livraison geplangt: ${e.kunde}, ${postenText(e.posten)}, ${datumKurz(e.datum)} · ${euro(e.betrag)}`;
     case "rechnung": {
@@ -446,7 +501,6 @@ function csv(Z, zeitText) {
 }
 
 const datumKurz = d => { const [j, m, t] = d.split("-"); return `${+t}.${+m}.${j}`; };
-const istFass = sorte => /keg|fass|fût/i.test(sorte);
 
 /* Dateien eines Biers (bier "" = allgemein): je festes Feld die neueste, „anner“ alle (neueste zuerst). */
 function dateienVon(Z, bier) {
@@ -466,30 +520,33 @@ function anteil(cfg, posten, betrag, p) {
   const n = posten.reduce((a, x) => a + x.n, 0);
   return n ? runde(betrag * p.n / n) : 0;
 }
-const bezahltText = v => v.offen <= 0 ? "Jo" : v.bezahlt > 0 ? `Deelweis (${euro(v.offen)} op)` : "Nee";
+const wieText = v => v.wie && v.wie.length ? " (" + v.wie.map(w => ZAHLARTEN[w]).join(", ") + ")" : "";
+const bezahltText = v => v.offen <= 0 ? "Jo" + wieText(v) : v.bezahlt > 0 ? `Deelweis (${euro(v.offen)} op)` : "Nee";
 
 /* Alle Zeilen einer Sorte, wie ein Blatt in der alten Excel-Tabelle: wer hat was wem verkauft. */
 function proSorte(Z, sorte) {
+  // Ein Bier mit seinen Fässern; jede Zeile sagt, ob Flaschen oder Fass (geb).
+  const keys = new Set(artikelVon(Z, sorte));
   const zeilen = [];
-  for (const v of Z.verkaeufe) for (const p of v.posten) if (p.sorte === sorte) {
+  for (const v of Z.verkaeufe) for (const p of v.posten) if (keys.has(p.sorte)) {
     const r = anteil(Z.cfg, v.posten, v.betrag, p);
     const L = v.livraison;
-    zeilen.push({ zeit: v.zeit, datum: L ? L.datum : null, kunde: v.kaeufer, kontakt: v.verkaeufer, n: p.n,
+    zeilen.push({ geb: gebindeText(p.sorte), zeit: v.zeit, datum: L ? L.datum : null, kunde: v.kaeufer, kontakt: v.verkaeufer, n: p.n,
       preis: runde(r / p.n), recetten: r, geliwwert: "Jo", bezuelt: bezahltText(v),
       rechnung: L && L.rechnung ? (v.rechnungGemacht ? "gemaach" : "nach ze maachen") : "",
       remarque: L ? [L.anlass, L.notiz].filter(Boolean).join(" · ") : "", id: v.id });
   }
-  for (const v of Z.altVerkaeufe) for (const p of v.posten) if (p.sorte === sorte) {
+  for (const v of Z.altVerkaeufe) for (const p of v.posten) if (keys.has(p.sorte)) {
     const r = anteil(Z.cfg, v.posten, v.betrag, p);
-    zeilen.push({ zeit: v.zeit, datum: v.datum || null, kunde: v.kaeufer, kontakt: v.verkaeufer, n: p.n, preis: runde(r / p.n), recetten: r,
+    zeilen.push({ geb: gebindeText(p.sorte), zeit: v.zeit, datum: v.datum || null, kunde: v.kaeufer, kontakt: v.verkaeufer, n: p.n, preis: runde(r / p.n), recetten: r,
       geliwwert: "Jo", bezuelt: "–", rechnung: "", remarque: v.notiz || "", id: v.id, alt: true });
   }
-  for (const e of Z.aktiv) if (e.art === "abgang" && e.sorte === sorte)
-    zeilen.push({ zeit: e.zeit, datum: e.datum || null, kunde: GRUENDE[e.grund], kontakt: e.wer, n: e.n, preis: 0, recetten: 0,
+  for (const e of Z.aktiv) if (e.art === "abgang" && keys.has(e.sorte))
+    zeilen.push({ geb: gebindeText(e.sorte), zeit: e.zeit, datum: e.datum || null, kunde: GRUENDE[e.grund], kontakt: e.wer, n: e.n, preis: 0, recetten: 0,
       geliwwert: "–", bezuelt: "–", rechnung: "", remarque: e.notiz || "", id: e.id, alt: e.durch === "Excel-Import" });
-  for (const L of Z.livraisons) if (!L.verkauf) for (const p of L.posten) if (p.sorte === sorte) {
+  for (const L of Z.livraisons) if (!L.verkauf) for (const p of L.posten) if (keys.has(p.sorte)) {
     const r = anteil(Z.cfg, L.posten, L.betrag, p);
-    zeilen.push({ zeit: L.zeit, datum: L.datum, kunde: L.kunde, kontakt: L.kontakt, n: p.n, preis: runde(r / p.n), recetten: r,
+    zeilen.push({ geb: gebindeText(p.sorte), zeit: L.zeit, datum: L.datum, kunde: L.kunde, kontakt: L.kontakt, n: p.n, preis: runde(r / p.n), recetten: r,
       geliwwert: "geplangt " + datumKurz(L.datum), bezuelt: "–", rechnung: L.rechnung ? "nach ze maachen" : "",
       remarque: [L.anlass, L.notiz].filter(Boolean).join(" · "), id: L.id, geplant: true });
   }
@@ -500,29 +557,31 @@ function proSorte(Z, sorte) {
    Reine Daten (Zeilen als Arrays), damit der Test ohne Excel-Bibliothek prüfen kann. */
 function exportBlaetter(Z, zeitFmt) {
   const blaetter = [];
-  const kopf = ["Datum", "Client", "Kontakt", "Unzuel", "Präis/Fl", "Recetten", "geliwwert?", "bezuel?", "Rechnung", "Remarquen"];
+  const kopf = ["Datum", "Client", "Kontakt", "Unzuel", "Gebinde", "Präis", "Recetten", "geliwwert?", "bezuel?", "Rechnung", "Remarquen"];
   for (const s of Z.sortenNamen) {
     const z = proSorte(Z, s), x = Z.sorten[s];
     if (!z.length && !x.abgefuellt && !x.da && !(Z.cfg.sorten.find(y => y.name === s) || {}).meta) continue;
-    const zeilen = z.map(r => [r.datum ? datumKurz(r.datum) : r.alt ? "" : zeitFmt(r.zeit), r.kunde, r.kontakt, r.n, r.preis, r.recetten, r.geliwwert, r.bezuelt, r.rechnung, r.remarque]);
-    const fest = z.filter(r => !r.geplant);
+    const zeilen = z.map(r => [r.datum ? datumKurz(r.datum) : r.alt ? "" : zeitFmt(r.zeit), r.kunde, r.kontakt, r.n, r.geb, r.preis, r.recetten, r.geliwwert, r.bezuelt, r.rechnung, r.remarque]);
+    const fest = z.filter(r => !r.geplant), festFl = fest.filter(r => r.geb === "Fläsch");
     const c = Z.cfg.sorten.find(y => y.name === s) || {}, m = c.meta || {};
     blaetter.push({ name: s, titel: s, info: [
       [m.stil, m.braudatum ? `Braugang vum ${datumKurz(m.braudatum)}` : "", m.alk != null ? `Alk: ${String(m.alk).replace(".", ",")} %` : "",
         m.liter != null ? `Quantitéit: ${String(m.liter).replace(".", ",")} L` : "", m.mhd ? `Haltbar bis ${datumKurz(m.mhd)}` : "", c.archiv ? "ARCHIVÉIERT" : ""].filter(Boolean).join(" · "),
-      `Ofgefëllt: ${x.abgefuellt} · Verkaaft: ${x.verkauft} · Fort: ${x.abgang} · Nach do: ${x.da}`,
-      `Verkafspräis: ${euro(preisVon(Z.cfg, s))} pro ${istFass(s) ? "Fass" : "Fläsch"}`, m.notiz || ""].filter(Boolean),
+      `Fläschen — ofgefëllt: ${x.abgefuellt} · verkaaft: ${x.verkauft} · fort: ${x.abgang} · nach do: ${x.da}`,
+      ...fassNamen(Z, s).map(k => { const y = Z.sorten[k]; return `${gebindeText(k)} — ofgefëllt: ${y.abgefuellt} · verkaaft: ${y.verkauft} · fort: ${y.abgang} · nach do: ${y.da}`; }),
+      `Verkafspräis: ${euro(preisVon(Z.cfg, s))} pro Fläsch` + fassNamen(Z, s).map(k => ` · ${euro(preisVon(Z.cfg, k))} pro ${gebindeText(k)}`).join(""), m.notiz || ""].filter(Boolean),
       kopf, zeilen,
-      summe: ["Total", "", "", fest.reduce((a, r) => a + r.n, 0), "", runde(fest.reduce((a, r) => a + r.recetten, 0)), "", "", "", "ouni geplangten"] });
+      summe: ["Total", "", "", festFl.reduce((a, r) => a + r.n, 0), "Fläschen", "", runde(fest.reduce((a, r) => a + r.recetten, 0)), "", "", "", "Recetten mat Fässer, ouni geplangten"] });
   }
   blaetter.push({ name: "Livraisons", titel: "Livraisons", info: [],
     kopf: ["Datum", "Client", "Kontakt", "Wat", "Betrag", "Anlass", "geliwwert?", "Rechnung", "bezuel?", "Remarquen"],
     zeilen: Z.livraisons.map(L => [datumKurz(L.datum), L.kunde, L.kontakt, postenText(L.posten), L.betrag, L.anlass || "",
       L.verkauf ? "Jo" : "geplangt", L.rechnung ? (L.verkauf && L.verkauf.rechnungGemacht ? "gemaach" : "nach ze maachen") : "",
       L.verkauf ? bezahltText(L.verkauf) : "–", L.notiz || ""]), summe: null });
-  blaetter.push({ name: "Stock", titel: "Stock", info: [], kopf: ["", ...Z.sortenNamen, "Total"],
-    zeilen: Z.halter.map(h => [h, ...Z.sortenNamen.map(s => hat(Z, h, s)), Z.sortenNamen.reduce((a, s) => a + hat(Z, h, s), 0)]),
-    summe: ["Total", ...Z.sortenNamen.map(s => Z.sorten[s].da), Z.flaschen.da] });
+  const alleK = Z.sortenNamen.flatMap(s => artikelVon(Z, s));
+  blaetter.push({ name: "Stock", titel: "Stock", info: ["Total = Fläschen; Fässer an hiren eegene Kolonnen."], kopf: ["", ...alleK.map(k => istFass(k) ? `${zerlege(k).bier} (Fass ${zerlege(k).l} l)` : k), "Total Fl."],
+    zeilen: Z.halter.map(h => [h, ...alleK.map(k => hat(Z, h, k)), Z.sortenNamen.reduce((a, s) => a + hat(Z, h, s), 0)]),
+    summe: ["Total", ...alleK.map(k => Z.sorten[k].da), Z.flaschen.da] });
   return blaetter;
 }
 
@@ -531,20 +590,19 @@ function exportBlaetter(Z, zeitFmt) {
    Fehlt ein Preis in der Tabelle, steht 0 € und ein Vermerk. Alle Verkäufe mit alt: true (nicht in Kasse/Ausstoend). */
 const ALT_KENNUNG = "alt26-bier-bp";
 function altImport() {
-  const BP = "Brown Porter 01/2026", BPK = "Brown Porter 01/2026 Keg 30l";
-  const RU = "Rusty 02/2026", RUK30 = "Rusty 02/2026 Keg 30l", RUK20 = "Rusty 02/2026 Keg 20l";
+  const BP = "Brown Porter 01/2026", BPK = fassKey(BP, 30);
+  const RU = "Rusty 02/2026", RUK30 = fassKey(RU, 30), RUK20 = fassKey(RU, 20);
   const tag = d => Date.parse(d + "T12:00:00Z");
   const out = [];
   let i = 0;
   const neu = (id, zeit, x) => out.push({ id: "alt26-" + id, zeit: zeit + (i++), durch: "Excel-Import", ...x });
   // Biere (archiviert) und Abfüllung
   const bp0 = tag("2026-01-23"), ru0 = tag("2026-02-06");
-  neu("bier-bp", bp0, { art: "bier", name: BP, preis: 3, stil: "Brown Porter", braudatum: "2026-01-23", alk: 5.1, liter: 176,
-    notiz: "Aus der aler Tabell. Laut Tabell 12 Cajots (288 Fl) ofgefëllt, d'Zeilen ergi 310 Fl. — dofir 310 hei." });
-  neu("bier-bpk", bp0, { art: "bier", name: BPK, preis: 180, braudatum: "2026-01-23", alk: 5.1, notiz: "4 Kegs à 30 L" });
-  neu("bier-ru", ru0, { art: "bier", name: RU, preis: 3, stil: "Rusty", braudatum: "2026-02-06", alk: 5.6, liter: 156, notiz: "Aus der aler Tabell. 12 Cajots (288 Fl)." });
-  neu("bier-ruk30", ru0, { art: "bier", name: RUK30, preis: 180, braudatum: "2026-02-06", alk: 5.6 });
-  neu("bier-ruk20", ru0, { art: "bier", name: RUK20, preis: 150, braudatum: "2026-02-06", alk: 5.6 });
+  // Fässer sind Gebinde des Biers (fassKey), keine eigenen Biere; Preise am Bier (preis20/preis30).
+  neu("bier-bp", bp0, { art: "bier", name: BP, preis: 3, preis20: 150, preis30: 180, stil: "Brown Porter", braudatum: "2026-01-23", alk: 5.1, liter: 176,
+    notiz: "Aus der aler Tabell. Laut Tabell 12 Cajots (288 Fl) + 4 Kegs à 30 L ofgefëllt, d'Zeilen ergi 310 Fl. — dofir 310 hei." });
+  neu("bier-ru", ru0, { art: "bier", name: RU, preis: 3, preis20: 150, preis30: 180, stil: "Rusty", braudatum: "2026-02-06", alk: 5.6, liter: 156,
+    notiz: "Aus der aler Tabell. 12 Cajots (288 Fl) + 1 Keg 30 L + 2 Kegs 20 L." });
   neu("abf-bp", bp0, { art: "abfuellung", sorte: BP, n: 310 });
   neu("abf-bpk", bp0, { art: "abfuellung", sorte: BPK, n: 4 });
   neu("abf-ru", ru0, { art: "abfuellung", sorte: RU, n: 288 });
@@ -589,7 +647,7 @@ function altImport() {
   neu("ru-bts", tag("2026-06-01"), { art: "abgang", sorte: RU, n: 3, wer: LAGER, grund: "verschenkt", datum: "2026-06-01", notiz: "BTS Design Logo-etiquettes: déi 3 Proffen, je 1 Fläsch, RDV 1.6.2026" });
   neu("bp-cw", bp0 + 86400000, { art: "bewegung", sorte: BP, n: 4, von: LAGER, an: "Claude" });
   // Alles archivieren
-  for (const [k, name] of [["bp", BP], ["bpk", BPK], ["ru", RU], ["ruk30", RUK30], ["ruk20", RUK20]])
+  for (const [k, name] of [["bp", BP], ["ru", RU]])
     neu("arch-" + k, Date.parse("2026-11-14T12:00:00Z"), { art: "bierstatus", name, status: "archiv" });
   return out;
 }
@@ -772,6 +830,13 @@ function renderStart() {
   });
 }
 
+/* Bestand eines Halters: Flaschen, Fässer extra („10 + 3 F.“). */
+function mengeText(h) {
+  const fl = Z.sortenNamen.reduce((a, s) => a + hat(Z, h, s), 0);
+  const fa = Z.sortenNamen.flatMap(s => fassNamen(Z, s)).reduce((a, k) => a + hat(Z, h, k), 0);
+  return fa ? `${fl} <small class="muted">+ ${fa} F.</small>` : String(fl);
+}
+
 function renderUebersicht() {
   const box = $("#t-uebersicht");
   box.onclick = e => {
@@ -792,14 +857,16 @@ function renderUebersicht() {
   const benutzt = s => { const x = Z.sorten[s]; return x.abgefuellt || x.da || x.verkauft || x.abgang; };
   const zeilen = Z.sortenNamen.filter(s => !imArchiv(s));
   const archivZ = Z.sortenNamen.filter(s => imArchiv(s) && benutzt(s));
-  const asum = f => archivZ.reduce((a, s) => a + Z.sorten[s][f], 0);
-  const zeile = (s, klein) => { const x = Z.sorten[s]; return `<tr class="klick ${klein ? "klein" : ""} ${OFFEN_SORTE === s ? "auf" : ""}" data-sorte="${esc(s)}"><td>${esc(s)}</td><td>${x.abgefuellt}</td><td>${x.verkauft}</td><td>${x.abgang}</td><td><b>${x.da}</b></td></tr>`; };
+  const asum = f => archivZ.reduce((a, s) => a + Z.sorten[s][f], 0); // nur Flaschen
+  // Fässer als eingerückte Zeilen unter ihrem Bier (vom Nutzer: kein eigenes Bier).
+  const fassZeilen = s => fassNamen(Z, s).map(k => { const y = Z.sorten[k]; return `<tr class="fass"><td>🛢️ Fass ${zerlege(k).l} l</td><td>${y.abgefuellt}</td><td>${y.verkauft}</td><td>${y.abgang}</td><td><b>${y.da}</b></td></tr>`; }).join("");
+  const zeile = (s, klein) => { const x = Z.sorten[s]; return `<tr class="klick ${klein ? "klein" : ""} ${OFFEN_SORTE === s ? "auf" : ""}" data-sorte="${esc(s)}"><td>${esc(s)}</td><td>${x.abgefuellt}</td><td>${x.verkauft}</td><td>${x.abgang}</td><td><b>${x.da}</b></td></tr>${fassZeilen(s)}`; };
   box.innerHTML = `
   ${PROBE ? `<div class="probe">Prouf-Modus: Agaben bleiwen just op dësem Handy.</div>` : ""}
   <div class="card"><div class="kacheln">
-    <div class="kachel"><b>${F.da}</b><span>Fläschen nach do</span></div>
+    <div class="kachel"><b>${F.da}</b><span>Fläschen nach do${(() => { const n = Z.sortenNamen.flatMap(s => fassNamen(Z, s)).reduce((a, k) => a + Z.sorten[k].da, 0); return n ? ` (+ ${n} ${n === 1 ? "Fass" : "Fässer"})` : ""; })()}</span></div>
     <div class="kachel"><b>${F.verkauft}</b><span>Fläsche verkaaft</span></div>
-    <div class="kachel geld"><b>${euro(Z.kasse)}</b><span>an der Kees</span></div>
+    <div class="kachel geld"><b>${euro(Z.kasse)}</b><span>an der Kees${Object.keys(Z.kasseNach).length ? "<br>" + Object.entries(Z.kasseNach).map(([w, b]) => `${esc(ZAHLARTEN[w] || "ouni Aart")} ${euro(b)}`).join(" · ") : ""}</span></div>
     <div class="kachel offen"><b>${euro(Z.offen)}</b><span>nach ausstoend${Z.kaeufer.filter(k => k.offen > 0).length ? ` (${Z.kaeufer.filter(k => k.offen > 0).length} Leit)` : ""}</span></div>
   </div></div>
   <div class="card"><h2>Pro Zort</h2><div class="tabwrap"><table>
@@ -814,9 +881,9 @@ function renderUebersicht() {
   <div class="card"><h2>Pro Persoun</h2><div class="tabwrap"><table>
     <tr><th></th><th>Huet nach</th><th>Verkaaft</th><th>Ëmsaz</th><th>Op</th></tr>
     ${leute.map(p => { const P = Z.personen[p] || { verkauft: 0, umsatz: 0, offen: 0 };
-      const n = Object.values(Z.bestand[p] || {}).reduce((a, b) => a + b, 0);
-      return `<tr><td>${esc(p)}</td><td>${n}</td><td>${P.verkauft}</td><td>${euro(P.umsatz)}</td><td>${P.offen ? euro(P.offen) : "–"}</td></tr>`; }).join("")}
-    <tr><td>Lager</td><td>${Object.values(Z.bestand[LAGER] || {}).reduce((a, b) => a + b, 0)}</td><td></td><td></td><td></td></tr>
+      const n = mengeText(p);
+      return `<tr><td>${esc(p)}</td><td>${n}</td><td>${P.verkauft}${P.faesser ? ` <small class="muted">+ ${P.faesser} F.</small>` : ""}</td><td>${euro(P.umsatz)}</td><td>${P.offen ? euro(P.offen) : "–"}</td></tr>`; }).join("")}
+    <tr><td>Lager</td><td>${mengeText(LAGER)}</td><td></td><td></td><td></td></tr>
   </table></div></div>
   <div class="card"><h2>Excel</h2>
     <div class="hinweis" style="margin:0 0 8px">All Verkéf als .xlsx: pro Béier e Blat wéi an der aler Tabell, dozou Livraisons a Stock.</div>
@@ -885,7 +952,9 @@ function leereLivraison() {
   const morgen = new Date(Date.now() + 86400000).toLocaleDateString("sv-SE", { timeZone: TZ });
   return { kunde: "", kontakt: EIN.ich, aus: LAGER, anlass: "", datum: morgen, n: {}, betrag: null, rechnung: true, notiz: "" };
 }
-function lAuto() { return runde(vSorten().reduce((a, s) => a + (LFORM.n[s.name] || 0) * s.preis, 0)); }
+const lArtikel = () => artikelListe(LFORM.aus, LFORM.n);
+function lAuto() { return runde(lArtikel().reduce((a, x) => a + (LFORM.n[x.key] || 0) * x.preis, 0)); }
+const freiText = (wer, key) => { const r = reserviertBei(Z, wer, key), h = hat(Z, wer, key); return `fräi ${h - r}` + (r ? ` (${h} do, ${r} reservéiert)` : ""); };
 function renderLivraisons() {
   renderLListe();
   renderLForm();
@@ -915,9 +984,9 @@ function renderLListe() {
       ${fertig.length ? fertig.slice(0, 40).map(karte).join("") : `<div class="leer">Nach keng.</div>`}</div>`;
   box.querySelectorAll("[data-geliwwert]").forEach(b => b.onclick = () => {
     const L = Z.livraisons.find(x => x.id === b.dataset.geliwwert); if (!L) return;
-    const zuWenig = L.posten.filter(p => p.n > hat(Z, L.aus, p.sorte));
+    const kurz = L.posten.filter(p => p.n > hat(Z, L.aus, p.sorte));
     let frage = `Livraisoun un ${L.kunde} geliwwert?\n\n${postenText(L.posten)} · ${euro(L.betrag)}`;
-    if (zuWenig.length) frage += `\n\nAchtung: laut der App huet ${de(L.aus)} just ${zuWenig.map(p => `${hat(Z, L.aus, p.sorte)} × ${p.sorte}`).join(", ")}.`;
+    if (kurz.length) frage += `\n\nAchtung: laut der App huet ${de(L.aus)} just ${kurz.map(p => `${hat(Z, L.aus, p.sorte)} × ${postenText([p]).replace(/^\d+ × /, "")}`).join(", ")}.`;
     if (!confirm(frage)) return;
     eintragen([{ art: "verkauf", verkaeufer: L.kontakt, kaeufer: L.kunde, posten: L.posten, betrag: L.betrag, aus: L.aus, liv: L.id }]);
   });
@@ -928,12 +997,12 @@ function renderLListe() {
   box.querySelectorAll("[data-rechnung]").forEach(b => b.onclick = () => eintragen([{ art: "rechnung", ref: b.dataset.rechnung }]));
   box.querySelectorAll("[data-lbezuelt]").forEach(b => b.onclick = () => {
     const v = Z.vkNachId.get(b.dataset.lbezuelt); if (!v) return;
-    if (confirm(`${v.kaeufer}: ${euro(v.offen)} bezuelt?`)) eintragen([{ art: "zahlung", ref: v.id, betrag: v.offen }]);
+    zahlartWaehlen(`${v.kaeufer}: ${euro(v.offen)} bezuelt — wéi?`).then(wie => { if (wie) eintragen([{ art: "zahlung", ref: v.id, betrag: v.offen, wie }]); });
   });
 }
-function renderLForm() {
+function renderLForm(egal) {
   const box = $("#lForm");
-  if (tipptIn(box)) return;
+  if (!egal && tipptIn(box)) return;
   if (!L_NEU) { box.innerHTML = `<button class="haupt" id="lAuf">+ Nei Livraisoun plangen</button><div id="lMeld">${LFORM && LFORM.meldung ? `<div class="meldung ok">${esc(LFORM.meldung)}</div>` : ""}</div>`; $("#lAuf").onclick = () => { L_NEU = true; LFORM = leereLivraison(); renderLForm(); }; return; }
   const F = LFORM;
   const opt = (liste, wert, txt = x => x) => liste.map(x => `<option value="${esc(x)}" ${x === wert ? "selected" : ""}>${esc(txt(x))}</option>`).join("");
@@ -941,12 +1010,12 @@ function renderLForm() {
     <label for="lKunde">Client</label><input id="lKunde" list="kaeuferListe" autocomplete="off" autocapitalize="words" value="${esc(F.kunde)}" placeholder="z. B. Ferro Forum">
     <div class="zeile"><div><label for="lDatum">Datum</label><input id="lDatum" type="date" value="${esc(F.datum)}"></div>
       <div><label for="lKontakt">Kontakt</label><select id="lKontakt">${opt(Z.cfg.leute, F.kontakt)}</select></div></div>
-    <label for="lAus">Fläschen huelen aus</label><select id="lAus">${opt([LAGER, ...Z.cfg.leute], F.aus, h => h === LAGER ? "📦 Lager" : h)}</select>
+    <label for="lAus">Huelen aus</label><select id="lAus">${opt([LAGER, ...Z.cfg.leute], F.aus, h => h === LAGER ? "📦 Lager" : h)}</select>
     <label for="lAnlass">Anlass (fräiwëlleg)</label><input id="lAnlass" value="${esc(F.anlass)}" placeholder="z. B. Oarbechterkiermes">
     <label>Wat?</label>
-    ${vSorten().map((s, i) => `<div class="posten"><div class="pn"><b>${esc(s.name)}</b><small class="muted">${euro(s.preis)} · am Lager ${hat(Z, LAGER, s.name)}</small></div>
+    ${lArtikel().map((x, i) => `<div class="posten"><div class="pn"><b>${esc(x.label)}</b><small class="muted">${euro(x.preis)} · ${esc(freiText(F.aus, x.key))}</small></div>
       <div class="stepper"><button data-lminus="${i}" aria-label="manner">−</button>
-      <input id="lN${i}" data-li="${i}" inputmode="numeric" pattern="[0-9]*" value="${F.n[s.name] || ""}" placeholder="0">
+      <input id="lN${i}" data-li="${i}" inputmode="numeric" pattern="[0-9]*" value="${F.n[x.key] || ""}" placeholder="0">
       <button data-lplus="${i}" aria-label="méi">+</button></div></div>`).join("")}
     <label for="lBetrag">Betrag (€)</label>
     <div class="zeile"><input id="lBetrag" inputmode="decimal" value="${F.betrag != null ? String(F.betrag).replace(".", ",") : (lAuto() ? String(lAuto()).replace(".", ",") : "")}" placeholder="0">
@@ -960,19 +1029,20 @@ function renderLForm() {
   bind("#lKunde", "kunde"); bind("#lAnlass", "anlass"); bind("#lNotiz", "notiz");
   $("#lDatum").onchange = $("#lDatum").oninput = e => { F.datum = e.target.value; };
   $("#lKontakt").onchange = e => { F.kontakt = e.target.value; };
-  $("#lAus").onchange = e => { F.aus = e.target.value; };
+  $("#lAus").onchange = e => { F.aus = e.target.value; e.target.blur(); renderLForm(true); };
   $("#lRechnung").onchange = e => { F.rechnung = e.target.checked; };
   const betragNach = () => { const inp = $("#lBetrag"); if (F.betrag == null && document.activeElement !== inp) inp.value = lAuto() ? String(lAuto()).replace(".", ",") : ""; };
-  const setzeN = (i, n) => { const s = vSorten()[i]; F.n[s.name] = Math.max(0, Math.min(9999, n | 0)); const inp = $("#lN" + i); if (document.activeElement !== inp) inp.value = F.n[s.name] || ""; betragNach(); };
-  box.querySelectorAll("[data-lplus]").forEach(b => b.onclick = () => setzeN(+b.dataset.lplus, (F.n[vSorten()[+b.dataset.lplus].name] || 0) + 1));
-  box.querySelectorAll("[data-lminus]").forEach(b => b.onclick = () => setzeN(+b.dataset.lminus, (F.n[vSorten()[+b.dataset.lminus].name] || 0) - 1));
+  const la = lArtikel();
+  const setzeN = (i, n) => { const x = la[i]; F.n[x.key] = Math.max(0, Math.min(9999, n | 0)); const inp = $("#lN" + i); if (document.activeElement !== inp) inp.value = F.n[x.key] || ""; betragNach(); };
+  box.querySelectorAll("[data-lplus]").forEach(b => b.onclick = () => setzeN(+b.dataset.lplus, (F.n[la[+b.dataset.lplus].key] || 0) + 1));
+  box.querySelectorAll("[data-lminus]").forEach(b => b.onclick = () => setzeN(+b.dataset.lminus, (F.n[la[+b.dataset.lminus].key] || 0) - 1));
   box.querySelectorAll("[data-li]").forEach(inp => inp.oninput = () => setzeN(+inp.dataset.li, parseInt(inp.value, 10) || 0));
   $("#lBetrag").oninput = e => { const v = e.target.value.trim().replace(",", "."); F.betrag = v === "" ? null : (isFinite(+v) ? runde(+v) : F.betrag); };
   $("#lZu").onclick = () => { L_NEU = false; LFORM = null; renderLForm(); };
   $("#lOk").onclick = () => {
     const meld = t => $("#lMeld").innerHTML = `<div class="meldung fehler">${esc(t)}</div>`;
     const kunde = F.kunde.trim().replace(/\s+/g, " ");
-    const posten = vSorten().filter(s => F.n[s.name] > 0).map(s => ({ sorte: s.name, n: F.n[s.name] }));
+    const posten = la.filter(x => F.n[x.key] > 0).map(x => ({ sorte: x.key, n: F.n[x.key] }));
     if (!kunde) return meld("Wéi heescht de Client?");
     if (!/^\d{4}-\d{2}-\d{2}$/.test(F.datum)) return meld("Wéini? Datum feelt.");
     if (!posten.length) return meld("Wat gëtt geliwwert? Mindestens eng Fläsch.");
@@ -980,6 +1050,9 @@ function renderLForm() {
     const e = { art: "livraison", kunde: bekannt ? bekannt.name : kunde, kontakt: F.kontakt, aus: F.aus, datum: F.datum, posten,
       betrag: F.betrag != null ? F.betrag : lAuto(), rechnung: !!F.rechnung, anlass: F.anlass.trim(), notiz: F.notiz.trim() };
     if (!gueltig({ ...e, id: "x", zeit: 0 })) return meld("Eppes ass ze laang oder net richteg.");
+    // Geplante Livraisons zählen schon (reserviert): reicht der freie Rest nicht, warnen (vom Nutzer, 14.11.2026).
+    const fehlt = zuWenig(Z, F.aus, posten);
+    if (fehlt.length && !confirm(`⚠️ Net genuch fräi:\n\n${fehltText(F.aus, fehlt)}\n\nTrotzdeem plangen?`)) return;
     if (document.activeElement) document.activeElement.blur();
     const neu = eintragen([e]);
     if (!neu.length) return;
@@ -990,50 +1063,61 @@ function renderLForm() {
 
 /* ---------- Verkaufen ---------- */
 function leeresFormular() {
-  return { verkaeufer: EIN.ich, kaeufer: "", n: {}, betrag: null, bezahlt: null, meldung: FORM && FORM.meldung };
+  return { verkaeufer: EIN.ich, kaeufer: "", n: {}, betrag: null, wie: null, meldung: FORM && FORM.meldung };
 }
 function vSorten() { return Z.cfg.sorten.filter(s => !s.aus); }
-function vAutoBetrag() { return runde(vSorten().reduce((a, s) => a + (FORM.n[s.name] || 0) * s.preis, 0)); }
-function vFlaschen() { return vSorten().reduce((a, s) => a + (FORM.n[s.name] || 0), 0); }
+/* Was man verkaufen/liefern kann: je Bier die Flaschen, Fässer nur, wenn der Halter welche hat (oder schon gewählt). */
+function artikelListe(wer, gewaehlt) {
+  return vSorten().flatMap(s => [{ key: s.name, label: s.name, preis: s.preis },
+    ...FAESSER.map(F => fassKey(s.name, F.l)).filter(k => hat(Z, wer, k) > 0 || (gewaehlt && gewaehlt[k] > 0))
+      .map(k => ({ key: k, label: `${s.name} · Fass ${zerlege(k).l} l`, preis: preisVon(Z.cfg, k), fass: true }))]);
+}
+const vArtikel = () => artikelListe(FORM.verkaeufer, FORM.n);
+function vAutoBetrag() { return runde(vArtikel().reduce((a, x) => a + (FORM.n[x.key] || 0) * x.preis, 0)); }
+function vFlaschen() { return vArtikel().filter(x => !x.fass).reduce((a, x) => a + (FORM.n[x.key] || 0), 0); }
+function zahlKnoepfe(gewaehlt, mitSpaeter) {
+  return `<div class="seg zahl">${Object.entries(ZAHLARTEN).map(([k, t]) => `<button data-bez="${k}" class="${gewaehlt === k ? "an gruen" : ""}">${t}</button>`).join("")}
+    ${mitSpaeter ? `<button data-bez="spaeter" class="breit ${gewaehlt === "spaeter" ? "an gelb" : ""}">Bezillt méi spéit</button>` : ""}</div>`;
+}
+const fehltText = (wer, liste) => liste.map(p => `${p.n} × ${istFass(p.sorte) ? zerlege(p.sorte).bier + " (Fass " + zerlege(p.sorte).l + " l)" : p.sorte}: ${de(wer)} huet ${p.hat}` + (p.res ? `, dovun ${p.res} reservéiert fir Livraisons → fräi ${Math.max(0, p.frei)}` : "")).join("\n");
 
-function renderVerkaufen() {
+function renderVerkaufen(egal) {
   if (!FORM) FORM = leeresFormular();
   const box = $("#vForm");
-  if (tipptIn(box)) { vHinweise(); return; }
+  if (!egal && tipptIn(box)) { vHinweise(); return; }
   const leute = Z.cfg.leute.includes(FORM.verkaeufer) ? Z.cfg.leute : [...Z.cfg.leute, FORM.verkaeufer];
+  const art = vArtikel();
   box.innerHTML = `<div class="card">
     <h2>Verkaf androen</h2>
     <label for="vVerk">Wien verkeeft?</label>
     <select id="vVerk">${leute.map(p => `<option ${p === FORM.verkaeufer ? "selected" : ""}>${esc(p)}</option>`).join("")}</select>
     <label for="vKaeufer">Un wien?</label>
     <input id="vKaeufer" list="kaeuferListe" autocomplete="off" autocapitalize="words" placeholder="Numm vum Keefer" value="${esc(FORM.kaeufer)}">
-    <label>Wéi vill Fläschen?</label>
-    ${vSorten().map((s, i) => `<div class="posten">
-      <div class="pn"><b>${esc(s.name)}</b><small class="muted" id="vHat${i}"></small></div>
+    <label>Wéi vill?</label>
+    ${art.map((x, i) => `<div class="posten">
+      <div class="pn"><b>${esc(x.label)}</b><small class="muted" id="vHat${i}"></small></div>
       <div class="stepper"><button data-minus="${i}" aria-label="manner">−</button>
-        <input id="vN${i}" data-i="${i}" inputmode="numeric" pattern="[0-9]*" value="${FORM.n[s.name] || ""}" placeholder="0">
+        <input id="vN${i}" data-i="${i}" inputmode="numeric" pattern="[0-9]*" value="${FORM.n[x.key] || ""}" placeholder="0">
         <button data-plus="${i}" aria-label="méi">+</button></div></div>`).join("")}
     <label for="vBetrag">Betrag (€)</label>
     <div class="zeile"><input id="vBetrag" inputmode="decimal" value="${FORM.betrag != null ? String(FORM.betrag).replace(".", ",") : (vAutoBetrag() ? String(vAutoBetrag()).replace(".", ",") : "")}" placeholder="0">
       <small class="muted" id="vAuto" style="flex:1.4"></small></div>
-    <div class="seg">
-      <button data-bez="1" class="${FORM.bezahlt === true ? "an gruen" : ""}">Bezuelt ✓</button>
-      <button data-bez="0" class="${FORM.bezahlt === false ? "an gelb" : ""}">Bezillt méi spéit</button>
-    </div>
+    <label>Bezuelt?</label>
+    ${zahlKnoepfe(FORM.wie, true)}
     <button class="haupt" id="vSpeichern">Verkaf androen</button>
     <div id="vMeldung">${FORM.meldung ? `<div class="meldung ${FORM.meldung.art}">${esc(FORM.meldung.text)}</div>` : ""}</div>
   </div>`;
   vHinweise();
 
-  $("#vVerk").onchange = e => { FORM.verkaeufer = e.target.value; vHinweise(); };
+  $("#vVerk").onchange = e => { FORM.verkaeufer = e.target.value; e.target.blur(); renderVerkaufen(true); };
   $("#vKaeufer").oninput = e => { FORM.kaeufer = e.target.value; };
   const setzeN = (i, n) => {
-    const s = vSorten()[i]; FORM.n[s.name] = Math.max(0, Math.min(9999, n | 0));
-    const inp = $("#vN" + i); if (document.activeElement !== inp) inp.value = FORM.n[s.name] || "";
+    const x = art[i]; FORM.n[x.key] = Math.max(0, Math.min(9999, n | 0));
+    const inp = $("#vN" + i); if (document.activeElement !== inp) inp.value = FORM.n[x.key] || "";
     vHinweise();
   };
-  box.querySelectorAll("[data-plus]").forEach(b => b.onclick = () => setzeN(+b.dataset.plus, (FORM.n[vSorten()[+b.dataset.plus].name] || 0) + 1));
-  box.querySelectorAll("[data-minus]").forEach(b => b.onclick = () => setzeN(+b.dataset.minus, (FORM.n[vSorten()[+b.dataset.minus].name] || 0) - 1));
+  box.querySelectorAll("[data-plus]").forEach(b => b.onclick = () => setzeN(+b.dataset.plus, (FORM.n[art[+b.dataset.plus].key] || 0) + 1));
+  box.querySelectorAll("[data-minus]").forEach(b => b.onclick = () => setzeN(+b.dataset.minus, (FORM.n[art[+b.dataset.minus].key] || 0) - 1));
   box.querySelectorAll("[data-i]").forEach(inp => inp.oninput = () => setzeN(+inp.dataset.i, parseInt(inp.value, 10) || 0));
   $("#vBetrag").oninput = e => {
     const v = e.target.value.trim().replace(",", ".");
@@ -1041,19 +1125,19 @@ function renderVerkaufen() {
     vHinweise();
   };
   box.querySelectorAll("[data-bez]").forEach(b => b.onclick = () => {
-    FORM.bezahlt = b.dataset.bez === "1";
-    box.querySelectorAll("[data-bez]").forEach(x => x.className = "");
-    b.className = "an " + (FORM.bezahlt ? "gruen" : "gelb");
+    FORM.wie = b.dataset.bez;
+    box.querySelectorAll("[data-bez]").forEach(x => x.classList.remove("an", "gruen", "gelb"));
+    b.classList.add("an", FORM.wie === "spaeter" ? "gelb" : "gruen");
   });
   $("#vSpeichern").onclick = vSpeichern;
 }
 
 function vHinweise() {
-  vSorten().forEach((s, i) => {
+  vArtikel().forEach((x, i) => {
     const el = $("#vHat" + i); if (!el) return;
-    const n = hat(Z, FORM.verkaeufer, s.name);
-    el.textContent = `${euro(s.preis)} · ${de(FORM.verkaeufer)} huet nach ${n}`;
-    el.style.color = (FORM.n[s.name] || 0) > n ? "var(--gelb)" : "";
+    const n = hat(Z, FORM.verkaeufer, x.key), r = reserviertBei(Z, FORM.verkaeufer, x.key);
+    el.textContent = `${euro(x.preis)} · ${de(FORM.verkaeufer)} huet nach ${n}` + (r ? ` (${r} reservéiert)` : "");
+    el.style.color = (FORM.n[x.key] || 0) > n - r ? "var(--gelb)" : "";
   });
   const auto = vAutoBetrag();
   const inp = $("#vBetrag");
@@ -1066,24 +1150,39 @@ function vHinweise() {
 function vSpeichern() {
   const zeige = (art, t) => { FORM.meldung = { art, text: t }; $("#vMeldung").innerHTML = `<div class="meldung ${art}">${esc(t)}</div>`; };
   const kaeufer = FORM.kaeufer.trim().replace(/\s+/g, " ");
-  const posten = vSorten().filter(s => FORM.n[s.name] > 0).map(s => ({ sorte: s.name, n: FORM.n[s.name] }));
+  const posten = vArtikel().filter(x => FORM.n[x.key] > 0).map(x => ({ sorte: x.key, n: FORM.n[x.key] }));
   if (!kaeufer) return zeige("fehler", "Un wien? Schreif w.e.g. en Numm an.");
-  if (!posten.length) return zeige("fehler", "Wéi vill Fläschen? Mindestens eng.");
-  if (FORM.bezahlt == null) return zeige("fehler", "Bezuelt oder bezillt méi spéit? Tipp w.e.g. eent un.");
+  if (!posten.length) return zeige("fehler", "Wéi vill? Mindestens eng Fläsch oder ee Fass.");
+  if (!FORM.wie) return zeige("fehler", "Wéi bezuelt? WERO, SumUp, Iwwerweisung, Bar — oder méi spéit. Tipp w.e.g. eent un.");
   const betrag = FORM.betrag != null ? FORM.betrag : vAutoBetrag();
-  const zuWenig = posten.filter(p => p.n > hat(Z, FORM.verkaeufer, p.sorte));
-  if (zuWenig.length && !confirm(`Laut der App huet ${de(FORM.verkaeufer)} just ${zuWenig.map(p => `${hat(Z, FORM.verkaeufer, p.sorte)} × ${p.sorte}`).join(", ")}.\n\nTrotzdeem androen?`)) return;
+  const fehlt = zuWenig(Z, FORM.verkaeufer, posten);
+  if (fehlt.length && !confirm(`Net genuch do:\n\n${fehltText(FORM.verkaeufer, fehlt)}\n\nTrotzdeem androen?`)) return;
   // Gleicher Name in anderer Schreibweise? Dann den bekannten nehmen.
   const bekannt = Z.kaeufer.find(k => k.name.toLowerCase() === kaeufer.toLowerCase());
   const name = bekannt ? bekannt.name : kaeufer;
   const [v] = eintragen([{ art: "verkauf", verkaeufer: FORM.verkaeufer, kaeufer: name, posten, betrag }]);
   if (!v) return; // gerade eben schon gespeichert (Doppeltipp)
-  if (FORM.bezahlt && betrag > 0) eintragen([{ art: "zahlung", ref: v.id, betrag }]);
-  const verk = FORM.verkaeufer, bez = FORM.bezahlt;
+  const wie = FORM.wie;
+  if (wie !== "spaeter" && betrag > 0) eintragen([{ art: "zahlung", ref: v.id, betrag, wie }]);
+  const verk = FORM.verkaeufer;
   FORM = leeresFormular(); FORM.verkaeufer = verk;
-  FORM.meldung = { art: "ok", text: `✓ Agedroen: ${name}, ${postenText(posten)}, ${euro(betrag)} — ${bez ? "bezuelt" : "steet ënner „Ausstoend“"}` };
+  FORM.meldung = { art: "ok", text: `✓ Agedroen: ${name}, ${postenText(posten)}, ${euro(betrag)} — ${wie !== "spaeter" ? "bezuelt per " + ZAHLARTEN[wie] : "steet ënner „Ausstoend“"}` };
   if (document.activeElement) document.activeElement.blur();
   renderVerkaufen();
+}
+
+/* Zahlungsart wählen (Ausstoend, Livraisons): Fenster mit WERO / SumUp / Iwwerweisung / Bar. Gibt die Art oder null. */
+function zahlartWaehlen(titel) {
+  return new Promise(fertig => {
+    const box = $("#zahlWahl");
+    $("#zahlTitel").textContent = titel;
+    box.querySelector(".seg").innerHTML = Object.entries(ZAHLARTEN).map(([k, t]) => `<button data-wie="${k}">${t}</button>`).join("");
+    box.classList.remove("versteckt");
+    const zu = wie => { box.classList.add("versteckt"); fertig(wie); };
+    box.querySelectorAll("[data-wie]").forEach(b => b.onclick = () => zu(b.dataset.wie));
+    $("#zahlZu").onclick = () => zu(null);
+    box.onclick = e => { if (e.target === box) zu(null); };
+  });
 }
 
 /* ---------- Offen ---------- */
@@ -1108,12 +1207,13 @@ function renderOffen() {
       <button class="knopf" data-erinnern="${i}">Erënneren 💬</button>
     </div></div>`).join("") : `<div class="card leer">Alles bezuelt. 🎉</div>`}`;
   box.querySelectorAll("[data-meine]").forEach(b => b.onclick = () => { NUR_MEINE = b.dataset.meine === "1"; renderOffen(); });
-  box.querySelectorAll("[data-alles]").forEach(b => b.onclick = () => {
+  box.querySelectorAll("[data-alles]").forEach(b => b.onclick = async () => {
     const K = liste[+b.dataset.alles];
-    if (!confirm(`${K.name}: ${euro(K.sichtOffen)} bezuelt?`)) return;
-    eintragen(K.sicht.map(v => ({ art: "zahlung", ref: v.id, betrag: v.offen })));
+    const wie = await zahlartWaehlen(`${K.name}: ${euro(K.sichtOffen)} bezuelt — wéi?`);
+    if (!wie) return;
+    eintragen(K.sicht.map(v => ({ art: "zahlung", ref: v.id, betrag: v.offen, wie })));
   });
-  box.querySelectorAll("[data-teil]").forEach(b => b.onclick = () => {
+  box.querySelectorAll("[data-teil]").forEach(b => b.onclick = async () => {
     const K = liste[+b.dataset.teil];
     const t = prompt(`${K.name}: wéi vill gouf bezuelt? (op: ${euro(K.sichtOffen)})`, "");
     if (t == null) return;
@@ -1121,7 +1221,9 @@ function renderOffen() {
     if (!(x > 0)) return alert("Dat ass kee Betrag.");
     const { zahlungen, rest } = verteile(K.sicht, x);
     if (rest > 0 && !confirm(`Dat sinn ${euro(rest)} méi wéi op. Agedroe ginn nëmmen ${euro(x - rest)}. Ok?`)) return;
-    eintragen(zahlungen);
+    const wie = await zahlartWaehlen(`${K.name}: ${euro(x - rest)} bezuelt — wéi?`);
+    if (!wie) return;
+    eintragen(zahlungen.map(z => ({ ...z, wie })));
   });
   box.querySelectorAll("[data-erinnern]").forEach(b => b.onclick = async () => {
     const K = liste[+b.dataset.erinnern];
@@ -1138,7 +1240,8 @@ const zahlText = x => x == null ? "" : String(x).replace(".", ",");
 const zahlAus = t => { const v = String(t || "").trim().replace(",", "."); return v === "" ? null : (isFinite(+v) ? +v : NaN); };
 function bierInfo(c) {
   const m = c.meta || {};
-  return [m.stil, m.alk != null ? zahlText(m.alk) + " %" : "", euro(c.preis) + (istFass(c.name) ? "/Fass" : "/Fl"),
+  const fp = fassNamen(Z, c.name).map(k => `${euro(preisVon(Z.cfg, k))}/Fass ${zerlege(k).l} l`);
+  return [m.stil, m.alk != null ? zahlText(m.alk) + " %" : "", euro(c.preis) + "/Fl", ...fp,
     m.braudatum ? "gebraut " + datumKurz(m.braudatum) : "", m.liter != null ? zahlText(m.liter) + " L" : "", m.mhd ? "haltbar bis " + datumKurz(m.mhd) : ""].filter(Boolean).join(" · ");
 }
 function renderBiere() {
@@ -1147,7 +1250,8 @@ function renderBiere() {
   if (tipptIn(box)) return;
   if (BIERFORM) return renderBierForm(box);
   const aktivB = Z.cfg.sorten.filter(c => !c.archiv), archiv = Z.cfg.sorten.filter(c => c.archiv);
-  const zeile = c => `<div class="bier"><div class="kopfz"><b>${esc(c.name)}</b><span class="muted">${Z.sorten[c.name] ? Z.sorten[c.name].da : 0} do</span></div>
+  const doText = c => [`${Z.sorten[c.name] ? Z.sorten[c.name].da : 0} Fl.`, ...fassNamen(Z, c.name).filter(k => Z.sorten[k].da).map(k => `${Z.sorten[k].da} × ${zerlege(k).l} l`)].join(" · ") + " do";
+  const zeile = c => `<div class="bier"><div class="kopfz"><b>${esc(c.name)}</b><span class="muted">${doText(c)}</span></div>
       <div class="hinweis" style="margin-top:2px">${esc(bierInfo(c))}</div>
       ${c.meta && c.meta.notiz ? `<div class="hinweis" style="margin-top:2px">${esc(c.meta.notiz)}</div>` : ""}
       ${dateienVon(Z, c.name).anzahl ? `<div class="hinweis" style="margin-top:2px">📎 ${["etikett", "rezept", "protokoll"].filter(f => dateienVon(Z, c.name)[f]).map(f => FELDER[f]).concat(dateienVon(Z, c.name).anner.length ? [dateienVon(Z, c.name).anner.length + " aner"] : []).join(" · ")}</div>` : ""}
@@ -1161,11 +1265,12 @@ function renderBiere() {
       ${ARCHIV_AUF ? archiv.map(zeile).join("") : ""}` : ""}
     <div id="bierMeld"></div></div>`;
   const finde = n => Z.cfg.sorten.find(c => c.name === n);
-  $("#bierNeu").onclick = () => { BIERFORM = { neu: true, name: "", stil: "", braudatum: "", alk: "", liter: "", preis: "3", mhd: "", notiz: "", flaschen: "" }; renderBiere(); };
+  $("#bierNeu").onclick = () => { BIERFORM = { neu: true, name: "", stil: "", braudatum: "", alk: "", liter: "", preis: "3", preis20: "150", preis30: "180", mhd: "", notiz: "", flaschen: "", f20: "", f30: "" }; renderBiere(); };
   const au = $("#archivAuf"); if (au) au.onclick = () => { ARCHIV_AUF = !ARCHIV_AUF; renderBiere(); };
   box.querySelectorAll("[data-bed]").forEach(b => b.onclick = () => {
     const c = finde(b.dataset.bed); if (!c) return; const m = c.meta || {};
-    BIERFORM = { neu: false, name: c.name, stil: m.stil || "", braudatum: m.braudatum || "", alk: zahlText(m.alk), liter: zahlText(m.liter), preis: zahlText(c.preis), mhd: m.mhd || "", notiz: m.notiz || "", flaschen: "" };
+    BIERFORM = { neu: false, name: c.name, stil: m.stil || "", braudatum: m.braudatum || "", alk: zahlText(m.alk), liter: zahlText(m.liter), preis: zahlText(c.preis),
+      preis20: zahlText(c.preis20), preis30: zahlText(c.preis30), mhd: m.mhd || "", notiz: m.notiz || "", flaschen: "", f20: "", f30: "" };
     renderBiere();
   });
   box.querySelectorAll("[data-barch]").forEach(b => b.onclick = () => {
@@ -1381,10 +1486,14 @@ function renderBierForm(box) {
       <div><label for="biAlk">Alkohol (%)</label><input id="biAlk" inputmode="decimal" value="${esc(F.alk)}" placeholder="5,6"></div></div>
     <div class="zeile"><div><label for="biLiter">Gebraut (Liter)</label><input id="biLiter" inputmode="decimal" value="${esc(F.liter)}" placeholder="176"></div>
       <div><label for="biPreis">Präis pro Fläsch (€)</label><input id="biPreis" inputmode="decimal" value="${esc(F.preis)}"></div></div>
+    <div class="zeile"><div><label for="biP20">Präis Fass 20 l (€)</label><input id="biP20" inputmode="decimal" value="${esc(F.preis20)}"></div>
+      <div><label for="biP30">Präis Fass 30 l (€)</label><input id="biP30" inputmode="decimal" value="${esc(F.preis30)}"></div></div>
     <label for="biMhd">Haltbar bis (fräiwëlleg)</label><input id="biMhd" type="date" value="${esc(F.mhd)}">
-    ${F.neu ? `<label for="biFl">Ofgefëllt: Fläschen an d'Lager (fräiwëlleg)</label><input id="biFl" inputmode="numeric" pattern="[0-9]*" value="${esc(F.flaschen)}" placeholder="z. B. 288">` : ""}
+    ${F.neu ? `<h3>Ofgefëllt an d'Lager (fräiwëlleg)</h3>
+      <div class="zeile"><div><label for="biFl">Fläschen</label><input id="biFl" inputmode="numeric" pattern="[0-9]*" value="${esc(F.flaschen)}" placeholder="288"></div>
+        <div><label for="biF20">Fässer 20 l</label><input id="biF20" inputmode="numeric" pattern="[0-9]*" value="${esc(F.f20)}" placeholder="0"></div>
+        <div><label for="biF30">Fässer 30 l</label><input id="biF30" inputmode="numeric" pattern="[0-9]*" value="${esc(F.f30)}" placeholder="0"></div></div>` : `<div class="hinweis">Méi ofgefëllt? Ënner <b>Fläsche beweegen → Ofgefëllt</b> (och Fässer).</div>`}
     <label for="biNotiz">Beschreiwung (fräiwëlleg)</label><input id="biNotiz" value="${esc(F.notiz)}" placeholder="z. B. Hopfen, Geschmaach">
-    <div class="hinweis">Fässer als eegent Béier uleeën, z. B. „Rusty Keg 30l“ mat 180 € als Präis.</div>
     <button class="haupt" id="biOk">${F.neu ? "Béier uleeën" : "Späicheren"}</button>
     <button class="haupt" id="biZu" style="background:var(--card2);color:var(--text)">Ofbriechen</button>
     <div id="biMeld">${F.meldung ? `<div class="meldung ok">${esc(F.meldung)}</div>` : ""}</div></div>
@@ -1393,28 +1502,38 @@ function renderBierForm(box) {
   const bind = (id, k) => { const el = $(id); if (el) el.oninput = el.onchange = () => { F[k] = el.value; }; };
   bind("#biName", "name"); bind("#biStil", "stil"); bind("#biBrau", "braudatum"); bind("#biAlk", "alk"); bind("#biLiter", "liter");
   bind("#biPreis", "preis"); bind("#biMhd", "mhd"); bind("#biFl", "flaschen"); bind("#biNotiz", "notiz");
+  bind("#biP20", "preis20"); bind("#biP30", "preis30"); bind("#biF20", "f20"); bind("#biF30", "f30");
   $("#biZu").onclick = () => { BIERFORM = null; renderBiere(); };
   $("#biOk").onclick = () => {
     const meld = t => $("#biMeld").innerHTML = `<div class="meldung fehler">${esc(t)}</div>`;
     const name = F.name.trim().replace(/\s+/g, " ");
     const preis = zahlAus(F.preis), alk = zahlAus(F.alk), liter = zahlAus(F.liter), fl = String(F.flaschen).trim() ? parseInt(F.flaschen, 10) : 0;
+    const p20 = zahlAus(F.preis20), p30 = zahlAus(F.preis30);
+    const anz = t => String(t || "").trim() ? parseInt(t, 10) : 0, f20 = anz(F.f20), f30 = anz(F.f30);
     if (!name) return meld("Wéi heescht d'Béier?");
     if (F.neu && (Z.cfg.sorten.some(c => c.name.toLowerCase() === name.toLowerCase()) || name === LAGER)) return meld("Dee Numm gëtt et schonn.");
     if (preis == null || isNaN(preis)) return meld("Wat kascht eng Fläsch?");
     if (Number.isNaN(alk) || Number.isNaN(liter)) return meld("Alkohol a Liter just als Zuel, z. B. 5,6.");
     if (fl && !ganz(fl)) return meld("Fläschen: just eng ganz Zuel.");
-    const e = { art: "bier", name, preis: runde(preis), stil: F.stil.trim(), braudatum: F.braudatum, alk, liter, mhd: F.mhd, notiz: F.notiz.trim() };
+    if ((f20 && !ganz(f20)) || (f30 && !ganz(f30))) return meld("Fässer: just eng ganz Zuel.");
+    if (Number.isNaN(p20) || Number.isNaN(p30)) return meld("Fasspräis just als Zuel.");
+    if (name.match(/ Keg (20|30)l$/)) return meld("Fässer brauche keen eegent Béier — si stinn ënnert dem Béier.");
+    const e = { art: "bier", name, preis: runde(preis), stil: F.stil.trim(), braudatum: F.braudatum, alk, liter, mhd: F.mhd, notiz: F.notiz.trim(),
+      ...(p20 != null ? { preis20: runde(p20) } : {}), ...(p30 != null ? { preis30: runde(p30) } : {}) };
     if (!gueltig({ ...e, id: "x", zeit: 0 })) return meld("Eppes ass ze laang oder net richteg (Numm max. 30 Zeechen).");
     const teile = [e];
     if (F.neu && fl) teile.push({ art: "abfuellung", sorte: name, n: fl });
+    if (F.neu && f20) teile.push({ art: "abfuellung", sorte: fassKey(name, 20), n: f20 });
+    if (F.neu && f30) teile.push({ art: "abfuellung", sorte: fassKey(name, 30), n: f30 });
     if (document.activeElement) document.activeElement.blur();
     if (!eintragen(teile).length) return;
     FORM = null; BFORM = null; LFORM = null;
     if (F.neu) {
       // Gleich in die Bearbeitung, damit man Etikett & Co. anhängen kann.
       const m = e;
-      BIERFORM = { neu: false, name, stil: m.stil, braudatum: m.braudatum, alk: zahlText(m.alk), liter: zahlText(m.liter), preis: zahlText(m.preis), mhd: m.mhd, notiz: m.notiz, flaschen: "",
-        meldung: `✓ ${name} ugeluecht${fl ? `, ${fl} Fläschen am Lager` : ""}. Elo kanns de Dateien derbäisetzen.` };
+      BIERFORM = { neu: false, name, stil: m.stil, braudatum: m.braudatum, alk: zahlText(m.alk), liter: zahlText(m.liter), preis: zahlText(m.preis),
+        preis20: zahlText(m.preis20 ?? 150), preis30: zahlText(m.preis30 ?? 180), mhd: m.mhd, notiz: m.notiz, flaschen: "", f20: "", f30: "",
+        meldung: `✓ ${name} ugeluecht` + [fl ? `${fl} Fläschen` : "", f20 ? `${f20} × Fass 20 l` : "", f30 ? `${f30} × Fass 30 l` : ""].filter(Boolean).map((t, i) => (i ? ", " : ", am Lager: ") + t).join("") + `. Elo kanns de Dateien derbäisetzen.` };
       renderBiere(); return;
     }
     BIERFORM = null;
@@ -1427,12 +1546,19 @@ function renderBestand() {
   renderBiere();
   const tab = $("#bTabelle");
   const sorten = Z.sortenNamen.filter(s => Z.halter.some(h => hat(Z, h, s) !== 0) || !(Z.cfg.sorten.find(c => c.name === s) || {}).aus);
-  tab.innerHTML = `<div class="card"><h2>Wien huet wat?</h2><div class="tabwrap"><table>
+  const faesser = Z.sortenNamen.flatMap(s => fassNamen(Z, s)).filter(k => Z.halter.some(h => hat(Z, h, k) !== 0 || reserviertBei(Z, h, k)));
+  const res = Z.halter.flatMap(h => Object.entries(Z.reserviert[h] || {}).filter(([, n]) => n > 0).map(([k, n]) => `${n} × ${postenText([{ sorte: k, n }]).replace(/^\d+ × /, "")} ${beim(h)}`));
+  tab.innerHTML = `<div class="card"><h2>Wien huet wat?</h2><div class="hinweis" style="margin:-6px 0 6px">Fläschen</div><div class="tabwrap"><table>
     <tr><th></th>${sorten.map(s => `<th>${esc(s)}</th>`).join("")}<th>Σ</th></tr>
     ${Z.halter.map(h => `<tr><td>${h === LAGER ? "📦 Lager" : esc(h)}</td>${sorten.map(s => { const n = hat(Z, h, s); return `<td style="${n < 0 ? "color:var(--rot)" : ""}">${n || "–"}</td>`; }).join("")}<td><b>${sorten.reduce((a, s) => a + hat(Z, h, s), 0)}</b></td></tr>`).join("")}
     <tr class="summe"><td>Total</td>${sorten.map(s => `<td>${Z.sorten[s].da}</td>`).join("")}<td>${Z.flaschen.da}</td></tr>
   </table></div>
-  ${Z.halter.some(h => sorten.some(s => hat(Z, h, s) < 0)) ? `<div class="meldung warn">Rout Zuelen: Do gouf méi verkaaft oder weiderginn, wéi laut der App do war. Wahrscheinlech feelt eng Verdeelung.</div>` : ""}
+  ${faesser.length ? `<h3>🛢️ Fässer</h3><div class="tabwrap"><table>
+    <tr><th></th>${faesser.map(k => `<th>${esc(zerlege(k).bier)}<br>${zerlege(k).l} l</th>`).join("")}</tr>
+    ${Z.halter.filter(h => faesser.some(k => hat(Z, h, k))).map(h => `<tr><td>${h === LAGER ? "📦 Lager" : esc(h)}</td>${faesser.map(k => `<td>${hat(Z, h, k) || "–"}</td>`).join("")}</tr>`).join("")}
+  </table></div>` : ""}
+  ${res.length ? `<div class="meldung warn">🚚 Reservéiert fir geplangt Livraisons: ${esc(res.join(" · "))}</div>` : ""}
+  ${Z.halter.some(h => [...sorten, ...faesser].some(s => hat(Z, h, s) < 0)) ? `<div class="meldung warn">Rout Zuelen: Do gouf méi verkaaft oder weiderginn, wéi laut der App do war. Wahrscheinlech feelt eng Verdeelung.</div>` : ""}
   </div>`;
   renderBForm();
 }
@@ -1445,7 +1571,8 @@ function renderBForm() {
   const halter = [LAGER, ...Z.cfg.leute];
   const opt = (liste, wert, txt = x => x) => liste.map(x => `<option value="${esc(x)}" ${x === wert ? "selected" : ""}>${esc(txt(x))}</option>`).join("");
   const nameH = h => h === LAGER ? "📦 Lager" : h;
-  const sorten = Z.cfg.sorten.filter(s => !s.aus).map(s => s.name);
+  // Zur Auswahl: je Bier Flaschen und beide Fassgrößen
+  const sorten = vSorten().flatMap(s => [s.name, ...FAESSER.map(F => fassKey(s.name, F.l))]);
   box.innerHTML = `<div class="card"><h2>Fläsche beweegen</h2>
     <div class="seg drei">
       <button data-m="abfuellung" class="${B.modus === "abfuellung" ? "an" : ""}">Ofgefëllt</button>
@@ -1457,8 +1584,8 @@ function renderBForm() {
       <div><label>Un</label><select id="bAn">${opt(halter, B.an, nameH)}</select></div></div>` : ""}
     ${B.modus === "abgang" ? `<div class="zeile"><div><label>Bei wiem?</label><select id="bWer">${opt(halter, B.wer, nameH)}</select></div>
       <div><label>Wat ass geschitt?</label><select id="bGrund">${opt(Object.keys(GRUENDE), B.grund, g => GRUENDE[g])}</select></div></div>` : ""}
-    <div class="zeile"><div><label>Zort</label><select id="bSorte">${opt(sorten, B.sorte)}</select></div>
-      <div><label>Fläschen</label><input id="bN" inputmode="numeric" pattern="[0-9]*" value="${esc(B.n)}" placeholder="0"></div></div>
+    <div class="zeile"><div><label>Béier</label><select id="bSorte">${opt(sorten, B.sorte, k => istFass(k) ? `${zerlege(k).bier} · Fass ${zerlege(k).l} l` : k)}</select></div>
+      <div><label>Unzuel</label><input id="bN" inputmode="numeric" pattern="[0-9]*" value="${esc(B.n)}" placeholder="0"></div></div>
     <button class="haupt" id="bOk">Androen</button>
     <div id="bMeld"></div></div>`;
   box.querySelectorAll("[data-m]").forEach(b => b.onclick = () => { B.modus = b.dataset.m; renderBForm(); });
@@ -1472,10 +1599,10 @@ function renderBForm() {
     if (B.modus === "abfuellung") e = { art: "abfuellung", sorte: B.sorte, n };
     else if (B.modus === "bewegung") {
       if (B.von === B.an) return meld("fehler", "Vun an Un sinn d'selwecht.");
-      if (n > hat(Z, B.von, B.sorte) && !confirm(`Laut der App huet ${de(B.von)} just ${hat(Z, B.von, B.sorte)} × ${B.sorte}. Trotzdeem?`)) return;
+      { const f = zuWenig(Z, B.von, [{ sorte: B.sorte, n }]); if (f.length && !confirm(`Net genuch fräi:\n\n${fehltText(B.von, f)}\n\nTrotzdeem?`)) return; }
       e = { art: "bewegung", sorte: B.sorte, n, von: B.von, an: B.an };
     } else {
-      if (n > hat(Z, B.wer, B.sorte) && !confirm(`Laut der App huet ${de(B.wer)} just ${hat(Z, B.wer, B.sorte)} × ${B.sorte}. Trotzdeem?`)) return;
+      { const f = zuWenig(Z, B.wer, [{ sorte: B.sorte, n }]); if (f.length && !confirm(`Net genuch fräi:\n\n${fehltText(B.wer, f)}\n\nTrotzdeem?`)) return; }
       e = { art: "abgang", sorte: B.sorte, n, wer: B.wer, grund: B.grund };
     }
     B.n = "";
@@ -1639,7 +1766,8 @@ function mittenImEintrag() {
   if (TAB === "einst" && EFORM) return true;
   if (FORM && (FORM.kaeufer.trim() || Object.values(FORM.n).some(n => n > 0) || FORM.betrag != null)) return true;
   if (BFORM && String(BFORM.n).trim()) return true;
-  if (L_NEU || BIERFORM || UPLOAD || ANSICHT) return true;
+  if (L_NEU || BIERFORM || UPLOAD || ANSICHT || !$("#zahlWahl").classList.contains("versteckt")) return true;
+  if (FORM && FORM.wie) return true;
   return false;
 }
 function neuLaden() {

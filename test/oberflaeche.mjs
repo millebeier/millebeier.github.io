@@ -67,15 +67,15 @@ ist("Tippen übersteht Abgleich", [await A.inputValue("#vKaeufer"), await A.eval
 for (let i = 0; i < 3; i++) await A.click('[data-plus="0"]');
 ist("Betrag automatisch", await A.inputValue("#vBetrag"), "9");
 await A.click("#vSpeichern");
-ist("ohne Bezahlt-Wahl: Hinweis", await txt(A, "#vMeldung"), s => s.includes("Bezuelt oder"));
-await A.click('[data-bez="0"]'); await A.click("#vSpeichern");
+ist("ohne Bezahlt-Wahl: Hinweis", await txt(A, "#vMeldung"), s => s.includes("Wéi bezuelt?"));
+await A.click('[data-bez="spaeter"]'); await A.click("#vSpeichern");
 ist("Verkauf eingetragen", await txt(A, "#vMeldung"), s => s.includes("Paul") && s.includes("9 €"));
 ist("Formular leer", await A.inputValue("#vKaeufer"), "");
 // zweiter Verkauf mit Rabatt, bezahlt
 await A.fill("#vKaeufer", "Anne"); await A.click('[data-plus="0"]'); await A.click('[data-plus="0"]');
-await A.fill("#vBetrag", "5"); await A.click('[data-bez="1"]'); await A.click("#vSpeichern");
+await A.fill("#vBetrag", "5"); await A.click('[data-bez="bar"]'); await A.click("#vSpeichern");
 // mehr verkaufen als da → Nachfrage (wird bestätigt)
-await A.fill("#vKaeufer", "paul"); await A.fill("#vN0", "20"); await A.click('[data-bez="0"]'); await A.click("#vSpeichern");
+await A.fill("#vKaeufer", "paul"); await A.fill("#vN0", "20"); await A.click('[data-bez="spaeter"]'); await A.click("#vSpeichern");
 await warte(400);
 ist("Name in bekannter Schreibweise", await A.evaluate(() => Z.kaeufer.map(k => k.name)), ["Paul", "Anne"]);
 // den letzten Verkauf rückgängig
@@ -89,14 +89,14 @@ const B = await handy();
 await B.fill("#sCode", "hopfen"); await B.click("#sCodeOk"); await B.click('[data-ich="Jeff"]');
 await B.click('[data-tab="offen"]');
 ist("Jeff sieht Pauls 9 €", await txt(B, "#t-offen"), s => s.includes("Paul") && s.includes("9 €"));
-await B.click('[data-alles="0"]');
+await B.click('[data-alles="0"]'); await B.click('#zahlWahl [data-wie="wero"]');
 await warte(400);
 ist("Bei Jeff alles bezahlt", await txt(B, "#t-offen"), s => s.includes("Alles bezuelt"));
 
 // Offline: Eintrag wartet und geht später raus
 SERVER_AN = false;
 await B.click('[data-tab="verkaufen"]');
-await B.fill("#vKaeufer", "Tom"); await B.click('[data-plus="0"]'); await B.click('[data-bez="1"]'); await B.click("#vSpeichern");
+await B.fill("#vKaeufer", "Tom"); await B.click('[data-plus="0"]'); await B.click('[data-bez="bar"]'); await B.click("#vSpeichern");
 await warte(300);
 ist("offline: wartet", await txt(B, "#sync"), s => s.includes("nach net geschéckt"));
 await B.reload(); await warte(300);
@@ -126,7 +126,7 @@ await A.click('[data-tab="verkaufen"]');
 const vorher = await A.evaluate(() => Z.verkaeufe.length);
 await A.fill("#vKaeufer", "Doppelt"); await A.click('[data-plus="0"]'); await A.click('[data-plus="0"]');
 ist("−/+ zählt beide Tipps", await A.inputValue("#vN0"), "2");
-await A.click('[data-bez="1"]');
+await A.click('[data-bez="bar"]');
 await A.dblclick("#vSpeichern");
 await A.click("#vSpeichern");
 await warte(300);

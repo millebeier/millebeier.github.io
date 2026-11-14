@@ -21,7 +21,7 @@ Unklarheiten, z. B. Brown Porter 310 Zeilen-Flaschen bei 288 gebraut) — Starts
 Der Excel-Export der App bildet dieses Format nach (s. u.).
 **Alte Verkäufe doch übernommen** (vom Nutzer, 14.11.2026), aber **ohne Geld**: `altImport()` (feste ids `alt26-…`,
 Knopf ⚙️ „📜 Al Verkéf 2026“, einmalig, verschwindet danach; springt in die Iwwersiicht mit offenem Archiv).
-Archivierte Biere „Brown Porter 01/2026“, „Rusty 02/2026“ und Fässer „… Keg 30l/20l“ (Namen mit Monat, vom Nutzer —
+Archivierte Biere „Brown Porter 01/2026“, „Rusty 02/2026“ mit ihren Fässern (seit Fassung i Gebinde, nicht eigene Biere) (Namen mit Monat, vom Nutzer —
 heute gibt es wieder ein Brown Porter). Verkäufe mit `alt: true` → `Z.altVerkaeufe`: zählen im Bestand und pro Bier
 (Recetten zur Info), **nie** in Kasse, Ausstoend, Umsatz je Person, Käuferliste (vom Nutzer: „gar nicht in die Kasse“).
 Kürzel JF Jeff, MW Marc, CW/Claude Claude, LR Laurent — **vom Nutzer bestätigt**. Gambrinuskelle = Verkauf zu 3 €
@@ -67,7 +67,21 @@ Laurent/Willy ohne Preis = 0 € mit Vermerk. BEST (Livraisons-Blatt, 24 Rusty +
   **Pro Bier** (`proSorte`): Verkäufe, Abgänge, geplante Livraisons je Sorte; Betrag eines Mehrsorten-Verkaufs nach
   Listenpreis aufgeteilt (`anteil`). In der Iwwersiicht Sorte antippen. **Excel-Export** (`exportBlaetter` → SheetJS
   0.18.5 von cdnjs, erst beim Tippen geladen): je Sorte ein Blatt wie die alte Tabelle, dazu Livraisons und Stock;
-  Teilen-Leiste wie die anderen Dateien. Fässer: als eigene Sorte anlegen (z. B. „Rusty Keg 30l“, 180 €), `istFass` am Namen.
+  Teilen-Leiste wie die anderen Dateien.
+  **Fässer = Gebinde eines Biers** (vom Nutzer, 14.11.2026: „nicht als eigenständiges Bier“): Schlüssel im Bestand
+  `fassKey(bier, 20|30)` = „<Bier> Keg 20l/30l“ — genau so hießen die früher als eigenes Bier angelegten Fässer, darum
+  ordnet sich Altbestand von selbst zu (`zerlege`); alte Fass-„bier“-Einträge liefern nur noch den Fasspreis.
+  Bier hat `preis20`/`preis30` (Vorgabe 150/180). `sortenNamen` = nur Biere; `fassNamen(Z, bier)` = Fässer mit
+  Bewegung; `artikelVon` = beides. Flaschen-Summen (`Z.flaschen`, je Person) **nie** mit Fässern mischen — Fässer
+  stehen daneben („10 + 3 F.“). Iwwersiicht: Fass-Zeilen 🛢️ unter dem Bier; Stock: eigene Fass-Tabelle; Excel:
+  Spalte „Gebinde“, Fass-Info oben, Stock-Blatt mit Fass-Spalten. Verkaufen/Livraison zeigen Fässer nur, wenn der
+  Halter welche hat (`artikelListe`).
+  **Reserviert** (vom Nutzer): geplante Livraisons belegen den Bestand bei `aus` (`Z.reserviert`, `frei()`); beim
+  Planen, Verkaufen, Weitergeben und Fort Warnung mit „huet X, dovun Y reservéiert → fräi Z“ (`zuWenig`, `fehltText`),
+  bestätigen geht trotzdem. Stock zeigt „🚚 Reservéiert fir geplangt Livraisons“.
+  **Zahlungsarten** (vom Nutzer): `zahlung.wie` ∈ wero|sumup|bank|bar (WERO, SumUp, Iwwerweisung, Bar); Verkaufen hat
+  vier Knöpfe + „Bezillt méi spéit“, Ausstoend/Livraisons ein Auswahlfenster (`zahlartWaehlen`, Abbrechen = nichts).
+  `Z.kasseNach` je Art (Iwwersiicht unter „an der Kees“), Excel „Jo (WERO)“. Alte Zahlungen ohne Art = „ouni Aart“.
   `rechne()` baut daraus den ganzen Stand. Rückgängig = storno, nie löschen; ein storniertes
   Verkauf nimmt seine Zahlungen mit. Storno eines Storno zählt nicht.
 - **`durch` = wer eingetragen hat** (nicht `von` — das ist bei `bewegung` die Herkunft; die
@@ -94,7 +108,7 @@ Laurent/Willy ohne Preis = 0 € mit Vermerk. BEST (Livraisons-Blatt, 24 Rusty +
   `navigator.share`.
 - **`FASSUNG`** unten in `index.html` bei jeder Änderung hochzählen — daran hängt auch das **automatische Update** (vom Nutzer, 13.11.2026): beim Öffnen und bei jeder Rückkehr holt `updatePruefen()` die Seite mit `cache:"reload"`, steht dort eine andere FASSUNG, lädt die App neu; mitten im Eintrag (`mittenImEintrag`) stattdessen roter Knopf oben. Je Zielfassung ein Versuch in 5 min (`millebeier_v1_update`), gegen Schleifen bei altem CDN-Stand. Ohne Hochzählen kommt kein Update an. (Die Apps in panini-wm-2026 haben das nicht.)
 
-## Testen — vor jedem Push alle sieben, jeder mit eigenem Rückgabewert
+## Testen — vor jedem Push alle acht, jeder mit eigenem Rückgabewert
 - `node test/logik.mjs` — schneidet `Logik`…`Oberfläche` aus der HTML (Gegenprobe gemacht).
 - `node test/worker.mjs` — Worker mit nachgebauter D1.
 - `node test/oberflaeche.mjs` — Playwright, zwei Handys gegen den echten Worker-Code, offline.
@@ -106,6 +120,7 @@ Laurent/Willy ohne Preis = 0 € mit Vermerk. BEST (Livraisons-Blatt, 24 Rusty +
   Byte auf dem zweiten Handy, Gegenprobe gemacht), Anzeige, Ersetzen, Löschen, > 10 MB abgelehnt. pdf.js per
   `npm install pdfjs-dist@3.11.174` in den Scratchpad. `test/fake-d1.mjs` = gemeinsame nachgebaute D1. Achtung beim
   Testen: derselbe Knopf zweimal < 800 ms zählt einmal (Doppeltipp-Schutz) — Tests müssen warten wie ein Mensch.
+- `node test/faesser.mjs` — Bier mit Fässern, Fass-Zeilen, Reservierung + Warnung (Gegenprobe gemacht), Zahlungsarten.
 - `node test/biere.mjs` — Bier anlegen/ändern/archivieren/zurückholen/löschen (zwei Rückfragen, Gegenprobe gemacht),
   rotes ✕ im Verlauf, rotes Dreieck.
 
