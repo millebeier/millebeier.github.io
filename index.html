@@ -232,7 +232,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px}
 <script>
 /* Adresse des Cloudflare-Workers. Leer = Probe-Modus (alles nur auf diesem Handy). */
 const WORKER_URL = "https://millebeier.rjtp6r9s9h.workers.dev/";
-const FASSUNG = "14.11.2026 u";
+const FASSUNG = "14.11.2026 v";
 
 /* === Logik === (kein DOM; test/logik.mjs schneidet diesen Block aus) */
 const LAGER = "Lager";
@@ -496,7 +496,7 @@ function beschreibe(e, Z) {
       return "🧾 Rechnung gemaach" + (v ? `: ${v.kaeufer}` : "");
     }
     case "bier": return `🍺 Béier: ${e.name}` + [e.stil, e.alk != null ? String(e.alk).replace(".", ",") + " %" : "", euro(e.preis), e.braudatum ? "gebraut " + datumKurz(e.braudatum) : ""].filter(Boolean).map(x => " · " + x).join("");
-    case "bierstatus": return { archiv: "📦 Archivéiert: ", aktiv: "↩️ Aus dem Archiv zréck: ", weg: "✕ Béier geläscht: " }[e.status] + e.name;
+    case "bierstatus": return { archiv: "📦 Archivéiert: ", aktiv: "↩️ Aus dem Archiv zréck: ", weg: "✕ Béier geläscht: " }[e.status] + bierText(e.name);
     case "datei": return `📎 ${FELDER[e.feld]}${e.bier ? " · " + e.bier : ""}: ${e.name}`;
     case "einstellungen": return `⚙️ Zorten/Präisser/Leit geännert: ${e.sorten.filter(s => !s.aus).map(s => `${s.name} ${euro(s.preis)}`).join(", ")}`;
     case "storno": {
@@ -1338,7 +1338,7 @@ function renderOffen() {
 
 /* ---------- Bestand ---------- */
 /* ---------- Biere (im Reiter Stock) ---------- */
-let BIERFORM = null, ARCHIV_AUF = false;
+let BIERFORM = null, ARCHIV_AUF = false, BIER_MELD = ""; // Meldung bleibt stehen, auch wenn ein Abgleich die Liste neu baut
 const zahlText = x => x == null ? "" : String(x).replace(".", ",");
 const zahlAus = t => { const v = String(t || "").trim().replace(",", "."); return v === "" ? null : (isFinite(+v) ? +v : NaN); };
 function bierInfo(c) {
@@ -1381,12 +1381,12 @@ function renderBiere() {
     <button class="haupt" id="bierNeu">+ Neien Béier</button>
     ${archiv.length ? `<button class="knopf" id="archivAuf" style="width:100%;margin-top:12px">📦 Archiv (${archiv.length}) ${ARCHIV_AUF ? "▴" : "▾"}</button>
       ${ARCHIV_AUF ? archiv.map(zeile).join("") : ""}` : ""}
-    <div id="bierMeld"></div></div>`;
+    <div id="bierMeld">${BIER_MELD ? `<div class="meldung ok">${esc(BIER_MELD)}</div>` : ""}</div></div>`;
   const finde = n => Z.cfg.sorten.find(c => c.name === n);
   box.querySelectorAll("[data-etikett]").forEach(b => b.onclick = () => { const D = Z.dateien.find(x => x.fid === b.dataset.etikett); if (D) dateiZeigen(D); });
-  $("#bierNeu").onclick = () => { BIERFORM = { neu: true, name: "", stil: "", braudatum: "", alk: "", liter: "", preis: "3", preis20: "150", preis30: "180", mhd: "", notiz: "", flaschen: "", f20: "", f30: "" }; renderBiere(); };
+  $("#bierNeu").onclick = () => { BIER_MELD = ""; BIERFORM = { neu: true, name: "", stil: "", braudatum: "", alk: "", liter: "", preis: "3", preis20: "150", preis30: "180", mhd: "", notiz: "", flaschen: "", f20: "", f30: "" }; renderBiere(); };
   const au = $("#archivAuf"); if (au) au.onclick = () => { ARCHIV_AUF = !ARCHIV_AUF; renderBiere(); };
-  box.querySelectorAll("[data-bed]").forEach(b => b.onclick = () => {
+  box.querySelectorAll("[data-bed]").forEach(b => b.onclick = () => { BIER_MELD = "";
     const c = finde(b.dataset.bed); if (!c) return; const m = c.meta || {};
     BIERFORM = { neu: false, name: c.name, stil: m.stil || "", braudatum: m.braudatum || "", alk: zahlText(m.alk), liter: zahlText(m.liter), preis: zahlText(c.preis),
       preis20: zahlText(c.preis20), preis30: zahlText(c.preis30), mhd: m.mhd || "", notiz: m.notiz || "", flaschen: "", f20: "", f30: "" };
@@ -1396,17 +1396,17 @@ function renderBiere() {
     const n = b.dataset.barch;
     // Erst archivieren, wenn alles weg ist (vom Nutzer, Fassung n): sonst Hinweis, wo noch etwas liegt.
     const rest = restVon(n);
-    if (rest.length) { alert(`${n} kann nach net archivéiert ginn.\n\nEt ass nach eppes do:\n${rest.join("\n")}\n\nFir d'Archiv muss alles verkaaft, geliwwert oder als „Fort“ agedroe sinn.`); return; }
-    if (!confirm(`${n} archivéieren?\n\nEt kann een et dann net méi verkafen. An der Iwwersiicht an am Excel bleift et.`)) return;
+    if (rest.length) { alert(`${bierText(n)} kann nach net archivéiert ginn.\n\nEt ass nach eppes do:\n${rest.join("\n")}\n\nFir d'Archiv muss alles verkaaft, geliwwert oder als „Fort“ agedroe sinn.`); return; }
+    if (!confirm(`${bierText(n)} archivéieren?\n\nEt kann een et dann net méi verkafen. An der Iwwersiicht an am Excel bleift et.`)) return;
     eintragen([{ art: "bierstatus", name: n, status: "archiv" }]);
   });
   box.querySelectorAll("[data-bzr]").forEach(b => b.onclick = () => eintragen([{ art: "bierstatus", name: b.dataset.bzr, status: "aktiv" }]));
   box.querySelectorAll("[data-bweg]").forEach(b => b.onclick = () => {
     const n = b.dataset.bweg, x = Z.sorten[n] || { verkauft: 0, da: 0 };
-    if (!confirm(`${n} komplett läschen?\n\nEt verschwënnt aus dem Stock, der Iwwersiicht an dem Excel.` +
+    if (!confirm(`${bierText(n)} komplett läschen?\n\nEt verschwënnt aus dem Stock, der Iwwersiicht an dem Excel.` +
       (x.verkauft || x.da ? `\n\nAchtung: ${x.verkauft} verkaaft, ${x.da} nach do. D'Verkéf bleiwen am Verlaf an d'Suen an der Kees.` : "") +
       `\n\nWëlls de just net méi verkafen? Dann besser „Archivéieren“.`)) return;
-    if (!confirm(`Bass de sécher? ${n} gëtt elo geläscht.\n\n(Réckgängeg nëmmen iwwer de Verlaf.)`)) return;
+    if (!confirm(`Bass de sécher? ${bierText(n)} gëtt elo geläscht.\n\n(Réckgängeg nëmmen iwwer de Verlaf.)`)) return;
     eintragen([{ art: "bierstatus", name: n, status: "weg" }]);
   });
 }
@@ -1703,9 +1703,8 @@ function renderBierForm(box) {
         meldung: `✓ ${name} ugeluecht` + [fl ? `${fl} Fläschen` : "", f20 ? `${f20} × Fass 20 l` : "", f30 ? `${f30} × Fass 30 l` : ""].filter(Boolean).map((t, i) => (i ? ", " : ", am Lager: ") + t).join("") + `. Elo kanns de Dateien derbäisetzen.` };
       renderBiere(); return;
     }
-    BIERFORM = null;
+    BIERFORM = null; BIER_MELD = `✓ ${bierText(name)} gespäichert`;
     renderBiere();
-    $("#bierMeld").innerHTML = `<div class="meldung ok">✓ ${esc(name)} gespäichert</div>`;
   };
 }
 
@@ -1917,7 +1916,7 @@ document.addEventListener("touchend", e => {
 
 /* ---------- Start ---------- */
 document.querySelectorAll("#nav button").forEach(b => b.onclick = () => {
-  TAB = b.dataset.tab; EIN.tab = TAB; merke(SP, EIN);
+  TAB = b.dataset.tab; EIN.tab = TAB; merke(SP, EIN); BIER_MELD = "";
   if (TAB === "verkaufen" && FORM) FORM.meldung = null;
   EFORM = null; render(); window.scrollTo(0, 0);
 });

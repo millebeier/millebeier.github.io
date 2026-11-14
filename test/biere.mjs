@@ -105,6 +105,16 @@ ist("altes NEIPA auf gleichen Tag: abgelehnt", [await p.locator("#biMeld").inner
 await warte(900);
 await p.fill("#biBrau", "2026-07-20"); await p.click("#biOk"); await warte(300);
 ist("anderer Tag: erlaubt", await p.evaluate(() => bierText("NEIPA")), "NEIPA (20.07.2026)");
+// Braudatum nachträglich korrigieren: Bestand bleibt, überall das neue Datum (auch Meldung und Rückfragen)
+await warte(900);
+await p.evaluate(() => { eintragen([{ art: "abfuellung", sorte: "NEIPA (28.07.2026)", n: 12 }]); TAB = "bestand"; BIERFORM = null; render(); });
+await warte(900);
+await p.click('[data-bed="NEIPA (28.07.2026)"]'); await p.fill("#biBrau", "2026-07-29"); await p.click("#biOk"); await warte(300);
+ist("Datum korrigiert: Anzeige neu, Bestand bleibt", [await p.locator("#bierMeld").innerText(), await p.evaluate(() => [bierText("NEIPA (28.07.2026)"), hat(Z, "Lager", "NEIPA (28.07.2026)")])], v => v[0].includes("NEIPA (29.07.2026) gespäichert") && v[1][0] === "NEIPA (29.07.2026)" && v[1][1] === 12);
+ist("Karte zeigt neues Datum", await p.locator("#bBiere").innerText(), t => t.includes("NEIPA (29.07.2026)") && !t.includes("NEIPA (28.07.2026)"));
+await warte(900);
+await p.click('[data-barch="NEIPA (28.07.2026)"]'); await warte(200);
+ist("Rückfrage mit neuem Datum", fragen[fragen.length - 1], t => t.startsWith("NEIPA (29.07.2026) kann nach net archivéiert"));
 ist("keine Seitenfehler", seitenfehler, []);
 await b.close();
 console.log(fehler ? `${fehler} Fehler` : "Biere: alles bestanden");
