@@ -4,7 +4,7 @@ const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
 const a = html.indexOf("/* === Logik ===");
 const b = html.indexOf("/* === Oberfläche ===");
 if (a < 0 || b < 0) { console.error("Marken nicht gefunden"); process.exit(1); }
-const L = new Function(html.slice(a, b) + "; return {rechne, gueltig, euro, verteile, erinnerung, csv, beschreibe, hat, LAGER, STANDARD, proSorte, exportBlaetter, anteil, dateienVon, altImport, frei, zuWenig, preisVon, fassKey, artikelVon};")();
+const L = new Function(html.slice(a, b) + "; return {rechne, gueltig, euro, verteile, erinnerung, csv, beschreibe, hat, LAGER, STANDARD, proSorte, exportBlaetter, anteil, dateienVon, altImport, altKorrekturen, frei, zuWenig, preisVon, fassKey, artikelVon};")();
 
 let fehler = 0, n = 0;
 const ist = (was, wert, soll) => { n++; const ok = JSON.stringify(wert) === JSON.stringify(soll); if (!ok) { fehler++; console.log(`✗ ${was}: ${JSON.stringify(wert)} statt ${JSON.stringify(soll)}`); } };
@@ -187,7 +187,7 @@ ist("CSV Zeilen", c.trim().split("\r\n").length, 4);
   ist("Import: nichts in Kasse/Ausstoend/Personen", [Y.kasse, Y.offen, Y.kaeufer.length, Y.umsatz, Y.personen.Jeff.verkauft], [0, 0, 0, 0, 0]);
   ist("Import: alle archiviert", Y.cfg.sorten.filter(c => c.name.includes("2026")).every(c => c.archiv), true);
   const bp = Y.sorten["Brown Porter 01/2026"], ru = Y.sorten["Rusty 02/2026"];
-  ist("Brown Porter: 310 ofgefëllt, 225 verkaaft, 81 fort, 4 bei Claude", [bp.abgefuellt, bp.verkauft, bp.abgang, L.hat(Y, "Claude", "Brown Porter 01/2026"), L.hat(Y, "Lager", "Brown Porter 01/2026")], [310, 225, 81, 4, 0]);
+  ist("Brown Porter: 310 ofgefëllt, 225 verkaaft, 85 fort, 0 do", [bp.abgefuellt, bp.verkauft, bp.abgang, L.hat(Y, "Claude", "Brown Porter 01/2026"), bp.da], [310, 225, 85, 0, 0]);
   ist("Rusty: 288 = 285 verkaaft + 3 fort", [ru.abgefuellt, ru.verkauft, ru.abgang, ru.da], [288, 285, 3, 0]);
   ist("Fässer: 2 BP-Keg und 1 Rusty-20l-Keg noch am Lager", [L.hat(Y, "Lager", "Brown Porter 01/2026 Keg 30l"), L.hat(Y, "Lager", "Rusty 02/2026 Keg 30l"), L.hat(Y, "Lager", "Rusty 02/2026 Keg 20l")], [2, 0, 1]);
   const z = L.proSorte(Y, "Rusty 02/2026");
@@ -197,6 +197,14 @@ ist("CSV Zeilen", c.trim().split("\r\n").length, 4);
   ist("Excel: ein Blatt je altes Bier, Fässer darin", L.exportBlaetter(Y, () => "").map(b => b.name).filter(n => n.includes("2026")), ["Brown Porter 01/2026", "Rusty 02/2026"]);
   ist("Excel Rusty: Fass-Info", L.exportBlaetter(Y, () => "").find(b => b.name === "Rusty 02/2026").info.filter(i => i.startsWith("Fass")), ["Fass 20 l — ofgefëllt: 2 · verkaaft: 1 · fort: 0 · nach do: 1", "Fass 30 l — ofgefëllt: 1 · verkaaft: 1 · fort: 0 · nach do: 0"]);
   ist("alte Zeile ohne Datum: im Excel leer statt erfundenem Tag", L.exportBlaetter(Y, () => "ERFUNDEN").find(b => b.name === "Rusty 02/2026").zeilen.find(r => r[1] === "Brennerdag")[0], "");
+  // Korrektur für schon eingespielten alten Stand (mit Umbuchung zu Claude)
+  const altStand = [...alt.filter(e => e.id !== "alt26-bp-cw-fort"), { id: "alt26-bp-cw", zeit: Date.parse("2026-01-24T12:00:00Z"), durch: "Excel-Import", art: "bewegung", sorte: "Brown Porter 01/2026", n: 4, von: "Lager", an: "Claude" }];
+  ist("alter Stand: 4 bei Claude", L.hat(L.rechne(altStand), "Claude", "Brown Porter 01/2026"), 4);
+  const korr = L.altKorrekturen(new Set(altStand.map(e => e.id)));
+  const Yk = L.rechne([...altStand, ...korr]);
+  ist("Korrektur: Claude 0, fort 85, Fässer bleiben", [L.hat(Yk, "Claude", "Brown Porter 01/2026"), Yk.sorten["Brown Porter 01/2026"].abgang, Yk.sorten["Brown Porter 01/2026"].da, L.hat(Yk, "Lager", "Brown Porter 01/2026 Keg 30l"), L.hat(Yk, "Lager", "Rusty 02/2026 Keg 20l")], [0, 85, 0, 2, 1]);
+  ist("Korrektur nur einmal", L.altKorrekturen(new Set([...altStand, ...korr].map(e => e.id))), []);
+  ist("frischer Import braucht keine Korrektur", L.altKorrekturen(new Set(alt.map(e => e.id))), []);
   ist("doppelt importiert = einmal", L.rechne([...alt, ...alt]).sorten["Rusty 02/2026"].verkauft, 285);
   // neben neuen Verkäufen: Kasse nur aus den neuen
   const neuV = { id: "neu-1", zeit: Date.now(), art: "verkauf", verkaeufer: "Jeff", kaeufer: "Paul", posten: [{ sorte: "NEIPA", n: 2 }], betrag: 6 };

@@ -170,6 +170,14 @@ ist("gleiche Fassung: nichts passiert", await B.locator("#neu").isVisible(), fal
   ist("nicht doppelt beim Server", [...DB.rows.keys()].filter(k => k.startsWith("alt26-")).length, (await C.evaluate(() => altImport().length)));
   const kasseVorher = await A.evaluate(() => Z.kasse);
   ist("Kasse unberührt", await C.evaluate(() => Z.kasse), kasseVorher);
+  // Euer Fall: beim Server liegt noch der alte Import (4 Fl. zu Claude umgebucht) → einmalige Korrektur
+  DB.rows.delete("alt26-bp-cw-fort");
+  DB.rows.set("alt26-bp-cw", { id: "alt26-bp-cw", zeit: Date.parse("2026-01-24T12:00:00Z"), daten: JSON.stringify({ id: "alt26-bp-cw", zeit: Date.parse("2026-01-24T12:00:00Z"), durch: "Excel-Import", art: "bewegung", sorte: "Brown Porter 01/2026", n: 4, von: "Lager", an: "Claude" }) });
+  await Promise.all([C.evaluate(() => abgleichen()), D2.evaluate(() => abgleichen())]); await warte(1200);
+  await C.evaluate(() => abgleichen()); await warte(500);
+  ist("Korrektur: Claude hat kein altes Porter mehr", await C.evaluate(() => [hat(Z, "Claude", "Brown Porter 01/2026"), Z.sorten["Brown Porter 01/2026"].abgang]), [0, 85]);
+  ist("Korrektur genau einmal beim Server", ["alt26-bp-cw-storno", "alt26-bp-cw-fort"].map(k => DB.rows.has(k)), [true, true]);
+  ist("alte Fässer beim Verkaufen angeboten", await C.evaluate(() => artikelListe("Lager", {}).filter(x => x.fass).map(x => x.label)), ["Brown Porter 01/2026 · Fass 30 l", "Rusty 02/2026 · Fass 20 l"]);
   await C.close(); await D2.close();
 }
 ist("keine Fehler in der Konsole", [...A.konsole, ...B.konsole].filter(s => !s.includes("ERR_INTERNET_DISCONNECTED") && !s.includes("Failed to load resource")), []);

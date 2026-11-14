@@ -29,10 +29,12 @@ heute gibt es wieder ein Brown Porter). Verkäufe mit `alt: true` → `Z.altVerk
 (Recetten zur Info), **nie** in Kasse, Ausstoend, Umsatz je Person, Käuferliste (vom Nutzer: „gar nicht in die Kasse“).
 Kürzel JF Jeff, MW Marc, CW/Claude Claude, LR Laurent — **vom Nutzer bestätigt**. Gambrinuskelle = Verkauf zu 3 €
 (vom Nutzer). Brown Porter 310 abgefüllt (= Zeilensumme, Vermerk am Bier), Testflaschen 78 + BTS 3 verschenkt,
-4 „nach doheem“ bei Claude; Ferro Forum 2,50 €/Fl (aus dem Livraisons-Blatt), Oarbechterkiermes/Brennerdag/
+4 „nach doheem“ bei Claude — **seit Fassung n fort verbucht** (vom Nutzer; schon eingespielte Stände korrigiert
+`altKorrekturen()` einmalig: storno von `alt26-bp-cw` + Abgang `alt26-bp-cw-fort`); Ferro Forum 2,50 €/Fl (aus dem Livraisons-Blatt), Oarbechterkiermes/Brennerdag/
 Laurent/Willy ohne Preis = 0 € mit Vermerk. BEST (Livraisons-Blatt, 24 Rusty + 12 Porter am 17.05.) = Marc Gloden
 (gleiche Menge, gleicher Tag), nicht doppelt. NEIPA 28.07. nicht übernommen (ist das aktuelle). Übrig im Lager:
-2 BP-Fässer, 1 Rusty-20-l-Fass (Verbleib unklar). Alte Zeilen ohne Datum: „ouni Datum“, im Excel leer.
+2 BP-Fässer, 1 Rusty-20-l-Fass — **bleiben aktuell** (vom Nutzer): Fässer archivierter Biere bietet `artikelListe`
+beim Verkaufen/Livraison und „Fläsche beweegen“ an, solange jemand welche hat. Alte Zeilen ohne Datum: „ouni Datum“, im Excel leer.
 
 ## Aufbau
 - `index.html` — Einzeldatei, kein Build, kein Framework. GitHub Pages: Organisation `millebeier`, Repo `millebeier.github.io` → https://millebeier.github.io/ (wie beim FC Koeppchen, vom Nutzer 13.11.2026).
