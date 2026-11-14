@@ -67,6 +67,18 @@ ist("archiviertes Bier: Verkäufe aufgeklappt", await p.locator("#t-uebersicht")
 ist("Total enthält Archiv", await p.evaluate(() => [+document.querySelector("#t-uebersicht tr.summe").cells[4].textContent.trim(), Z.flaschen.da, hat(Z, "Lager", "Rusty")]), v => v[0] === v[1] && v[2] > 0 && v[0] >= v[2]);
 await p.click("tr[data-archiv]");
 ist("Archiv zu → Rusty-Liste auch zu", [await zeilenText(), (await p.locator("#t-uebersicht").innerText()).includes("Rusty: wien huet")], [["NEIPA", "White IPA", "Brown Porter", "📦 Archiv (1)"], false]);
+// Alte Verkäufe einspielen (einmalig, Knopf in ⚙️)
+await p.click("#zahnrad");
+antworten = [true];
+await p.click("#eAlt"); await warte(300);
+ist("Import: gleich Iwwersiicht mit offenem Archiv", await p.evaluate(() => [TAB, [...document.querySelectorAll("#t-uebersicht tr.klick.klein")].map(t => t.cells[0].textContent.trim())]), v => v[0] === "uebersicht" && v[1].includes("Rusty 02/2026") && v[1].includes("Brown Porter 01/2026"));
+await p.click("#zahnrad");
+ist("Import: Knopf danach weg", await p.locator("#eAlt").count(), 0);
+ist("Import: Kasse unverändert", await p.evaluate(() => [Z.kasse, Z.offen]), [0, 0]);
+await p.evaluate(() => { TAB = "uebersicht"; ARCHIV_UEB = false; OFFEN_SORTE = ""; render(); });
+ist("Import: im Archiv", await p.evaluate(() => document.querySelector("tr[data-archiv]").cells[0].textContent), s => /Archiv \((6|7)\)/.test(s));
+await p.evaluate(() => altEinspielen()); await warte(200);
+ist("Import zweimal: nichts doppelt", await p.evaluate(() => Z.sorten["Rusty 02/2026"].verkauft), 285);
 ist("keine Seitenfehler", seitenfehler, []);
 await b.close();
 console.log(fehler ? `${fehler} Fehler` : "Biere: alles bestanden");

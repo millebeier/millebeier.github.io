@@ -118,12 +118,14 @@ select{background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),
 .liv .wann.faellig{color:var(--gelb);font-weight:700}
 .chip{display:inline-block;font-size:12px;padding:3px 8px;border-radius:9px;background:var(--card2);margin:6px 4px 0 0}
 .chip.ok{background:#1f3a20;color:#bfe8c0} .chip.warn{background:#3a3115;color:#f4e2a0}
-tr.klick{cursor:pointer} tr.klick td:first-child{white-space:nowrap}
-tr.klick td:first-child::before{content:"▶";display:inline-block;width:20px;color:var(--akzent);font-size:15px}
+/* Dreieck links fest, Name darf umbrechen (lange Namen wie „Brown Porter 01/2026 Keg 30l“ sprengten sonst die Tabelle) */
+tr.klick{cursor:pointer} tr.klick td:first-child{position:relative;padding-left:22px}
+tr.klick td:first-child::before{content:"▶";position:absolute;left:0;color:var(--akzent);font-size:15px}
 tr.klick.auf td:first-child::before{content:"▼"}
-tr.klick.klein td{font-size:13px;color:var(--muted)} tr.klick.klein td:first-child{padding-left:22px}
-tr.klick.klein td:first-child::before{font-size:11px;width:16px}
+tr.klick.klein td{font-size:13px;color:var(--muted)} tr.klick.klein td:first-child{padding-left:38px}
+tr.klick.klein td:first-child::before{font-size:11px;left:20px;top:9px}
 tr.archivzeile td{border-top:1px solid var(--line)}
+@media (max-width:350px){table{font-size:12px} th{font-size:10px} th,td{padding:6px 2px} .wrap{padding:0 10px}}
 .bier{border-top:1px solid var(--line);padding:12px 0}
 .bier:first-of-type{border-top:0}
 .bier .kopfz{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
@@ -196,7 +198,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px}
 <script>
 /* Adresse des Cloudflare-Workers. Leer = Probe-Modus (alles nur auf diesem Handy). */
 const WORKER_URL = "https://millebeier.rjtp6r9s9h.workers.dev/";
-const FASSUNG = "14.11.2026 f";
+const FASSUNG = "14.11.2026 h";
 
 /* === Logik === (kein DOM; test/logik.mjs schneidet diesen Block aus) */
 const LAGER = "Lager";
@@ -228,10 +230,11 @@ function gueltig(e) {
   switch (e.art) {
     case "abfuellung": return text(e.sorte) && ganz(e.n);
     case "bewegung": return text(e.sorte) && ganz(e.n) && text(e.von) && text(e.an) && e.von !== e.an;
-    case "abgang": return text(e.sorte) && ganz(e.n) && text(e.wer) && e.grund in GRUENDE;
+    case "abgang": return text(e.sorte) && ganz(e.n) && text(e.wer) && e.grund in GRUENDE && optText(e.notiz, 300);
     case "verkauf":
       return text(e.verkaeufer) && text(e.kaeufer) && geld(e.betrag) && postenOk(e.posten) &&
-        (e.aus === undefined || text(e.aus)) && (e.liv === undefined || typeof e.liv === "string");
+        (e.aus === undefined || text(e.aus)) && (e.liv === undefined || typeof e.liv === "string") &&
+        optText(e.notiz, 300) && optDatum(e.datum) && (e.alt === undefined || typeof e.alt === "boolean");
     case "livraison":
       return text(e.kunde) && text(e.kontakt, 30) && text(e.aus, 30) && geld(e.betrag) && postenOk(e.posten) &&
         typeof e.datum === "string" && /^\d{4}-\d{2}-\d{2}$/.test(e.datum) &&
@@ -313,7 +316,7 @@ function rechne(eintraege) {
   const personen = {};
   const pe = p => (personen[p] ||= { verkauft: 0, umsatz: 0, bezahlt: 0, offen: 0 });
   for (const p of cfg.leute) pe(p);
-  const vk = new Map();
+  const vk = new Map(), altVk = [];
 
   for (const e of aktiv) {
     if (e.art === "abfuellung") { add(LAGER, e.sorte, e.n); st(e.sorte).abgefuellt += e.n; }
@@ -323,6 +326,9 @@ function rechne(eintraege) {
       let n = 0;
       // Flaschen kommen von „aus“ (z. B. Lager bei einer Livraison), sonst vom Verkäufer selbst.
       for (const p of e.posten) { add(e.aus || e.verkaeufer, p.sorte, -p.n); st(p.sorte).verkauft += p.n; n += p.n; }
+      // Alte Verkäufe aus der Excel-Tabelle (alt: true, vom Nutzer 14.11.2026: „gar nicht in die Kasse“):
+      // zählen im Bestand und in der Liste pro Bier, nie in Kasse, Ausstoend oder Umsatz je Person.
+      if (e.alt) { altVk.push({ ...e, flaschen: n }); continue; }
       vk.set(e.id, { ...e, flaschen: n, bezahlt: 0, offen: 0 });
       const P = pe(e.verkaeufer); P.verkauft += n; P.umsatz += e.betrag;
     }
@@ -360,6 +366,7 @@ function rechne(eintraege) {
   return {
     cfg, basisSorten, geloescht, liste, aktiv, storniert, nachId, bestand, halter, sorten, sortenNamen, personen,
     verkaeufe: [...vk.values()],
+    altVerkaeufe: altVk,
     vkNachId: vk,
     livraisons: [...liv.values()].sort((a, b) => a.datum.localeCompare(b.datum) || ordnung(a, b)),
     dateien: aktiv.filter(e => e.art === "datei"),
@@ -383,7 +390,7 @@ function beschreibe(e, Z) {
     case "abfuellung": return `🍺 ${e.n} × ${e.sorte} ofgefëllt (an d'Lager)`;
     case "bewegung": return `➡️ ${e.n} × ${e.sorte}: ${e.von} → ${e.an}`;
     case "abgang": return `🗑️ ${e.n} × ${e.sorte} ${beim(e.wer)}: ${GRUENDE[e.grund]}`;
-    case "verkauf": return `${e.liv ? "🚚 Geliwwert" : "💶"} ${e.verkaeufer} → ${e.kaeufer}: ${postenText(e.posten)} · ${euro(e.betrag)}`;
+    case "verkauf": return `${e.alt ? "📜 Al Tabell:" : e.liv ? "🚚 Geliwwert" : "💶"} ${e.verkaeufer} → ${e.kaeufer}: ${postenText(e.posten)} · ${euro(e.betrag)}`;
     case "zahlung": {
       const v = Z && Z.nachId.get(e.ref);
       return `✓ ${euro(e.betrag)} bezuelt` + (v ? `: ${v.kaeufer} (${beim(v.verkaeufer)})` : "");
@@ -472,9 +479,14 @@ function proSorte(Z, sorte) {
       rechnung: L && L.rechnung ? (v.rechnungGemacht ? "gemaach" : "nach ze maachen") : "",
       remarque: L ? [L.anlass, L.notiz].filter(Boolean).join(" · ") : "", id: v.id });
   }
+  for (const v of Z.altVerkaeufe) for (const p of v.posten) if (p.sorte === sorte) {
+    const r = anteil(Z.cfg, v.posten, v.betrag, p);
+    zeilen.push({ zeit: v.zeit, datum: v.datum || null, kunde: v.kaeufer, kontakt: v.verkaeufer, n: p.n, preis: runde(r / p.n), recetten: r,
+      geliwwert: "Jo", bezuelt: "–", rechnung: "", remarque: v.notiz || "", id: v.id, alt: true });
+  }
   for (const e of Z.aktiv) if (e.art === "abgang" && e.sorte === sorte)
-    zeilen.push({ zeit: e.zeit, datum: null, kunde: GRUENDE[e.grund], kontakt: e.wer, n: e.n, preis: 0, recetten: 0,
-      geliwwert: "–", bezuelt: "–", rechnung: "", remarque: "", id: e.id });
+    zeilen.push({ zeit: e.zeit, datum: e.datum || null, kunde: GRUENDE[e.grund], kontakt: e.wer, n: e.n, preis: 0, recetten: 0,
+      geliwwert: "–", bezuelt: "–", rechnung: "", remarque: e.notiz || "", id: e.id, alt: e.durch === "Excel-Import" });
   for (const L of Z.livraisons) if (!L.verkauf) for (const p of L.posten) if (p.sorte === sorte) {
     const r = anteil(Z.cfg, L.posten, L.betrag, p);
     zeilen.push({ zeit: L.zeit, datum: L.datum, kunde: L.kunde, kontakt: L.kontakt, n: p.n, preis: runde(r / p.n), recetten: r,
@@ -492,7 +504,7 @@ function exportBlaetter(Z, zeitFmt) {
   for (const s of Z.sortenNamen) {
     const z = proSorte(Z, s), x = Z.sorten[s];
     if (!z.length && !x.abgefuellt && !x.da && !(Z.cfg.sorten.find(y => y.name === s) || {}).meta) continue;
-    const zeilen = z.map(r => [r.datum ? datumKurz(r.datum) : zeitFmt(r.zeit), r.kunde, r.kontakt, r.n, r.preis, r.recetten, r.geliwwert, r.bezuelt, r.rechnung, r.remarque]);
+    const zeilen = z.map(r => [r.datum ? datumKurz(r.datum) : r.alt ? "" : zeitFmt(r.zeit), r.kunde, r.kontakt, r.n, r.preis, r.recetten, r.geliwwert, r.bezuelt, r.rechnung, r.remarque]);
     const fest = z.filter(r => !r.geplant);
     const c = Z.cfg.sorten.find(y => y.name === s) || {}, m = c.meta || {};
     blaetter.push({ name: s, titel: s, info: [
@@ -512,6 +524,74 @@ function exportBlaetter(Z, zeitFmt) {
     zeilen: Z.halter.map(h => [h, ...Z.sortenNamen.map(s => hat(Z, h, s)), Z.sortenNamen.reduce((a, s) => a + hat(Z, h, s), 0)]),
     summe: ["Total", ...Z.sortenNamen.map(s => Z.sorten[s].da), Z.flaschen.da] });
   return blaetter;
+}
+
+/* Alte Verkäufe aus „Iwwersiicht_Commanden_Clients_2026.xlsx“ (vom Nutzer am 14.11.2026). Feste ids „alt26-…“,
+   damit ein zweiter Import nichts verdoppelt. Kürzel: JF Jeff, MW Marc, CW/Claude Claude, LR Laurent (vom Nutzer bestätigt).
+   Fehlt ein Preis in der Tabelle, steht 0 € und ein Vermerk. Alle Verkäufe mit alt: true (nicht in Kasse/Ausstoend). */
+const ALT_KENNUNG = "alt26-bier-bp";
+function altImport() {
+  const BP = "Brown Porter 01/2026", BPK = "Brown Porter 01/2026 Keg 30l";
+  const RU = "Rusty 02/2026", RUK30 = "Rusty 02/2026 Keg 30l", RUK20 = "Rusty 02/2026 Keg 20l";
+  const tag = d => Date.parse(d + "T12:00:00Z");
+  const out = [];
+  let i = 0;
+  const neu = (id, zeit, x) => out.push({ id: "alt26-" + id, zeit: zeit + (i++), durch: "Excel-Import", ...x });
+  // Biere (archiviert) und Abfüllung
+  const bp0 = tag("2026-01-23"), ru0 = tag("2026-02-06");
+  neu("bier-bp", bp0, { art: "bier", name: BP, preis: 3, stil: "Brown Porter", braudatum: "2026-01-23", alk: 5.1, liter: 176,
+    notiz: "Aus der aler Tabell. Laut Tabell 12 Cajots (288 Fl) ofgefëllt, d'Zeilen ergi 310 Fl. — dofir 310 hei." });
+  neu("bier-bpk", bp0, { art: "bier", name: BPK, preis: 180, braudatum: "2026-01-23", alk: 5.1, notiz: "4 Kegs à 30 L" });
+  neu("bier-ru", ru0, { art: "bier", name: RU, preis: 3, stil: "Rusty", braudatum: "2026-02-06", alk: 5.6, liter: 156, notiz: "Aus der aler Tabell. 12 Cajots (288 Fl)." });
+  neu("bier-ruk30", ru0, { art: "bier", name: RUK30, preis: 180, braudatum: "2026-02-06", alk: 5.6 });
+  neu("bier-ruk20", ru0, { art: "bier", name: RUK20, preis: 150, braudatum: "2026-02-06", alk: 5.6 });
+  neu("abf-bp", bp0, { art: "abfuellung", sorte: BP, n: 310 });
+  neu("abf-bpk", bp0, { art: "abfuellung", sorte: BPK, n: 4 });
+  neu("abf-ru", ru0, { art: "abfuellung", sorte: RU, n: 288 });
+  neu("abf-ruk30", ru0, { art: "abfuellung", sorte: RUK30, n: 1 });
+  neu("abf-ruk20", ru0, { art: "abfuellung", sorte: RUK20, n: 2 });
+  // Verkäufe: [id, Bier, Kontakt, Käufer, Anzahl, Betrag, Datum oder "", Bemerkung]
+  const V = [
+    ["bp01", BP, "Marc", "Ferro Forum", 96, 240, "2026-05-12", "Oarbechterkiermes · 2,50 €/Fl · Rechnung maachen"],
+    ["bp02", BPK, "Jeff", "Café Millebières", 1, 180, "2026-04-23", "Rechnung maachen"],
+    ["bp03", BP, "Jeff", "Jean-Claude Jung", 12, 36, "", "Payé 01.03.2026 via Homepage"],
+    ["bp04", BP, "Jeff", "Gambrinuskelle", 24, 72, "2026-10-07", "Dégustation/vente"],
+    ["bp05", BP, "Jeff", "Marc Gloden", 12, 36, "2026-05-17", "geliwwert 17.05.2026 (BEST)"],
+    ["bp06", BP, "Jeff", "Yannick Alesch", 6, 18, "2026-05-13", "Digicash JF → Millebéier-Kont 13.05.2026"],
+    ["bp07", BPK, "Marc", "Ferro Forum – Oarbechterkiermes", 1, 0, "", "4 €/Béier gezapt — Recetten am Décompte vun der Oarbechterkiermes"],
+    ["bp08", BP, "Marc", "Ferro Forum – Oarbechterkiermes", 24, 0, "", "3 €/Béier fir mat heem — Recetten am Décompte vun der Oarbechterkiermes"],
+    ["bp09", BP, "Claude", "Guy Assa", 4, 12, "", "bezuelt"],
+    ["bp10", BP, "Jeff", "Marc Gloden", 6, 18, "2026-10-26", "Iwwerweisung Jeff → Millebéier-Konto 26.10.2026"],
+    ["bp11", BP, "Jeff", "Claude Scheuer", 6, 18, "2026-10-26", "Iwwerweisung Jeff → Millebéier-Konto 26.10.2026"],
+    ["bp12", BP, "Jeff", "Sim Trufelli", 6, 18, "2026-10-26", "Iwwerweisung Jeff → Millebéier-Konto 26.10.2026"],
+    ["bp13", BP, "Jeff", "Roby Barnabei", 6, 18, "2026-10-26", "Iwwerweisung Jeff → Millebéier-Konto 26.10.2026"],
+    ["bp14", BP, "Laurent", "Laurent Radrizzi", 11, 0, "", "10 Fl + 1 Fl fir de Ruppert — kee Präis an der Tabell"],
+    ["bp15", BP, "Claude", "Claude Wilwert", 12, 0, "", "de Willy hat dës Fläschen fir de Laurent matgeholl — kee Präis an der Tabell"],
+    ["ru01", RU, "Marc", "Ferro Forum", 96, 240, "2026-05-12", "Oarbechterkiermes · 2,50 €/Fl · Rechnung maachen"],
+    ["ru02", RU, "Marc", "Brennerdag", 48, 0, "", "Präis an der Tabell: ?"],
+    ["ru03", RUK30, "Jeff", "Café Millebières", 1, 180, "2026-04-23", "Rechnung maachen"],
+    ["ru04", RU, "Jeff", "Jean-Claude Jung", 12, 36, "", "Payé 01.03.2026 via Homepage"],
+    ["ru05", RU, "Marc", "Rock Solid", 72, 180, "2026-05-09", "2,50 €/Fl"],
+    ["ru06", RU, "Jeff", "Gambrinuskelle", 24, 72, "2026-10-07", "Dégustation/vente"],
+    ["ru07", RU, "Jeff", "Marc Gloden", 24, 72, "2026-05-17", "geliwwert 17.05.2026 (BEST)"],
+    ["ru08", RU, "Jeff", "Yannick Alesch", 6, 18, "2026-05-13", "Digicash JF → Millebéier-Kont 13.05.2026"],
+    ["ru09", RUK20, "Marc", "Tom Schäfer – Heeparty", 1, 150, "", "Réserve fir d'Oarbechterkiermes"],
+    ["ru10", RU, "Claude", "Guy Assa", 3, 9, "", "bezuelt"],
+  ];
+  for (const [id, sorte, wer, kaeufer, n, betrag, datum, notiz] of V) {
+    const t0 = sorte.startsWith("Rusty") ? ru0 : bp0;
+    neu(id, datum ? tag(datum) : t0 + 86400000, { art: "verkauf", alt: true, verkaeufer: wer, kaeufer, aus: LAGER,
+      posten: [{ sorte, n }], betrag, ...(datum ? { datum } : {}), notiz });
+  }
+  // Verschenkt, Testflaschen, noch zu Hause
+  neu("bp-test", bp0 + 86400000, { art: "abgang", sorte: BP, n: 78, wer: LAGER, grund: "verschenkt", notiz: "Test Fläschen: 1x Jeff, 2x Willy, 2x Millebéier AG, 2x Rock Solid" });
+  neu("bp-bts", tag("2026-06-01"), { art: "abgang", sorte: BP, n: 3, wer: LAGER, grund: "verschenkt", datum: "2026-06-01", notiz: "BTS Design Logo-etiquettes: déi 3 Proffen, je 1 Fläsch, RDV 1.6.2026" });
+  neu("ru-bts", tag("2026-06-01"), { art: "abgang", sorte: RU, n: 3, wer: LAGER, grund: "verschenkt", datum: "2026-06-01", notiz: "BTS Design Logo-etiquettes: déi 3 Proffen, je 1 Fläsch, RDV 1.6.2026" });
+  neu("bp-cw", bp0 + 86400000, { art: "bewegung", sorte: BP, n: 4, von: LAGER, an: "Claude" });
+  // Alles archivieren
+  for (const [k, name] of [["bp", BP], ["bpk", BPK], ["ru", RU], ["ruk30", RUK30], ["ruk20", RUK20]])
+    neu("arch-" + k, Date.parse("2026-11-14T12:00:00Z"), { art: "bierstatus", name, status: "archiv" });
+  return out;
 }
 
 function neueId() {
@@ -752,7 +832,7 @@ function sorteDetail(s) {
     ${z.length ? `<div class="tabwrap"><table class="detail">
       <tr><th>Client</th><th>Fl.</th><th>Recetten</th><th>bezuel?</th></tr>
       ${z.map(r => `<tr class="${r.geplant ? "geplant" : ""}">
-        <td><b>${esc(r.kunde)}</b><br><small class="muted">${r.datum ? esc(datumKurz(r.datum)) : datumText(r.zeit)} · ${esc(beim(r.kontakt))}${r.geplant ? " · geplangt" : ""}${r.remarque ? " · " + esc(r.remarque) : ""}${r.rechnung ? " · 🧾 " + esc(r.rechnung) : ""}</small></td>
+        <td><b>${esc(r.kunde)}</b><br><small class="muted">${r.datum ? esc(datumKurz(r.datum)) : r.alt ? "ouni Datum" : datumText(r.zeit)} · ${esc(beim(r.kontakt))}${r.geplant ? " · geplangt" : ""}${r.remarque ? " · " + esc(r.remarque) : ""}${r.rechnung ? " · 🧾 " + esc(r.rechnung) : ""}</small></td>
         <td>${r.n}</td><td>${r.recetten ? euro(r.recetten) : "–"}</td><td>${esc(r.bezuelt.replace(/^Deelweis.*/, "Deelweis"))}</td></tr>`).join("")}
       <tr class="summe"><td>Total</td><td>${fest.reduce((a, r) => a + r.n, 0)}</td><td>${euro(fest.reduce((a, r) => a + r.recetten, 0))}</td><td></td></tr>
     </table></div><div class="hinweis">Gro an schréi = geplangt Livraisoun, nach net am Total.</div>` : `<div class="leer">Nach näischt.</div>`}</div>`;
@@ -1433,6 +1513,21 @@ function renderVerlauf() {
   const m = $("#mehr"); if (m) m.onclick = () => { VERLAUF_MAX += 200; renderVerlauf(); };
 }
 
+/* ---------- Alte Verkäufe einspielen (einmalig) ---------- */
+const altSchonDa = () => Z.nachId.has(ALT_KENNUNG) || AUSGANG.some(e => e.id === ALT_KENNUNG);
+function altEinspielen() {
+  if (altSchonDa()) return;
+  const neu = altImport();
+  const n = neu.filter(e => e.art === "verkauf").length;
+  if (!confirm(`Al Verkéf aus der Excel-Tabell 2026 androen?\n\n„Brown Porter 01/2026“ an „Rusty 02/2026“ (+ Fässer) als archivéiert Béieren, ${n} Verkéf, Test- a Kaddo-Fläschen.\n\nSi zielen NET an der Kees an net bei Ausstoend — just an der Iwwersiicht (📦 Archiv) an am Excel.`)) return;
+  const ids = new Set([...SERVER, ...AUSGANG].map(e => e.id));
+  AUSGANG.push(...neu.filter(e => !ids.has(e.id)));
+  merke(SP_AUSGANG, AUSGANG);
+  // Gleich zeigen, wo es steht: Iwwersiicht mit offenem Archiv.
+  TAB = "uebersicht"; EIN.tab = TAB; merke(SP, EIN); EFORM = null; ARCHIV_UEB = true; OFFEN_SORTE = "";
+  neuRechnen(); render(); abgleichen(); window.scrollTo(0, 0);
+}
+
 /* ---------- Einstellungen ---------- */
 function renderEinst() {
   const box = $("#t-einst");
@@ -1455,6 +1550,7 @@ function renderEinst() {
     <div class="knopfe">
       <button class="knopf" id="eCsv">📊 Excel-Export (.xlsx)</button>
       <button class="knopf" id="eNeu">Elo synchroniséieren</button>
+      ${altSchonDa() ? "" : `<button class="knopf" id="eAlt">📜 Al Verkéf 2026 aus der Excel-Tabell</button>`}
       ${PROBE ? `<button class="knopf" id="eProbeWeg">Proufdonnéeë läschen</button>` : `<button class="knopf" id="eAbmelden">Code nei aginn</button>`}
     </div>
     <div class="hinweis">${PROBE ? "Prouf-Modus: nach kee Server ageriicht." : `Lescht synchroniséiert: ${STATUS.zuletzt ? zeitText(STATUS.zuletzt) : "nach ni"}`}</div>
@@ -1478,6 +1574,7 @@ function renderEinst() {
   };
   $("#eCsv").onclick = () => excelExport($("#eMeld"));
   $("#eNeu").onclick = () => abgleichen();
+  const ea = $("#eAlt"); if (ea) ea.onclick = altEinspielen;
   const ab = $("#eAbmelden"); if (ab) ab.onclick = () => { if (confirm("Code op dësem Handy läschen?")) { EIN.code = ""; merke(SP, EIN); render(); } };
   const pw = $("#eProbeWeg"); if (pw) pw.onclick = () => {
     if (!confirm("All Proufdonnéeën op dësem Handy läschen?")) return;

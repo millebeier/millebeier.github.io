@@ -4,7 +4,7 @@ const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
 const a = html.indexOf("/* === Logik ===");
 const b = html.indexOf("/* === Oberfläche ===");
 if (a < 0 || b < 0) { console.error("Marken nicht gefunden"); process.exit(1); }
-const L = new Function(html.slice(a, b) + "; return {rechne, gueltig, euro, verteile, erinnerung, csv, beschreibe, hat, LAGER, STANDARD, proSorte, exportBlaetter, anteil, dateienVon};")();
+const L = new Function(html.slice(a, b) + "; return {rechne, gueltig, euro, verteile, erinnerung, csv, beschreibe, hat, LAGER, STANDARD, proSorte, exportBlaetter, anteil, dateienVon, altImport};")();
 
 let fehler = 0, n = 0;
 const ist = (was, wert, soll) => { n++; const ok = JSON.stringify(wert) === JSON.stringify(soll); if (!ok) { fehler++; console.log(`✗ ${was}: ${JSON.stringify(wert)} statt ${JSON.stringify(soll)}`); } };
@@ -176,6 +176,32 @@ ist("CSV Zeilen", c.trim().split("\r\n").length, 4);
   ist("neueste gelöscht → alte wieder da", L.dateienVon(Y, "Rusty").etikett.name, "etikett-alt.pdf");
   ist("Datei ungültig: böse fid", L.gueltig({ ...e1, fid: "../x" }), false);
   ist("Datei ungültig: falsches Feld", L.gueltig({ ...e1, feld: "foto" }), false);
+}
+
+// Alte Verkäufe aus der Excel-Tabelle: archiviert, nicht in Kasse/Ausstoend, Zahlen wie in der Tabelle
+{
+  const alt = L.altImport();
+  ist("Import: alle Einträge gültig", alt.filter(e => !L.gueltig(e)).map(e => e.id), []);
+  ist("Import: ids eindeutig", new Set(alt.map(e => e.id)).size, alt.length);
+  const Y = L.rechne(alt);
+  ist("Import: nichts in Kasse/Ausstoend/Personen", [Y.kasse, Y.offen, Y.kaeufer.length, Y.umsatz, Y.personen.Jeff.verkauft], [0, 0, 0, 0, 0]);
+  ist("Import: alle archiviert", Y.cfg.sorten.filter(c => c.name.includes("2026")).every(c => c.archiv), true);
+  const bp = Y.sorten["Brown Porter 01/2026"], ru = Y.sorten["Rusty 02/2026"];
+  ist("Brown Porter: 310 ofgefëllt, 225 verkaaft, 81 fort, 4 bei Claude", [bp.abgefuellt, bp.verkauft, bp.abgang, L.hat(Y, "Claude", "Brown Porter 01/2026"), L.hat(Y, "Lager", "Brown Porter 01/2026")], [310, 225, 81, 4, 0]);
+  ist("Rusty: 288 = 285 verkaaft + 3 fort", [ru.abgefuellt, ru.verkauft, ru.abgang, ru.da], [288, 285, 3, 0]);
+  ist("Fässer: 2 BP-Keg und 1 Rusty-20l-Keg noch am Lager", [L.hat(Y, "Lager", "Brown Porter 01/2026 Keg 30l"), L.hat(Y, "Lager", "Rusty 02/2026 Keg 30l"), L.hat(Y, "Lager", "Rusty 02/2026 Keg 20l")], [2, 0, 1]);
+  const z = L.proSorte(Y, "Rusty 02/2026");
+  ist("pro Bier Rusty: Zeilen und Recetten", [z.length, z.reduce((a, r) => a + r.recetten, 0)], [9, 627]);
+  ist("Gambrinuskelle als Verkauf zu 3 €", z.find(r => r.kunde === "Gambrinuskelle").recetten, 72);
+  ist("alte Zeile: bezuel? –, Bemerkung", [z.find(r => r.kunde === "Rock Solid").bezuelt, z.find(r => r.kunde === "Rock Solid").remarque, z.find(r => r.kunde === "Rock Solid").datum], ["–", "2,50 €/Fl", "2026-05-09"]);
+  ist("Excel: Blätter für die alten Biere", L.exportBlaetter(Y, () => "").map(b => b.name).filter(n => n.includes("2026")), ["Brown Porter 01/2026", "Brown Porter 01/2026 Keg 30l", "Rusty 02/2026", "Rusty 02/2026 Keg 30l", "Rusty 02/2026 Keg 20l"]);
+  ist("alte Zeile ohne Datum: im Excel leer statt erfundenem Tag", L.exportBlaetter(Y, () => "ERFUNDEN").find(b => b.name === "Rusty 02/2026").zeilen.find(r => r[1] === "Brennerdag")[0], "");
+  ist("doppelt importiert = einmal", L.rechne([...alt, ...alt]).sorten["Rusty 02/2026"].verkauft, 285);
+  // neben neuen Verkäufen: Kasse nur aus den neuen
+  const neuV = { id: "neu-1", zeit: Date.now(), art: "verkauf", verkaeufer: "Jeff", kaeufer: "Paul", posten: [{ sorte: "NEIPA", n: 2 }], betrag: 6 };
+  const neuZ = { id: "neu-2", zeit: Date.now() + 1, art: "zahlung", ref: "neu-1", betrag: 6 };
+  const Y2 = L.rechne([...alt, neuV, neuZ]);
+  ist("mit neuen Verkäufen: Kasse nur neu", [Y2.kasse, Y2.personen.Jeff.verkauft, Y2.kaeufer.map(k => k.name)], [6, 2, ["Paul"]]);
 }
 
 console.log(fehler ? `${fehler} von ${n} Prüfungen fehlgeschlagen` : `Alle ${n} Prüfungen bestanden`);

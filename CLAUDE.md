@@ -19,6 +19,17 @@ Unzuel, Béier (Preis), geliwwert?, Recetten, Remarquen, bezuel?; dazu „LIVRAI
 150 €; Vereine 2,50 €/Fl; Geschenkpacks 12 €/4, 18 €/6. Die Geschichte 2026 wurde **nicht** übernommen (zu viele
 Unklarheiten, z. B. Brown Porter 310 Zeilen-Flaschen bei 288 gebraut) — Startstand = Zählung.
 Der Excel-Export der App bildet dieses Format nach (s. u.).
+**Alte Verkäufe doch übernommen** (vom Nutzer, 14.11.2026), aber **ohne Geld**: `altImport()` (feste ids `alt26-…`,
+Knopf ⚙️ „📜 Al Verkéf 2026“, einmalig, verschwindet danach; springt in die Iwwersiicht mit offenem Archiv).
+Archivierte Biere „Brown Porter 01/2026“, „Rusty 02/2026“ und Fässer „… Keg 30l/20l“ (Namen mit Monat, vom Nutzer —
+heute gibt es wieder ein Brown Porter). Verkäufe mit `alt: true` → `Z.altVerkaeufe`: zählen im Bestand und pro Bier
+(Recetten zur Info), **nie** in Kasse, Ausstoend, Umsatz je Person, Käuferliste (vom Nutzer: „gar nicht in die Kasse“).
+Kürzel JF Jeff, MW Marc, CW/Claude Claude, LR Laurent — **vom Nutzer bestätigt**. Gambrinuskelle = Verkauf zu 3 €
+(vom Nutzer). Brown Porter 310 abgefüllt (= Zeilensumme, Vermerk am Bier), Testflaschen 78 + BTS 3 verschenkt,
+4 „nach doheem“ bei Claude; Ferro Forum 2,50 €/Fl (aus dem Livraisons-Blatt), Oarbechterkiermes/Brennerdag/
+Laurent/Willy ohne Preis = 0 € mit Vermerk. BEST (Livraisons-Blatt, 24 Rusty + 12 Porter am 17.05.) = Marc Gloden
+(gleiche Menge, gleicher Tag), nicht doppelt. NEIPA 28.07. nicht übernommen (ist das aktuelle). Übrig im Lager:
+2 BP-Fässer, 1 Rusty-20-l-Fass (Verbleib unklar). Alte Zeilen ohne Datum: „ouni Datum“, im Excel leer.
 
 ## Aufbau
 - `index.html` — Einzeldatei, kein Build, kein Framework. GitHub Pages: Organisation `millebeier`, Repo `millebeier.github.io` → https://millebeier.github.io/ (wie beim FC Koeppchen, vom Nutzer 13.11.2026).
