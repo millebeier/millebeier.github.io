@@ -121,8 +121,9 @@ await A.click('[data-tab="verkaufen"]');
 await A.screenshot({ path: "/tmp/claude-0/-home-user-panini-wm-2026/d92c0ce6-1931-5139-9414-8708d0c7e81c/scratchpad/verkaufen.png", fullPage: true });
 
 // Einstellungen: Preis ändern gilt für alle
-await A.click("#zahnrad");
-await A.fill('[data-sp="2"]', "3,50"); await A.click("#eSpeichern"); await warte(300);
+await A.click('[data-tab="bestand"]');
+await A.click('[data-bed="Brown Porter"]');
+await A.fill("#biPreis", "3,50"); await A.click("#biOk"); await warte(300);
 await B.evaluate(() => abgleichen()); await warte(300);
 ist("neuer Preis bei Jeff", await B.evaluate(() => Z.cfg.sorten[2].preis), 3.5);
 // Doppeltipp: Speichern zweimal schnell → ein Verkauf; Abfüllen doppelt → einmal; −/+ zählt jeden Tipp.

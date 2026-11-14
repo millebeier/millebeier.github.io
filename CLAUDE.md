@@ -31,7 +31,14 @@ Der Excel-Export der App bildet dieses Format nach (s. u.).
   `{id, zeit, art, durch, …}` mit `art` ∈ abfuellung, bewegung (von/an, „Lager“ ist ein Halter),
   abgang (getrunken/verschenkt/kaputt/sonst), verkauf (verkaeufer, kaeufer, posten[], betrag),
   zahlung (ref = Verkauf), einstellungen (sorten, leute; die letzte gilt), storno (ref),
-  livraison (kunde, kontakt, aus, datum YYYY-MM-DD, posten, betrag, rechnung, anlass?, notiz?), rechnung (ref = Verkauf).
+  livraison (kunde, kontakt, aus, datum YYYY-MM-DD, posten, betrag, rechnung, anlass?, notiz?), rechnung (ref = Verkauf),
+  bier (name, preis, stil?, braudatum?, alk?, liter?, mhd?, notiz?), bierstatus (name, status aktiv|archiv|weg).
+  **Biere** (vom Nutzer, 14.11.2026): angelegt und geändert unter **Stock → Eis Béieren** (nicht mehr in ⚙️; die
+  Sortenliste aus `einstellungen` bleibt Grundlage für Altbestand und wird beim Speichern der Leute unverändert
+  mitgeschickt — `Z.basisSorten`). Name nicht änderbar (Bestand hängt dran). Beim Anlegen optional Flaschen → `abfuellung`.
+  **Archiv** = nicht mehr verkaufbar, bleibt in Iwwersiicht (📦) und Excel. **Läschen** = zwei Rückfragen, verschwindet
+  überall (`Z.geloescht`), Verkäufe bleiben im Verlauf und in der Kasse; zurück über den Verlauf oder neues Anlegen.
+  Excel-Blatt je Bier zeigt die Eigenschaften (Braugang, Alk, Liter, Haltbar, ARCHIVÉIERT).
   **Livraison** (vom Nutzer, 14.11.2026): geplant, bis ein Verkauf mit `liv` = ihre id existiert („Geliwwert ✓“ legt ihn an,
   Flaschen aus `aus`, meist Lager — Verkauf hat dafür optional `aus`). Verkauf rückgängig → wieder geplant. Rechnung
   „gemaach“ = Eintrag `rechnung`. Geplantes zählt nirgends als verkauft.
@@ -52,6 +59,8 @@ Der Excel-Export der App bildet dieses Format nach (s. u.).
 - Logo vom Nutzer (13.11.2026): `bilder/icon-180.png` (Home-Bildschirm, schwarzer Grund), `icon-512.png`, `logo-96.png` (Kopf, durchsichtig).
 - **Doppeltipp-Schutz** (vom Nutzer, 13.11.2026), vier Stufen: `html`/`*{touch-action:manipulation}` (wie in der Koeppchen-App — **reichte hier am iPhone nicht**, Fassung n, Ursache unbekannt); deshalb `touchend`-Wächter: zweiter Ein-Finger-Tipp < 350 ms und < 40 px vom ersten wird abgefangen (−/+ bekommt ihn per `click()`, Eingabefelder ausgenommen, zwei Finger frei — **nie `user-scalable=no`**, der Nutzer will Zwei-Finger-Zoom; Test `test/tippen.mjs`, Gegenprobe gemacht); Klick-Wächter im Capture: derselbe Knopf (id + data + Text) innerhalb 800 ms wird verschluckt, −/+ ausgenommen; `eintragen()` speichert denselben Inhalt innerhalb 3 s nicht zweimal (gibt dann `[]` zurück — Aufrufer müssen das abfangen). Tests in `oberflaeche.mjs`, Gegenprobe gemacht. Tests, die denselben Knopf zweimal drücken, müssen > 800 ms warten.
 - **Artikel vor Namen** (vom Nutzer: „Du bass de Laurent“): Verkäufer (alle Männer) über `de()`/`beim()` („de Jeff“, „beim Jeff“, „d'Lager“, „am Lager“); Käufer können Frauen sein (d'Anne) → Sätze mit Käufernamen ohne Artikel bauen („Paul: 4 € bezuelt?“). Kommt eine Verkäuferin dazu, braucht `de()` eine Liste.
+- **Verlauf: rotes ✕ = Läschen** (= storno, Text „Dësen Agab läschen?“, „geläscht vum …“), vom Nutzer: ↶ war unklar.
+  **Iwwersiicht: rotes ▶/▼** vor jeder Sorte (vom Nutzer: Dreieck war zu klein).
 - **Name im Kopf** ganz weiß, nur der Akzent auf dem é rot wie im Logo: weißes „e“ mit rotem Strich darüber (`.akz::after`), weil sich ein Akzent nicht einzeln einfärben lässt.
 - **Farben wie im Logo** (vom Nutzer, 13.11.2026): schwarz, weiß, Rot `--akzent` (#e3141b) für Knöpfe und markierte Reiter, Kopf mit rotem Strich und grauer Linie wie der Logo-Ring. Grün (bezahlt) und Gelb (offen) bleiben als Bedeutungsfarben.
 - iPhone-Regeln wie in den anderen Apps des Nutzers: kein `viewport-fit=cover`, Kasten mit
@@ -59,7 +68,7 @@ Der Excel-Export der App bildet dieses Format nach (s. u.).
   `navigator.share`.
 - **`FASSUNG`** unten in `index.html` bei jeder Änderung hochzählen — daran hängt auch das **automatische Update** (vom Nutzer, 13.11.2026): beim Öffnen und bei jeder Rückkehr holt `updatePruefen()` die Seite mit `cache:"reload"`, steht dort eine andere FASSUNG, lädt die App neu; mitten im Eintrag (`mittenImEintrag`) stattdessen roter Knopf oben. Je Zielfassung ein Versuch in 5 min (`millebeier_v1_update`), gegen Schleifen bei altem CDN-Stand. Ohne Hochzählen kommt kein Update an. (Die Apps in panini-wm-2026 haben das nicht.)
 
-## Testen — vor jedem Push alle fünf, jeder mit eigenem Rückgabewert
+## Testen — vor jedem Push alle sechs, jeder mit eigenem Rückgabewert
 - `node test/logik.mjs` — schneidet `Logik`…`Oberfläche` aus der HTML (Gegenprobe gemacht).
 - `node test/worker.mjs` — Worker mit nachgebauter D1.
 - `node test/oberflaeche.mjs` — Playwright, zwei Handys gegen den echten Worker-Code, offline.
@@ -67,8 +76,11 @@ Der Excel-Export der App bildet dieses Format nach (s. u.).
 - `XLSX_JS=…/xlsx.full.min.js node test/livraisons.mjs` — Livraison planen/liefern/Rechnung/bezahlen, Liste pro Bier,
   Excel-Export (Datei wird mit SheetJS zurückgelesen), alter Worker. cdnjs ist in der Cloud-Umgebung gesperrt:
   SheetJS 0.18.5 per `npm install xlsx@0.18.5` in den Scratchpad, Pfad über `XLSX_JS`; ohne wird der Excel-Teil übersprungen.
+- `node test/biere.mjs` — Bier anlegen/ändern/archivieren/zurückholen/löschen (zwei Rückfragen, Gegenprobe gemacht),
+  rotes ✕ im Verlauf, rotes Dreieck.
 
 ## Ideen, nicht gebaut
+Dateien je Bier (Etiketten-PDFs u. a., vom Nutzer 14.11.2026 gefragt — Plan: D1 in Stücken oder R2, Worker neu nötig);
 Excel-Datei, die sich ständig selbst aktualisiert (vom Nutzer gefragt 14.11.2026, Wege besprochen, noch offen);
 Ausgaben (Malz, Hopfen, Flaschen) → Gewinn; Daueraufträge (in der alten Tabelle rot); Reservierungen; Kisten-Preis; Kassensturz (Ist-Betrag
 in der Kasse gegen App).

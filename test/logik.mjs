@@ -128,5 +128,34 @@ ist("CSV Zeilen", c.trim().split("\r\n").length, 4);
   ist("Livraison ungültig ohne Datum", L.gueltig({ ...L2, datum: "20.12." }), false);
 }
 
+// Biere: anlegen mit Eigenschaften, Preis ändern, archivieren, löschen, wieder anlegen
+{
+  let k3 = 0, t3 = 90000;
+  const B = (art, x) => ({ id: "bi-" + String(++k3).padStart(5, "0"), zeit: t3 += 1000, art, durch: "Laurent", ...x });
+  const rusty = B("bier", { name: "Rusty", preis: 3, stil: "Red Ale", braudatum: "2026-02-06", alk: 5.6, liter: 156, mhd: "2027-02-01", notiz: "" });
+  const ab = B("abfuellung", { sorte: "Rusty", n: 288 });
+  let Y = L.rechne([rusty, ab]);
+  ist("Bier angelegt", Y.cfg.sorten.map(c => c.name), ["NEIPA", "White IPA", "Brown Porter", "Rusty"]);
+  ist("Bier im Lager", L.hat(Y, "Lager", "Rusty"), 288);
+  ist("Eigenschaften", [Y.cfg.sorten[3].meta.alk, Y.cfg.sorten[3].meta.braudatum], [5.6, "2026-02-06"]);
+  const bp = B("bier", { name: "Brown Porter", preis: 3.5, alk: 5.1 });
+  Y = L.rechne([rusty, ab, bp]);
+  ist("Altbestand-Sorte bekommt Preis und Eigenschaften", [Y.cfg.sorten[2].preis, Y.cfg.sorten[2].meta.alk], [3.5, 5.1]);
+  const arch = B("bierstatus", { name: "Rusty", status: "archiv" });
+  Y = L.rechne([rusty, ab, bp, arch]);
+  ist("archiviert: aus, bleibt in Liste und Excel", [Y.cfg.sorten[3].aus, Y.cfg.sorten[3].archiv, Y.sortenNamen.includes("Rusty"), L.exportBlaetter(Y, () => "").some(b => b.name === "Rusty")], [true, true, true, true]);
+  ist("Excel-Info mit Eigenschaften", L.exportBlaetter(Y, () => "").find(b => b.name === "Rusty").info[0], "Red Ale · Braugang vum 6.2.2026 · Alk: 5,6 % · Quantitéit: 156 L · Haltbar bis 1.2.2027 · ARCHIVÉIERT");
+  Y = L.rechne([rusty, ab, bp, arch, B("bierstatus", { name: "Rusty", status: "aktiv" })]);
+  ist("aus dem Archiv zurück", Y.cfg.sorten[3].aus, false);
+  const weg = B("bierstatus", { name: "Rusty", status: "weg" });
+  Y = L.rechne([rusty, ab, bp, weg]);
+  ist("gelöscht: überall weg", [Y.cfg.sorten.some(c => c.name === "Rusty"), Y.sortenNamen.includes("Rusty"), L.exportBlaetter(Y, () => "").some(b => b.name === "Rusty"), Y.flaschen.da], [false, false, false, 0]);
+  Y = L.rechne([rusty, ab, bp, weg, B("bier", { name: "Rusty", preis: 3 })]);
+  ist("neu angelegt nach Löschen: wieder da", Y.sortenNamen.includes("Rusty"), true);
+  ist("Bier ungültig: Lager als Name", L.gueltig({ ...rusty, name: "Lager" }), false);
+  ist("Bier ungültig: Alkohol zu hoch", L.gueltig({ ...rusty, alk: 55 }), false);
+  ist("Verlauf-Text", L.beschreibe(rusty), "🍺 Béier: Rusty · Red Ale · 5,6 % · 3 € · gebraut 6.2.2026");
+}
+
 console.log(fehler ? `${fehler} von ${n} Prüfungen fehlgeschlagen` : `Alle ${n} Prüfungen bestanden`);
 process.exit(fehler ? 1 : 0);

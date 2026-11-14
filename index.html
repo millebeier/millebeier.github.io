@@ -99,7 +99,7 @@ select{background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),
 .log .lt{flex:1;min-width:0}
 .log .lt small{display:block;color:var(--muted)}
 .log.weg .lt > div{text-decoration:line-through;color:var(--muted)}
-.log .zurueck{background:none;border:1px solid var(--line);color:var(--muted);border-radius:8px;padding:4px 8px;font-size:13px;cursor:pointer}
+.log .zurueck{background:none;border:1.5px solid var(--akzent);color:var(--akzent);border-radius:10px;min-width:40px;height:36px;padding:0 10px;font-size:18px;font-weight:700;line-height:1;cursor:pointer}
 .hinweis{font-size:13px;color:var(--muted);margin-top:8px}
 #neu{display:block;width:100%;margin:8px 0 0;padding:10px 12px;border:0;border-radius:10px;background:var(--akzent);color:#fff;font-size:15px;font-weight:700;cursor:pointer}
 .probe{background:#3a3115;color:#f4e2a0;border-radius:10px;padding:8px 12px;font-size:13px;margin-top:10px}
@@ -117,7 +117,16 @@ select{background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),
 .liv .wann.faellig{color:var(--gelb);font-weight:700}
 .chip{display:inline-block;font-size:12px;padding:3px 8px;border-radius:9px;background:var(--card2);margin:6px 4px 0 0}
 .chip.ok{background:#1f3a20;color:#bfe8c0} .chip.warn{background:#3a3115;color:#f4e2a0}
-tr.klick{cursor:pointer} tr.klick td:first-child::after{content:" ▾";color:var(--muted)} tr.klick.auf td:first-child::after{content:" ▴"}
+tr.klick{cursor:pointer} tr.klick td:first-child{white-space:nowrap}
+tr.klick td:first-child::before{content:"▶";display:inline-block;width:20px;color:var(--akzent);font-size:15px}
+tr.klick.auf td:first-child::before{content:"▼"}
+.bier{border-top:1px solid var(--line);padding:12px 0}
+.bier:first-of-type{border-top:0}
+.bier .kopfz{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.bier .kopfz b{font-size:17px}
+.knopf.rot{border-color:var(--akzent);color:var(--akzent);background:none}
+.bier .knopfe{flex-wrap:nowrap} .bier .knopf{flex:1;padding:9px 4px;font-size:13px;white-space:nowrap}
+#bTabelle td:first-child{white-space:nowrap}
 .detail td{font-size:13px;vertical-align:top}
 .detail td:first-child,.detail th:first-child{text-align:left;padding-right:8px}
 .detail tr.geplant td{color:var(--muted);font-style:italic}
@@ -153,7 +162,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px}
   <section id="t-verkaufen" class="versteckt"><div id="vForm"></div></section>
   <section id="t-livraisons" class="versteckt"><div id="lListe"></div><div id="lForm"></div></section>
   <section id="t-offen" class="versteckt"></section>
-  <section id="t-bestand" class="versteckt"><div id="bTabelle"></div><div id="bForm"></div></section>
+  <section id="t-bestand" class="versteckt"><div id="bTabelle"></div><div id="bForm"></div><div id="bBiere"></div></section>
   <section id="t-verlauf" class="versteckt"></section>
   <section id="t-einst" class="versteckt"></section>
   <footer id="fuss"></footer>
@@ -163,7 +172,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px}
 <script>
 /* Adresse des Cloudflare-Workers. Leer = Probe-Modus (alles nur auf diesem Handy). */
 const WORKER_URL = "https://millebeier.rjtp6r9s9h.workers.dev/";
-const FASSUNG = "14.11.2026 b";
+const FASSUNG = "14.11.2026 d";
 
 /* === Logik === (kein DOM; test/logik.mjs schneidet diesen Block aus) */
 const LAGER = "Lager";
@@ -172,7 +181,7 @@ const STANDARD = {
   leute: ["Jeff", "Marc", "Claude", "Laurent"],
 };
 const GRUENDE = { getrunken: "selwer gedronk", verschenkt: "verschenkt / Prouf", kaputt: "futti", sonst: "soss eppes" };
-const ARTEN = ["abfuellung", "bewegung", "abgang", "verkauf", "zahlung", "einstellungen", "storno", "livraison", "rechnung"];
+const ARTEN = ["abfuellung", "bewegung", "abgang", "verkauf", "zahlung", "einstellungen", "storno", "livraison", "rechnung", "bier", "bierstatus"];
 
 const ganz = n => Number.isInteger(n) && n > 0 && n <= 100000;
 const geld = x => typeof x === "number" && isFinite(x) && x >= 0 && x <= 1000000;
@@ -184,6 +193,9 @@ function euro(x) {
   return (Number.isInteger(r) ? String(r) : r.toFixed(2).replace(".", ",")) + " €";
 }
 
+const optDatum = d => d === undefined || d === "" || (typeof d === "string" && /^\d{4}-\d{2}-\d{2}$/.test(d));
+const optZahl = (x, a, b) => x === undefined || x === null || (typeof x === "number" && isFinite(x) && x >= a && x <= b);
+const optText = (t, m) => t === undefined || (typeof t === "string" && t.length <= m);
 const postenOk = p => Array.isArray(p) && p.length > 0 && p.length <= 30 && p.every(x => x && text(x.sorte) && ganz(x.n));
 
 function gueltig(e) {
@@ -201,6 +213,10 @@ function gueltig(e) {
         (e.anlass === undefined || e.anlass === "" || text(e.anlass, 80)) &&
         (e.notiz === undefined || (typeof e.notiz === "string" && e.notiz.length <= 300));
     case "rechnung": return typeof e.ref === "string";
+    case "bier":
+      return text(e.name, 30) && e.name !== LAGER && geld(e.preis) && optDatum(e.braudatum) && optDatum(e.mhd) &&
+        optZahl(e.alk, 0, 30) && optZahl(e.liter, 0, 100000) && optText(e.stil, 40) && optText(e.notiz, 300);
+    case "bierstatus": return text(e.name, 30) && ["aktiv", "archiv", "weg"].includes(e.status);
     case "zahlung": return typeof e.ref === "string" && geld(e.betrag) && e.betrag > 0;
     case "einstellungen":
       return Array.isArray(e.sorten) && e.sorten.length > 0 && e.sorten.length <= 30 &&
@@ -234,6 +250,31 @@ function rechne(eintraege) {
   let cfg = { sorten: STANDARD.sorten.map(s => ({ ...s })), leute: [...STANDARD.leute] };
   for (const e of aktiv) if (e.art === "einstellungen")
     cfg = { sorten: e.sorten.map(s => ({ name: s.name.trim(), preis: runde(s.preis), aus: !!s.aus })), leute: e.leute.map(p => p.trim()) };
+
+  // Biere mit Eigenschaften (seit 14.11.2026). Die Liste aus den Einstellungen bleibt die Grundlage
+  // (Altbestand); ein „bier“-Eintrag fügt ein Bier hinzu oder ergänzt Preis und Eigenschaften.
+  // Status: archiv = nicht mehr zu verkaufen, bleibt in Iwwersiicht/Excel; weg = verschwindet überall
+  // (Verkäufe bleiben im Verlauf und in der Kasse). Ein neuer „bier“-Eintrag holt ein gelöschtes zurück.
+  const basisSorten = cfg.sorten.map(x => ({ ...x }));
+  const biere = new Map(), status = new Map();
+  for (const e of aktiv) {
+    if (e.art === "bier") {
+      biere.set(e.name, { name: e.name, preis: runde(e.preis), stil: e.stil || "", braudatum: e.braudatum || "", alk: e.alk ?? null,
+        liter: e.liter ?? null, mhd: e.mhd || "", notiz: e.notiz || "", id: e.id, zeit: e.zeit });
+      if (status.get(e.name) === "weg") status.delete(e.name);
+    } else if (e.art === "bierstatus") status.set(e.name, e.status);
+  }
+  const sl = cfg.sorten.map(x => ({ ...x }));
+  for (const b of biere.values()) { const x = sl.find(y => y.name === b.name); if (x) x.preis = b.preis; else sl.push({ name: b.name, preis: b.preis }); }
+  for (const x of sl) {
+    x.meta = biere.get(x.name) || null;
+    const stt = status.get(x.name);
+    if (stt === "archiv" || (x.aus && stt !== "aktiv")) { x.aus = true; x.archiv = true; }
+    if (stt === "aktiv") { x.aus = false; x.archiv = false; }
+    if (stt === "weg") x.weg = true;
+  }
+  const geloescht = new Set(sl.filter(x => x.weg).map(x => x.name));
+  cfg = { ...cfg, sorten: sl.filter(x => !x.weg) };
 
   const bestand = {};
   const add = (h, s, n) => { (bestand[h] ||= {}); bestand[h][s] = (bestand[h][s] || 0) + n; };
@@ -284,11 +325,11 @@ function rechne(eintraege) {
 
   const halter = [LAGER, ...cfg.leute];
   for (const h in bestand) if (!halter.includes(h) && Object.values(bestand[h]).some(n => n !== 0)) halter.push(h);
-  const sortenNamen = [...cfg.sorten.map(s => s.name), ...Object.keys(sorten).filter(s => !cfg.sorten.some(c => c.name === s))];
+  const sortenNamen = [...cfg.sorten.map(s => s.name), ...Object.keys(sorten).filter(s => !cfg.sorten.some(c => c.name === s) && !geloescht.has(s))];
   const summe = f => sortenNamen.reduce((a, s) => a + sorten[s][f], 0);
 
   return {
-    cfg, liste, aktiv, storniert, nachId, bestand, halter, sorten, sortenNamen, personen,
+    cfg, basisSorten, geloescht, liste, aktiv, storniert, nachId, bestand, halter, sorten, sortenNamen, personen,
     verkaeufe: [...vk.values()],
     vkNachId: vk,
     livraisons: [...liv.values()].sort((a, b) => a.datum.localeCompare(b.datum) || ordnung(a, b)),
@@ -322,10 +363,12 @@ function beschreibe(e, Z) {
       const v = Z && Z.nachId.get(e.ref);
       return "🧾 Rechnung gemaach" + (v ? `: ${v.kaeufer}` : "");
     }
+    case "bier": return `🍺 Béier: ${e.name}` + [e.stil, e.alk != null ? String(e.alk).replace(".", ",") + " %" : "", euro(e.preis), e.braudatum ? "gebraut " + datumKurz(e.braudatum) : ""].filter(Boolean).map(x => " · " + x).join("");
+    case "bierstatus": return { archiv: "📦 Archivéiert: ", aktiv: "↩️ Aus dem Archiv zréck: ", weg: "✕ Béier geläscht: " }[e.status] + e.name;
     case "einstellungen": return `⚙️ Zorten/Präisser/Leit geännert: ${e.sorten.filter(s => !s.aus).map(s => `${s.name} ${euro(s.preis)}`).join(", ")}`;
     case "storno": {
       const z = Z && Z.nachId.get(e.ref);
-      return "↶ Réckgängeg: " + (z ? beschreibe(z, Z) : "?");
+      return "✕ Geläscht: " + (z ? beschreibe(z, Z) : "?");
     }
   }
   return "?";
@@ -407,12 +450,15 @@ function exportBlaetter(Z, zeitFmt) {
   const kopf = ["Datum", "Client", "Kontakt", "Unzuel", "Präis/Fl", "Recetten", "geliwwert?", "bezuel?", "Rechnung", "Remarquen"];
   for (const s of Z.sortenNamen) {
     const z = proSorte(Z, s), x = Z.sorten[s];
-    if (!z.length && !x.abgefuellt && !x.da) continue;
+    if (!z.length && !x.abgefuellt && !x.da && !(Z.cfg.sorten.find(y => y.name === s) || {}).meta) continue;
     const zeilen = z.map(r => [r.datum ? datumKurz(r.datum) : zeitFmt(r.zeit), r.kunde, r.kontakt, r.n, r.preis, r.recetten, r.geliwwert, r.bezuelt, r.rechnung, r.remarque]);
     const fest = z.filter(r => !r.geplant);
+    const c = Z.cfg.sorten.find(y => y.name === s) || {}, m = c.meta || {};
     blaetter.push({ name: s, titel: s, info: [
+      [m.stil, m.braudatum ? `Braugang vum ${datumKurz(m.braudatum)}` : "", m.alk != null ? `Alk: ${String(m.alk).replace(".", ",")} %` : "",
+        m.liter != null ? `Quantitéit: ${String(m.liter).replace(".", ",")} L` : "", m.mhd ? `Haltbar bis ${datumKurz(m.mhd)}` : "", c.archiv ? "ARCHIVÉIERT" : ""].filter(Boolean).join(" · "),
       `Ofgefëllt: ${x.abgefuellt} · Verkaaft: ${x.verkauft} · Fort: ${x.abgang} · Nach do: ${x.da}`,
-      `Präis: ${euro(preisVon(Z.cfg, s))} pro ${istFass(s) ? "Fass" : "Fläsch"}`],
+      `Verkafspräis: ${euro(preisVon(Z.cfg, s))} pro ${istFass(s) ? "Fass" : "Fläsch"}`, m.notiz || ""].filter(Boolean),
       kopf, zeilen,
       summe: ["Total", "", "", fest.reduce((a, r) => a + r.n, 0), "", runde(fest.reduce((a, r) => a + r.recetten, 0)), "", "", "", "ouni geplangten"] });
   }
@@ -625,10 +671,10 @@ function renderUebersicht() {
   </div></div>
   <div class="card"><h2>Pro Zort</h2><div class="tabwrap"><table>
     <tr><th>Zort</th><th>Ofgefëllt</th><th>Verkaaft</th><th>Fort</th><th>Nach do</th></tr>
-    ${zeilen.map(s => { const x = Z.sorten[s]; return `<tr class="klick ${OFFEN_SORTE === s ? "auf" : ""}" data-sorte="${esc(s)}"><td>${esc(s)}</td><td>${x.abgefuellt}</td><td>${x.verkauft}</td><td>${x.abgang}</td><td><b>${x.da}</b></td></tr>`; }).join("")}
+    ${zeilen.map(s => { const x = Z.sorten[s]; return `<tr class="klick ${OFFEN_SORTE === s ? "auf" : ""}" data-sorte="${esc(s)}"><td>${esc(s)}${(Z.cfg.sorten.find(c => c.name === s) || {}).archiv ? ` <small class="muted">📦</small>` : ""}</td><td>${x.abgefuellt}</td><td>${x.verkauft}</td><td>${x.abgang}</td><td><b>${x.da}</b></td></tr>`; }).join("")}
     <tr class="summe"><td>Total</td><td>${F.abgefuellt}</td><td>${F.verkauft}</td><td>${F.abgang}</td><td>${F.da}</td></tr>
   </table></div>
-  <div class="hinweis">„Fort“ = selwer gedronk, verschenkt oder futti. Eng Zort antippen: wien huet wat wiem verkaaft.</div></div>
+  <div class="hinweis">„Fort“ = selwer gedronk, verschenkt oder futti. Op ▶ tippen: wien huet wat wiem verkaaft. 📦 = archivéiert.</div></div>
   ${OFFEN_SORTE && Z.sorten[OFFEN_SORTE] ? sorteDetail(OFFEN_SORTE) : ""}
   <div class="card"><h2>Pro Persoun</h2><div class="tabwrap"><table>
     <tr><th></th><th>Huet nach</th><th>Verkaaft</th><th>Ëmsaz</th><th>Op</th></tr>
@@ -951,7 +997,99 @@ function renderOffen() {
 }
 
 /* ---------- Bestand ---------- */
+/* ---------- Biere (im Reiter Stock) ---------- */
+let BIERFORM = null, ARCHIV_AUF = false;
+const zahlText = x => x == null ? "" : String(x).replace(".", ",");
+const zahlAus = t => { const v = String(t || "").trim().replace(",", "."); return v === "" ? null : (isFinite(+v) ? +v : NaN); };
+function bierInfo(c) {
+  const m = c.meta || {};
+  return [m.stil, m.alk != null ? zahlText(m.alk) + " %" : "", euro(c.preis) + (istFass(c.name) ? "/Fass" : "/Fl"),
+    m.braudatum ? "gebraut " + datumKurz(m.braudatum) : "", m.liter != null ? zahlText(m.liter) + " L" : "", m.mhd ? "haltbar bis " + datumKurz(m.mhd) : ""].filter(Boolean).join(" · ");
+}
+function renderBiere() {
+  const box = $("#bBiere");
+  if (tipptIn(box)) return;
+  if (BIERFORM) return renderBierForm(box);
+  const aktivB = Z.cfg.sorten.filter(c => !c.archiv), archiv = Z.cfg.sorten.filter(c => c.archiv);
+  const zeile = c => `<div class="bier"><div class="kopfz"><b>${esc(c.name)}</b><span class="muted">${Z.sorten[c.name] ? Z.sorten[c.name].da : 0} do</span></div>
+      <div class="hinweis" style="margin-top:2px">${esc(bierInfo(c))}</div>
+      ${c.meta && c.meta.notiz ? `<div class="hinweis" style="margin-top:2px">${esc(c.meta.notiz)}</div>` : ""}
+      <div class="knopfe"><button class="knopf" data-bed="${esc(c.name)}">✎ Änneren</button>
+        ${c.archiv ? `<button class="knopf" data-bzr="${esc(c.name)}">↩️ Zréckhuelen</button>` : `<button class="knopf" data-barch="${esc(c.name)}">📦 Archiv</button>`}
+        <button class="knopf rot" data-bweg="${esc(c.name)}">✕ Läschen</button></div></div>`;
+  box.innerHTML = `<div class="card"><h2>Eis Béieren</h2>
+    ${aktivB.length ? aktivB.map(zeile).join("") : `<div class="leer">Nach keen Béier.</div>`}
+    <button class="haupt" id="bierNeu">+ Neit Béier</button>
+    ${archiv.length ? `<button class="knopf" id="archivAuf" style="width:100%;margin-top:12px">📦 Archiv (${archiv.length}) ${ARCHIV_AUF ? "▴" : "▾"}</button>
+      ${ARCHIV_AUF ? archiv.map(zeile).join("") : ""}` : ""}
+    <div id="bierMeld"></div></div>`;
+  const finde = n => Z.cfg.sorten.find(c => c.name === n);
+  $("#bierNeu").onclick = () => { BIERFORM = { neu: true, name: "", stil: "", braudatum: "", alk: "", liter: "", preis: "3", mhd: "", notiz: "", flaschen: "" }; renderBiere(); };
+  const au = $("#archivAuf"); if (au) au.onclick = () => { ARCHIV_AUF = !ARCHIV_AUF; renderBiere(); };
+  box.querySelectorAll("[data-bed]").forEach(b => b.onclick = () => {
+    const c = finde(b.dataset.bed); if (!c) return; const m = c.meta || {};
+    BIERFORM = { neu: false, name: c.name, stil: m.stil || "", braudatum: m.braudatum || "", alk: zahlText(m.alk), liter: zahlText(m.liter), preis: zahlText(c.preis), mhd: m.mhd || "", notiz: m.notiz || "", flaschen: "" };
+    renderBiere();
+  });
+  box.querySelectorAll("[data-barch]").forEach(b => b.onclick = () => {
+    const n = b.dataset.barch, da = Z.sorten[n] ? Z.sorten[n].da : 0;
+    if (!confirm(`${n} archivéieren?\n\nEt kann een et dann net méi verkafen. An der Iwwersiicht an am Excel bleift et.` + (da ? `\n\nAchtung: et sinn nach ${da} do.` : ""))) return;
+    eintragen([{ art: "bierstatus", name: n, status: "archiv" }]);
+  });
+  box.querySelectorAll("[data-bzr]").forEach(b => b.onclick = () => eintragen([{ art: "bierstatus", name: b.dataset.bzr, status: "aktiv" }]));
+  box.querySelectorAll("[data-bweg]").forEach(b => b.onclick = () => {
+    const n = b.dataset.bweg, x = Z.sorten[n] || { verkauft: 0, da: 0 };
+    if (!confirm(`${n} komplett läschen?\n\nEt verschwënnt aus dem Stock, der Iwwersiicht an dem Excel.` +
+      (x.verkauft || x.da ? `\n\nAchtung: ${x.verkauft} verkaaft, ${x.da} nach do. D'Verkéf bleiwen am Verlaf an d'Suen an der Kees.` : "") +
+      `\n\nWëlls de just net méi verkafen? Dann besser „Archivéieren“.`)) return;
+    if (!confirm(`Bass de sécher? ${n} gëtt elo geläscht.\n\n(Réckgängeg nëmmen iwwer de Verlaf.)`)) return;
+    eintragen([{ art: "bierstatus", name: n, status: "weg" }]);
+  });
+}
+function renderBierForm(box) {
+  const F = BIERFORM;
+  box.innerHTML = `<div class="card"><h2>${F.neu ? "Neit Béier" : esc(F.name) + " änneren"}</h2>
+    ${F.neu ? `<label for="biName">Numm</label><input id="biName" value="${esc(F.name)}" placeholder="z. B. Rusty" autocapitalize="words">`
+      : `<div class="hinweis" style="margin:0">Den Numm bleift — de Stock hänkt drun.</div>`}
+    <label for="biStil">Stil (fräiwëlleg)</label><input id="biStil" value="${esc(F.stil)}" placeholder="z. B. Red Ale, Porter, NEIPA">
+    <div class="zeile"><div><label for="biBrau">Braudatum</label><input id="biBrau" type="date" value="${esc(F.braudatum)}"></div>
+      <div><label for="biAlk">Alkohol (%)</label><input id="biAlk" inputmode="decimal" value="${esc(F.alk)}" placeholder="5,6"></div></div>
+    <div class="zeile"><div><label for="biLiter">Gebraut (Liter)</label><input id="biLiter" inputmode="decimal" value="${esc(F.liter)}" placeholder="176"></div>
+      <div><label for="biPreis">Präis pro Fläsch (€)</label><input id="biPreis" inputmode="decimal" value="${esc(F.preis)}"></div></div>
+    <label for="biMhd">Haltbar bis (fräiwëlleg)</label><input id="biMhd" type="date" value="${esc(F.mhd)}">
+    ${F.neu ? `<label for="biFl">Ofgefëllt: Fläschen an d'Lager (fräiwëlleg)</label><input id="biFl" inputmode="numeric" pattern="[0-9]*" value="${esc(F.flaschen)}" placeholder="z. B. 288">` : ""}
+    <label for="biNotiz">Beschreiwung (fräiwëlleg)</label><input id="biNotiz" value="${esc(F.notiz)}" placeholder="z. B. Hopfen, Geschmaach">
+    <div class="hinweis">Fässer als eegent Béier uleeën, z. B. „Rusty Keg 30l“ mat 180 € als Präis.</div>
+    <button class="haupt" id="biOk">${F.neu ? "Béier uleeën" : "Späicheren"}</button>
+    <button class="haupt" id="biZu" style="background:var(--card2);color:var(--text)">Ofbriechen</button>
+    <div id="biMeld"></div></div>`;
+  const bind = (id, k) => { const el = $(id); if (el) el.oninput = el.onchange = () => { F[k] = el.value; }; };
+  bind("#biName", "name"); bind("#biStil", "stil"); bind("#biBrau", "braudatum"); bind("#biAlk", "alk"); bind("#biLiter", "liter");
+  bind("#biPreis", "preis"); bind("#biMhd", "mhd"); bind("#biFl", "flaschen"); bind("#biNotiz", "notiz");
+  $("#biZu").onclick = () => { BIERFORM = null; renderBiere(); };
+  $("#biOk").onclick = () => {
+    const meld = t => $("#biMeld").innerHTML = `<div class="meldung fehler">${esc(t)}</div>`;
+    const name = F.name.trim().replace(/\s+/g, " ");
+    const preis = zahlAus(F.preis), alk = zahlAus(F.alk), liter = zahlAus(F.liter), fl = String(F.flaschen).trim() ? parseInt(F.flaschen, 10) : 0;
+    if (!name) return meld("Wéi heescht d'Béier?");
+    if (F.neu && (Z.cfg.sorten.some(c => c.name.toLowerCase() === name.toLowerCase()) || name === LAGER)) return meld("Dee Numm gëtt et schonn.");
+    if (preis == null || isNaN(preis)) return meld("Wat kascht eng Fläsch?");
+    if (Number.isNaN(alk) || Number.isNaN(liter)) return meld("Alkohol a Liter just als Zuel, z. B. 5,6.");
+    if (fl && !ganz(fl)) return meld("Fläschen: just eng ganz Zuel.");
+    const e = { art: "bier", name, preis: runde(preis), stil: F.stil.trim(), braudatum: F.braudatum, alk, liter, mhd: F.mhd, notiz: F.notiz.trim() };
+    if (!gueltig({ ...e, id: "x", zeit: 0 })) return meld("Eppes ass ze laang oder net richteg (Numm max. 30 Zeechen).");
+    const teile = [e];
+    if (F.neu && fl) teile.push({ art: "abfuellung", sorte: name, n: fl });
+    if (document.activeElement) document.activeElement.blur();
+    if (!eintragen(teile).length) return;
+    BIERFORM = null; FORM = null; BFORM = null; LFORM = null;
+    renderBiere();
+    $("#bierMeld").innerHTML = `<div class="meldung ok">✓ ${esc(name)} ${F.neu ? "ugeluecht" + (fl ? `, ${fl} Fläschen am Lager` : "") : "gespäichert"}</div>`;
+  };
+}
+
 function renderBestand() {
+  renderBiere();
   const tab = $("#bTabelle");
   const sorten = Z.sortenNamen.filter(s => Z.halter.some(h => hat(Z, h, s) !== 0) || !(Z.cfg.sorten.find(c => c.name === s) || {}).aus);
   tab.innerHTML = `<div class="card"><h2>Wien huet wat?</h2><div class="tabwrap"><table>
@@ -1024,15 +1162,15 @@ function renderVerlauf() {
       const weg = Z.storniert.get(e.id);
       const kann = e.art !== "storno" && !weg;
       return `<div class="log ${weg ? "weg" : ""}"><div class="lt"><div>${esc(beschreibe(e, Z))}</div>
-        <small>${zeitText(e.zeit)} · ${esc(e.durch || "?")}${offenIds.has(e.id) ? " · ⏳ nach net geschéckt" : ""}${weg ? ` · réckgängeg gemaach: ${esc(weg.durch || "?")}` : ""}</small></div>
-        ${kann ? `<button class="zurueck" data-storno="${esc(e.id)}">↶</button>` : ""}</div>`;
+        <small>${zeitText(e.zeit)} · ${esc(e.durch || "?")}${offenIds.has(e.id) ? " · ⏳ nach net geschéckt" : ""}${weg ? ` · geläscht vum ${esc(weg.durch || "?")}` : ""}</small></div>
+        ${kann ? `<button class="zurueck" data-storno="${esc(e.id)}" aria-label="Läschen" title="Läschen">✕</button>` : ""}</div>`;
     }).join("") : `<div class="leer">Nach näischt agedroen.</div>`}
     ${alle.length > VERLAUF_MAX ? `<button class="knopf" id="mehr" style="width:100%;margin-top:10px">Méi al weisen</button>` : ""}
   </div>`;
   box.querySelectorAll("[data-storno]").forEach(b => b.onclick = () => {
     const e = Z.nachId.get(b.dataset.storno);
     if (!e) return;
-    let frage = `Réckgängeg maachen?\n\n${beschreibe(e, Z)}`;
+    let frage = `Dësen Agab läschen?\n\n${beschreibe(e, Z)}`;
     if (e.art === "verkauf" && (Z.vkNachId.get(e.id) || {}).bezahlt) frage += "\n\nD'Bezuelung dozou zielt dann och net méi.";
     if (!confirm(frage)) return;
     eintragen([{ art: "storno", ref: e.id }]);
@@ -1044,21 +1182,14 @@ function renderVerlauf() {
 function renderEinst() {
   const box = $("#t-einst");
   if (tipptIn(box)) return;
-  if (!EFORM) EFORM = { sorten: Z.cfg.sorten.map(s => ({ ...s })), leute: [...Z.cfg.leute] };
+  if (!EFORM) EFORM = { leute: [...Z.cfg.leute] };
   const E = EFORM;
   box.innerHTML = `<div class="card"><h2>Dësen Handy</h2>
     <label for="eIch">Ech sinn</label>
     <select id="eIch">${Z.cfg.leute.map(p => `<option ${p === EIN.ich ? "selected" : ""}>${esc(p)}</option>`).join("")}</select>
   </div>
-  <div class="card"><h2>Zorten a Präisser</h2>
-    <div class="hinweis" style="margin:0 0 8px">Präis pro Fläsch. Ouni Haken = gëtt net méi verkaaft (bleift an der Statistik).</div>
-    ${E.sorten.map((s, i) => `<div class="sorte-ed">
-      <input data-sn="${i}" value="${esc(s.name)}" placeholder="Name">
-      <input data-sp="${i}" inputmode="decimal" value="${String(s.preis).replace(".", ",")}">
-      <input type="checkbox" data-sa="${i}" ${s.aus ? "" : "checked"} aria-label="gëtt verkaaft">
-      <button data-sx="${i}" aria-label="ewechhuelen">✕</button></div>`).join("")}
-    <button class="knopf" id="eSorteNeu">+ Zort</button>
-    <h3>Wien verkeeft?</h3>
+  <div class="card"><h2>Wien verkeeft?</h2>
+    <div class="hinweis" style="margin:0 0 8px">Béieren a Präisser: ënner <b>Stock → Eis Béieren</b>.</div>
     ${E.leute.map((p, i) => `<div class="person-ed"><input data-pn="${i}" value="${esc(p)}"><button data-px="${i}" aria-label="ewechhuelen">✕</button></div>`).join("")}
     <button class="knopf" id="ePersonNeu">+ Persoun</button>
     <div class="hinweis">Nimm net ëmbenennen, wann een scho Fläschen huet — de Stock hänkt um Numm.</div>
@@ -1075,20 +1206,14 @@ function renderEinst() {
   </div>
   <button class="haupt" id="eZurueck" style="background:var(--card2);color:var(--text)">Zréck</button>`;
   $("#eIch").onchange = e => { EIN.ich = e.target.value; merke(SP, EIN); FORM = null; BFORM = null; render(); };
-  box.querySelectorAll("[data-sn]").forEach(el => el.oninput = () => { E.sorten[+el.dataset.sn].name = el.value; });
-  box.querySelectorAll("[data-sp]").forEach(el => el.oninput = () => { E.sorten[+el.dataset.sp].preis = el.value; });
-  box.querySelectorAll("[data-sa]").forEach(el => el.onchange = () => { E.sorten[+el.dataset.sa].aus = !el.checked; });
-  box.querySelectorAll("[data-sx]").forEach(el => el.onclick = () => { E.sorten.splice(+el.dataset.sx, 1); renderEinst(); });
   box.querySelectorAll("[data-pn]").forEach(el => el.oninput = () => { E.leute[+el.dataset.pn] = el.value; });
   box.querySelectorAll("[data-px]").forEach(el => el.onclick = () => { E.leute.splice(+el.dataset.px, 1); renderEinst(); });
-  $("#eSorteNeu").onclick = () => { E.sorten.push({ name: "", preis: 3 }); renderEinst(); };
   $("#ePersonNeu").onclick = () => { E.leute.push(""); renderEinst(); };
   $("#eSpeichern").onclick = () => {
     const meld = (art, t) => $("#eMeld").innerHTML = `<div class="meldung ${art}">${esc(t)}</div>`;
-    const sorten = E.sorten.map(s => ({ name: String(s.name).trim(), preis: runde(+String(s.preis).replace(",", ".")), ...(s.aus ? { aus: true } : {}) })).filter(s => s.name);
+    // Die Grundliste der Sorten unverändert mitschicken; Biere pflegt man jetzt im Stock.
+    const sorten = Z.basisSorten.map(s => ({ name: s.name, preis: s.preis, ...(s.aus ? { aus: true } : {}) }));
     const leute = E.leute.map(p => String(p).trim()).filter(Boolean);
-    if (!sorten.length || sorten.some(s => !geld(s.preis))) return meld("fehler", "All Zort brauch e Präis.");
-    if (new Set(sorten.map(s => s.name)).size !== sorten.length) return meld("fehler", "Zwou Zorten heeschen d'selwecht.");
     if (!leute.length || new Set(leute).size !== leute.length || leute.includes(LAGER)) return meld("fehler", "Nimm feelen oder sinn duebel.");
     const e = { art: "einstellungen", sorten, leute };
     if (!gueltig({ ...e, id: "x", zeit: 0 })) return meld("fehler", "En Numm ass ze laang.");
@@ -1162,7 +1287,7 @@ function mittenImEintrag() {
   if (TAB === "einst" && EFORM) return true;
   if (FORM && (FORM.kaeufer.trim() || Object.values(FORM.n).some(n => n > 0) || FORM.betrag != null)) return true;
   if (BFORM && String(BFORM.n).trim()) return true;
-  if (L_NEU) return true;
+  if (L_NEU || BIERFORM) return true;
   return false;
 }
 function neuLaden() {
