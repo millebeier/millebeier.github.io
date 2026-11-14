@@ -125,6 +125,7 @@ select{background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),
 .liv .kopfz b{font-size:17px}
 .liv .wann{font-size:13px;color:var(--muted)}
 .liv .wann.faellig{color:var(--gelb);font-weight:700}
+h3 .flasche{width:12px;height:24px;vertical-align:-5px;margin-right:4px}
 .aus-fest{align-items:center;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:6px 6px 6px 12px}
 .aus-fest b{font-size:16px}
 .chip{display:inline-block;font-size:12px;padding:3px 8px;border-radius:9px;background:var(--card2);margin:6px 4px 0 0}
@@ -234,7 +235,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px}
 <script>
 /* Adresse des Cloudflare-Workers. Leer = Probe-Modus (alles nur auf diesem Handy). */
 const WORKER_URL = "https://millebeier.rjtp6r9s9h.workers.dev/";
-const FASSUNG = "15.11.2026 a";
+const FASSUNG = "15.11.2026 b";
 
 /* === Logik === (kein DOM; test/logik.mjs schneidet diesen Block aus) */
 const LAGER = "Lager";
@@ -1739,7 +1740,7 @@ function renderBestand() {
   const sorten = Z.sortenNamen.filter(s => Z.halter.some(h => hat(Z, h, s) !== 0) || !(Z.cfg.sorten.find(c => c.name === s) || {}).aus);
   const faesser = Z.sortenNamen.flatMap(s => fassNamen(Z, s)).filter(k => Z.halter.some(h => hat(Z, h, k) !== 0 || reserviertBei(Z, h, k)));
   const res = Z.halter.flatMap(h => Object.entries(Z.reserviert[h] || {}).filter(([, n]) => n > 0).map(([k, n]) => `${n} × ${postenText([{ sorte: k, n }]).replace(/^\d+ × /, "")} ${beim(h)}`));
-  tab.innerHTML = `<div class="card"><h2>Wien huet wat?</h2><h3>🍾 Fläschen</h3><div class="tabwrap"><table>
+  tab.innerHTML = `<div class="card"><h2>Wien huet wat?</h2><h3><svg class="flasche" viewBox="0 0 24 48" aria-hidden="true"><rect x="9" y="1" width="6" height="3" rx="1" fill="#c9c9c9"/><path d="M9.5 4h5v8c0 2 1 3 2.5 5s3 4 3 7.5V44a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3V24.5c0-3.5 1.5-5.5 3-7.5S9.5 14 9.5 12z" fill="#8a4b14"/><rect x="5" y="26" width="14" height="10" rx="1.5" fill="#f3ece2"/><rect x="7.5" y="29.5" width="9" height="3" rx="1" fill="#e3141b"/></svg> Fläschen</h3><div class="tabwrap"><table>
     <tr><th></th>${sorten.map(s => `<th>${esc(bierText(s))}</th>`).join("")}<th>Σ</th></tr>
     ${Z.halter.map(h => `<tr><td>${h === LAGER ? "📦 Lager" : esc(h)}</td>${sorten.map(s => { const n = hat(Z, h, s); return `<td style="${n < 0 ? "color:var(--rot)" : ""}">${n || "–"}</td>`; }).join("")}<td><b>${sorten.reduce((a, s) => a + hat(Z, h, s), 0)}</b></td></tr>`).join("")}
     <tr class="summe"><td>Total</td>${sorten.map(s => `<td>${Z.sorten[s].da}</td>`).join("")}<td>${Z.flaschen.da}</td></tr>
