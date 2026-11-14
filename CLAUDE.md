@@ -125,6 +125,12 @@ beim Verkaufen/Livraison und „Fläsche beweegen“ an, solange jemand welche h
   `navigator.share`.
 - **`FASSUNG`** unten in `index.html` bei jeder Änderung hochzählen — daran hängt auch das **automatische Update** (vom Nutzer, 13.11.2026): beim Öffnen und bei jeder Rückkehr holt `updatePruefen()` die Seite mit `cache:"reload"`, steht dort eine andere FASSUNG, lädt die App neu; mitten im Eintrag (`mittenImEintrag`) stattdessen roter Knopf oben. Je Zielfassung ein Versuch in 5 min (`millebeier_v1_update`), gegen Schleifen bei altem CDN-Stand. Ohne Hochzählen kommt kein Update an. (Die Apps in panini-wm-2026 haben das nicht.)
 
+## Neuanfang (14.11.2026, vom Nutzer)
+`tools/neustart.sql` im D1-Dashboard (Console) ausführen: löscht alle Einträge außer Biere/bierstatus/Dateien/
+einstellungen/`alt26-…`; Löschungen (storno) bleiben nur, wenn ihr Ziel bleibt. An einer nachgebauten SQLite-DB
+geprüft (Gegenprobe gemacht). Die Datenbank ist von der Cloud-Umgebung aus nicht erreichbar — ausführen kann nur der
+Nutzer. Rückweg: D1 Time Travel (Restore auf einen Zeitpunkt davor).
+
 ## Testen — vor jedem Push alle acht, jeder mit eigenem Rückgabewert
 - `node test/logik.mjs` — schneidet `Logik`…`Oberfläche` aus der HTML (Gegenprobe gemacht).
 - `node test/worker.mjs` — Worker mit nachgebauter D1.
