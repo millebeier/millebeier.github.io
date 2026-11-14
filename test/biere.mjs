@@ -12,8 +12,12 @@ await p.route(/workers\.dev/, r => r.abort());
 await p.goto(new URL("../index.html", import.meta.url).href);
 await p.evaluate(() => { localStorage.clear(); EIN = { code: "x", ich: "Laurent" }; TAB = "bestand"; render(); });
 
+// Ohne Braudatum: abgelehnt (Pflichtfeld)
+await p.click("#bierNeu"); await p.fill("#biName", "Ouni Datum"); await p.fill("#biPreis", "3"); await p.click("#biOk"); await warte(200);
+ist("ohne Braudatum abgelehnt", [await p.locator("#biMeld").innerText(), await p.evaluate(() => Z.cfg.sorten.some(c => c.name.startsWith("Ouni")))], v => v[0].includes("Braudatum feelt") && v[1] === false);
+await p.click("#biZu"); await warte(900);
 await p.click("#bierNeu");
-await p.fill("#biName", "Rusty (06.02.2026)"); await p.fill("#biStil", "Red Ale"); await p.fill("#biBrau", "2026-02-06");
+await p.fill("#biName", "Rusty"); await p.fill("#biStil", "Red Ale"); await p.fill("#biBrau", "2026-02-06");
 await p.fill("#biAlk", "5,6"); await p.fill("#biLiter", "156"); await p.fill("#biPreis", "3"); await p.fill("#biFl", "288");
 await p.click("#biOk"); await warte(200);
 ist("nach dem Anlegen gleich Dokumente", await p.locator("#bierDok").innerText(), s => s.includes("Etikett") && s.includes("Brauprotokoll"));

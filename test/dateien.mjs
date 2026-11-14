@@ -61,15 +61,15 @@ const hoch = async (p, feld, name, mimeType, buffer) => {
 
 const A = await handy("Laurent");
 await A.evaluate(() => { TAB = "bestand"; render(); });
-await A.click("#bierNeu"); await A.fill("#biName", "Rusty"); await A.fill("#biPreis", "3"); await A.click("#biOk"); await warte(300);
+await A.click("#bierNeu"); await A.fill("#biName", "Rusty"); await A.fill("#biBrau", "2026-10-01"); await A.fill("#biPreis", "3"); await A.click("#biOk"); await warte(300);
 ist("nach Anlegen: Dokumente sichtbar", await A.locator("#bierDok").innerText(), s => s.includes("Etikett") && s.includes("Rezept") && s.includes("Brauprotokoll") && s.includes("ANER DATEIEN"));
 
 await hoch(A, "etikett", "rusty-etikett.pdf", "application/pdf", pdf);
-ist("Etikett hochgeladen", await A.evaluate(() => dateienVon(Z, "Rusty").etikett && dateienVon(Z, "Rusty").etikett.name), "rusty-etikett.pdf");
+ist("Etikett hochgeladen", await A.evaluate(() => dateienVon(Z, "Rusty (01.10.2026)").etikett && dateienVon(Z, "Rusty (01.10.2026)").etikett.name), "rusty-etikett.pdf");
 if (mitPdfjs) ist("Etikett: Vorschaubild (erste PDF-Seite)", await A.evaluate(() => { const i = document.querySelector("#bierDok [data-thumb] img"); return !!(i && i.src.startsWith("data:image/jpeg")); }), true);
 await hoch(A, "anner", "foto.png", "image/png", png);
 await hoch(A, "anner", "gross.bin", "application/octet-stream", gross);
-const gd = await A.evaluate(() => dateienVon(Z, "Rusty").anner.find(d => d.name === "gross.bin"));
+const gd = await A.evaluate(() => dateienVon(Z, "Rusty (01.10.2026)").anner.find(d => d.name === "gross.bin"));
 ist("große Datei in 3 Stücken", gd.teile, 3);
 ist("Stücke beim Server", [...env.DB.teile.keys()].filter(k => k.startsWith(gd.fid + "#")).length, 3);
 
@@ -78,16 +78,16 @@ const B = await handy("Jeff");
 await B.waitForFunction(() => Z.dateien.length >= 3, null, { timeout: 10000 }); // erster Abgleich
 await B.evaluate(() => { TAB = "bestand"; render(); });
 ist("Bier-Karte zeigt Dateien", await B.locator("#bBiere").innerText(), s => s.includes("📎 Etikett · 2 aner"));
-await B.click('[data-bed="Rusty"]'); await warte(800);
+await B.click('[data-bed="Rusty (01.10.2026)"]'); await warte(800);
 if (mitPdfjs) ist("Handy 2: Vorschaubild vom Server", await B.evaluate(() => [...document.querySelectorAll("#bierDok [data-thumb] img")].length), 2);
 const hashB = await B.evaluate(async () => {
-  const D = dateienVon(Z, "Rusty").anner.find(d => d.name === "gross.bin");
+  const D = dateienVon(Z, "Rusty (01.10.2026)").anner.find(d => d.name === "gross.bin");
   const datei = await dateiDaten(D);
   const h = await crypto.subtle.digest("SHA-256", await datei.arrayBuffer());
   return [...new Uint8Array(h)].map(x => x.toString(16).padStart(2, "0")).join("");
 });
 ist("große Datei Byte für Byte gleich", hashB, sha(gross));
-await B.click(`#bierDok [data-auf="${await B.evaluate(() => dateienVon(Z, "Rusty").etikett.fid)}"]`);
+await B.click(`#bierDok [data-auf="${await B.evaluate(() => dateienVon(Z, "Rusty (01.10.2026)").etikett.fid)}"]`);
 if (mitPdfjs) {
   await B.waitForFunction(() => document.querySelectorAll("#ansichtInhalt canvas").length === 2, null, { timeout: 20000 });
   ist("Anzeige: beide PDF-Seiten", await B.evaluate(() => document.querySelectorAll("#ansichtInhalt canvas").length), 2);
@@ -98,12 +98,12 @@ ist("Anzeige zu", await B.locator("#ansicht").isVisible(), false);
 
 // Ersetzen und Löschen
 await hoch(B, "etikett", "rusty-etikett-v2.pdf", "application/pdf", pdf);
-ist("Ersetzt: neues Etikett gilt", await B.evaluate(() => dateienVon(Z, "Rusty").etikett.name), "rusty-etikett-v2.pdf");
+ist("Ersetzt: neues Etikett gilt", await B.evaluate(() => dateienVon(Z, "Rusty (01.10.2026)").etikett.name), "rusty-etikett-v2.pdf");
 await warte(900);
-await B.click(`#bierDok [data-dweg="${await B.evaluate(() => dateienVon(Z, "Rusty").anner.find(d => d.name === "foto.png").fid)}"]`); await warte(300);
-ist("Foto gelöscht", await B.evaluate(() => dateienVon(Z, "Rusty").anner.map(d => d.name)), ["gross.bin"]);
+await B.click(`#bierDok [data-dweg="${await B.evaluate(() => dateienVon(Z, "Rusty (01.10.2026)").anner.find(d => d.name === "foto.png").fid)}"]`); await warte(300);
+ist("Foto gelöscht", await B.evaluate(() => dateienVon(Z, "Rusty (01.10.2026)").anner.map(d => d.name)), ["gross.bin"]);
 await A.evaluate(() => abgleichen()); await warte(400);
-ist("Handy 1 sieht Ersetzen und Löschen", await A.evaluate(() => [dateienVon(Z, "Rusty").etikett.name, dateienVon(Z, "Rusty").anner.length]), ["rusty-etikett-v2.pdf", 1]);
+ist("Handy 1 sieht Ersetzen und Löschen", await A.evaluate(() => [dateienVon(Z, "Rusty (01.10.2026)").etikett.name, dateienVon(Z, "Rusty (01.10.2026)").anner.length]), ["rusty-etikett-v2.pdf", 1]);
 // Tabelle (.ods, wie das Brauprotokoll des Nutzers) als Brauprotokoll anhängen und ansehen
 if (mitXlsx) {
   const { createRequire } = await import("node:module");
@@ -112,8 +112,8 @@ if (mitXlsx) {
   X.utils.book_append_sheet(wb, X.utils.aoa_to_sheet([["BRAUPROTOKOLL"], ["REZEPT:", "White IPA"], ["Malz:", "Pale Weizen", 3500, "g"], ["DATUM:", new Date(Date.UTC(2026, 8, 26))]], { cellDates: true }), "Blatt1");
   const ods = Buffer.from(X.write(wb, { bookType: "ods", type: "array" }));
   await hoch(B, "protokoll", "Brauprotokoll_White_IPA.ods", "application/vnd.oasis.opendocument.spreadsheet", ods);
-  ist("Tabelle: Symbol 📊", await B.evaluate(() => document.querySelector(`#bierDok [data-thumb="${dateienVon(Z, "Rusty").protokoll.fid}"]`).textContent.trim()), "📊");
-  await B.click(`#bierDok [data-auf="${await B.evaluate(() => dateienVon(Z, "Rusty").protokoll.fid)}"]`);
+  ist("Tabelle: Symbol 📊", await B.evaluate(() => document.querySelector(`#bierDok [data-thumb="${dateienVon(Z, "Rusty (01.10.2026)").protokoll.fid}"]`).textContent.trim()), "📊");
+  await B.click(`#bierDok [data-auf="${await B.evaluate(() => dateienVon(Z, "Rusty (01.10.2026)").protokoll.fid)}"]`);
   await B.waitForSelector("#ansichtInhalt .tabelle table", { timeout: 15000 });
   ist("Tabelle angezeigt mit Inhalt und Datum", await B.locator("#ansichtInhalt").innerText(), t => t.includes("BRAUPROTOKOLL") && t.includes("Pale Weizen") && t.includes("3500") && /26\.09\.2026/.test(t));
   // Deelen: nachgebautes iOS, das .ods nicht teilt, eine allgemeine Datei aber schon
@@ -139,11 +139,11 @@ if (mitXlsx) {
 } else console.log("– Tabellen-Anzeige übersprungen (XLSX_JS nicht gesetzt)");
 // Etikett als Bild vor dem Biernamen im Stock
 await B.click("#biZu"); await warte(300);
-if (mitPdfjs) ist("Stock: Etikett-Bild vor dem Namen", await B.evaluate(() => { const k = [...document.querySelectorAll("#bBiere .bier")].find(x => x.textContent.includes("Rusty")); const b = k && k.querySelector(".bier-etikett"); return !!(b && b.querySelector("img") && b.nextElementSibling && b.nextElementSibling.textContent === "Rusty"); }), true);
+if (mitPdfjs) ist("Stock: Etikett-Bild vor dem Namen", await B.evaluate(() => { const k = [...document.querySelectorAll("#bBiere .bier")].find(x => x.textContent.includes("Rusty (01.10.2026)")); const b = k && k.querySelector(".bier-etikett"); return !!(b && b.querySelector("img") && b.nextElementSibling && b.nextElementSibling.textContent === "Rusty (01.10.2026)"); }), true);
 await B.click("#bBiere .bier-etikett");
 ist("Etikett antippen öffnet es", [await B.locator("#ansicht").isVisible(), await B.locator("#ansichtName").innerText()], [true, "rusty-etikett-v2.pdf"]);
 await B.click("#ansichtZu");
-ist("zu groß wird abgelehnt", await A.evaluate(async () => { let m = ""; const alt = window.alert; window.alert = t => { m = t; }; await dateiHochladen(new File([new Uint8Array(11 * 1024 * 1024)], "riesig.bin"), "Rusty", "anner"); window.alert = alt; return m; }), s => s.includes("maximal 10 MB"));
+ist("zu groß wird abgelehnt", await A.evaluate(async () => { let m = ""; const alt = window.alert; window.alert = t => { m = t; }; await dateiHochladen(new File([new Uint8Array(11 * 1024 * 1024)], "riesig.bin"), "Rusty (01.10.2026)", "anner"); window.alert = alt; return m; }), s => s.includes("maximal 10 MB"));
 ist("keine Seitenfehler", [...A.seitenfehler, ...B.seitenfehler], []);
 if (!mitPdfjs) console.log("– PDF-Vorschau/Anzeige übersprungen (PDFJS_DIR nicht gesetzt)");
 await b.close();

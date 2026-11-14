@@ -232,7 +232,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px}
 <script>
 /* Adresse des Cloudflare-Workers. Leer = Probe-Modus (alles nur auf diesem Handy). */
 const WORKER_URL = "https://millebeier.rjtp6r9s9h.workers.dev/";
-const FASSUNG = "14.11.2026 t";
+const FASSUNG = "14.11.2026 u";
 
 /* === Logik === (kein DOM; test/logik.mjs schneidet diesen Block aus) */
 const LAGER = "Lager";
@@ -1640,7 +1640,7 @@ function renderBierForm(box) {
     ${F.neu ? `<label for="biName">Numm</label><input id="biName" value="${esc(F.name)}" placeholder="z. B. NEIPA" autocapitalize="words"><div class="hinweis">D'Braudatum kënnt automatesch an Klammeren hannen drun, z. B. „NEIPA (28.07.2026)“.</div>`
       : `<div class="hinweis" style="margin:0">Den Numm bleift — de Stock hänkt drun.</div>`}
     <label for="biStil">Stil (fräiwëlleg)</label><input id="biStil" value="${esc(F.stil)}" placeholder="z. B. Red Ale, Porter, NEIPA">
-    <div class="zeile"><div><label for="biBrau">Braudatum</label><input id="biBrau" type="date" value="${esc(F.braudatum)}"></div>
+    <div class="zeile"><div><label for="biBrau">Braudatum${F.neu ? ` <span style="color:var(--akzent)">*</span>` : ""}</label><input id="biBrau" type="date" value="${esc(F.braudatum)}"></div>
       <div><label for="biAlk">Alkohol (%)</label><input id="biAlk" inputmode="decimal" value="${esc(F.alk)}" placeholder="5,6"></div></div>
     <div class="zeile"><div><label for="biLiter">Gebraut (Liter)</label><input id="biLiter" inputmode="decimal" value="${esc(F.liter)}" placeholder="176"></div>
       <div><label for="biPreis">Präis pro Fläsch (€)</label><input id="biPreis" inputmode="decimal" value="${esc(F.preis)}"></div></div>
@@ -1671,6 +1671,8 @@ function renderBierForm(box) {
     const p20 = zahlAus(F.preis20), p30 = zahlAus(F.preis30);
     const anz = t => String(t || "").trim() ? parseInt(t, 10) : 0, f20 = anz(F.f20), f30 = anz(F.f30);
     if (!grund) return meld("Wéi heescht d'Béier?");
+    // Pflicht beim Anlegen (vom Nutzer, Fassung u): so hat jeder Sud ein Datum im Namen und lässt sich unterscheiden
+    if (F.neu && !/^\d{4}-\d{2}-\d{2}$/.test(F.braudatum || "")) return meld("Braudatum feelt — w.e.g. aginn (et kënnt an den Numm, z. B. „NEIPA (28.07.2026)“).");
     if (F.neu && (Z.cfg.sorten.some(c => c.name.toLowerCase() === name.toLowerCase()) || name === LAGER)) return meld("Dee Numm gëtt et schonn.");
     // Zwei Biere dürfen auch nicht gleich AUSSEHEN (z. B. altes „NEIPA“ + Datum 28.07. und neues „NEIPA (28.07.2026)“):
     // sonst kann man sie nicht unterscheiden, und im Excel hießen zwei Blätter gleich.

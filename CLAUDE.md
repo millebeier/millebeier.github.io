@@ -57,7 +57,8 @@ beim Verkaufen/Livraison und „Fläsche beweegen“ an, solange jemand welche h
   ältere Biere zeigen das Datum nur an (`bierText`/`artikelText`, `BRAUDATEN`); Namen mit Datum oder „MM/JJJJ“ bleiben.
   Doppelt = gleicher Name samt Datum. **Datum nachtragen/ändern** (vom Nutzer gefragt, Fassung s): Name/Bestand bleiben, die
   Anzeige nimmt immer das aktuelle Braudatum (ein Datum im Namen wird nur in der Anzeige ersetzt); Test in `logik.mjs`.
-  Ein Datum gibt es nur, wenn jemand es einträgt (nichts automatisch). **Nie zwei gleich aussehende Biere** (Fassung t):
+  Ein Datum gibt es nur, wenn jemand es einträgt (nichts automatisch). **Braudatum ist beim Anlegen Pflicht** (vom Nutzer,
+  Fassung u; beim Ändern freiwillig, damit alte Biere ohne Datum nicht blockiert sind). **Nie zwei gleich aussehende Biere** (Fassung t):
   Anlegen/Ändern wird abgelehnt, wenn die Anzeige einem anderen Bier gleicht (altes „NEIPA“ + 28.07. vs. neues
   „NEIPA (28.07.2026)“); Excel-Blattnamen werden trotzdem eindeutig gemacht („… (2)“), sonst bricht SheetJS ab. Knopf „+ Neien Béier“ (vom Nutzer, nicht „Neit“). Beim Anlegen optional Flaschen → `abfuellung`.
   **Archiv** = nicht mehr verkaufbar, bleibt in Iwwersiicht (📦) und Excel. **Erst wenn nichts mehr da ist** (vom Nutzer,
