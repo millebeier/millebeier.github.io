@@ -59,7 +59,7 @@ if (XLSX_JS && existsSync(XLSX_JS)) {
   const require = createRequire(XLSX_JS);
   const X = require(XLSX_JS);
   const wb = X.read(readFileSync(pfad), { cellNF: true });
-  ist("Excel: Blätter", wb.SheetNames, ["NEIPA", "Brown Porter", "Livraisons", "Stock"]);
+  ist("Excel: Blätter", wb.SheetNames, ["NEIPA", "Brown Porter", "Bestellungen", "Stock"]);
   const neipa = X.utils.sheet_to_json(wb.Sheets.NEIPA, { header: 1, defval: "" });
   const kopf = neipa.findIndex(r => r[0] === "Datum");
   ist("Excel NEIPA: Kopf", neipa[kopf].slice(0, 9), ["Datum", "Client", "Kontakt", "Unzuel", "Gebinde", "Präis", "Recetten", "geliwwert?", "bezuel?"]);
@@ -67,7 +67,7 @@ if (XLSX_JS && existsSync(XLSX_JS)) {
   ist("Excel NEIPA: BEST geplant", neipa[kopf + 2].slice(1, 8), ["BEST", "Marc", 1, "Fläsch", 3, 3, "geplangt 20.12.2026"]);
   ist("Excel NEIPA: Total ohne geplant", neipa[neipa.length - 1].slice(0, 7), ["Total", "", "", 24, "Fläschen", "", 60]);
   ist("Excel: Euro-Format", wb.Sheets.NEIPA[X.utils.encode_cell({ r: kopf + 1, c: 5 })].z, '#,##0.00 "€"');
-  const liv = X.utils.sheet_to_json(wb.Sheets.Livraisons, { header: 1, defval: "" });
+  const liv = X.utils.sheet_to_json(wb.Sheets.Bestellungen, { header: 1, defval: "" });
   ist("Excel Livraisons", liv.filter(r => r[1] === "Ferro Forum" || r[1] === "BEST").map(r => [r[1], r[6], r[7], r[8], r[9]]), [["Ferro Forum", "Jo", "gemaach", "Jo", "Iwwerweisung"], ["BEST", "geplangt", "nach ze maachen", "–", ""]]);
   // Altbestand mit zwei gleich aussehenden Bieren: Export klappt trotzdem, Blattnamen eindeutig
   await p.evaluate(() => eintragen([{ art: "bier", name: "NEIPA", preis: 3, braudatum: "2026-07-28" }, { art: "bier", name: "NEIPA (28.07.2026)", preis: 3, braudatum: "2026-07-28" }, { art: "abfuellung", sorte: "NEIPA (28.07.2026)", n: 5 }]));
@@ -102,6 +102,7 @@ if (XLSX_JS && existsSync(XLSX_JS)) {
   ist("alter Worker: Livraison wartet mit Hinweis", [await p2.evaluate(() => AUSGANG.map(e => e.art)), await p2.locator("#sync").innerText()], v => v[0].join() === "livraison" && v[1].includes("Worker muss aktualiséiert"));
   await p2.close();
 }
+ist("Reiter heißt Bestellungen", await p.evaluate(() => document.querySelector('[data-tab="livraisons"]').textContent.trim().startsWith("Bestellungen")), true);
 ist("keine Seitenfehler", seitenfehler, []);
 await p.screenshot({ path: process.env.BILD || "/dev/null", fullPage: true }).catch(() => {});
 await b.close();

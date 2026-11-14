@@ -198,7 +198,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px}
   <nav id="nav">
     <button data-tab="bestand">Stock</button>
     <button data-tab="verkaufen">Verkafen</button>
-    <button data-tab="livraisons">Livraisons</button>
+    <button data-tab="livraisons">Bestellungen</button>
     <button data-tab="offen">Ausstoend</button>
     <button data-tab="uebersicht">Iwwersiicht</button>
     <button data-tab="verlauf">Verlaf</button>
@@ -232,7 +232,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px}
 <script>
 /* Adresse des Cloudflare-Workers. Leer = Probe-Modus (alles nur auf diesem Handy). */
 const WORKER_URL = "https://millebeier.rjtp6r9s9h.workers.dev/";
-const FASSUNG = "14.11.2026 v";
+const FASSUNG = "14.11.2026 w";
 
 /* === Logik === (kein DOM; test/logik.mjs schneidet diesen Block aus) */
 const LAGER = "Lager";
@@ -490,7 +490,7 @@ function beschreibe(e, Z) {
       const v = Z && Z.nachId.get(e.ref);
       return `✓ ${euro(e.betrag)} bezuelt${e.wie ? " per " + ZAHLARTEN[e.wie] : ""}` + (v ? `: ${v.kaeufer} (${beim(v.verkaeufer)})` : "");
     }
-    case "livraison": return `🚚 Livraison geplangt: ${e.kunde}, ${postenText(e.posten)}, ${datumKurz(e.datum)} · ${euro(e.betrag)}`;
+    case "livraison": return `🚚 Bestellung geplangt: ${e.kunde}, ${postenText(e.posten)}, ${datumKurz(e.datum)} · ${euro(e.betrag)}`;
     case "rechnung": {
       const v = Z && Z.nachId.get(e.ref);
       return "🧾 Rechnung gemaach" + (v ? `: ${v.kaeufer}` : "");
@@ -614,7 +614,7 @@ function exportBlaetter(Z, zeitFmt) {
       kopf, zeilen,
       summe: ["Total", "", "", festFl.reduce((a, r) => a + r.n, 0), "Fläschen", "", runde(fest.reduce((a, r) => a + r.recetten, 0)), "", "", "", "", "Recetten mat Fässer, ouni geplangten"] });
   }
-  blaetter.push({ name: "Livraisons", titel: "Livraisons", info: [],
+  blaetter.push({ name: "Bestellungen", titel: "Bestellungen", info: [],
     kopf: ["Datum", "Client", "Kontakt", "Wat", "Betrag", "Anlass", "geliwwert?", "Rechnung", "bezuel?", "bezuelt per", "Remarquen"],
     zeilen: Z.livraisons.map(L => [datumKurz(L.datum), L.kunde, L.kontakt, postenText(L.posten), L.betrag, L.anlass || "",
       L.verkauf ? "Jo" : "geplangt", L.rechnung ? (L.verkauf && L.verkauf.rechnungGemacht ? "gemaach" : "nach ze maachen") : "",
@@ -835,7 +835,7 @@ function render() {
   $('#nav [data-tab="offen"]').innerHTML = "Ausstoend" + (nOffen ? ` <span class="badge">${nOffen}</span>` : "");
   renderSync();
   const nGeplant = Z.livraisons.filter(L => !L.verkauf).length;
-  $('#nav [data-tab="livraisons"]').innerHTML = "Livraisons" + (nGeplant ? ` <span class="badge" style="background:var(--card2);border:1px solid var(--line)">${nGeplant}</span>` : "");
+  $('#nav [data-tab="livraisons"]').innerHTML = "Bestellungen" + (nGeplant ? ` <span class="badge" style="background:var(--card2);border:1px solid var(--line)">${nGeplant}</span>` : "");
   ({ start: renderStart, uebersicht: renderUebersicht, verkaufen: renderVerkaufen, offen: renderOffen, livraisons: renderLivraisons,
      bestand: renderBestand, verlauf: renderVerlauf, einst: renderEinst })[tab]();
   $("#fuss").innerHTML = `Versioun ${esc(FASSUNG)}` + (EIN.ich ? ` · Du bass ${esc(de(EIN.ich))}` : "");
@@ -947,7 +947,7 @@ function renderUebersicht() {
     <tr><td>Lager</td><td>${mengeText(LAGER)}</td><td></td><td></td><td></td></tr>
   </table></div></div>
   <div class="card"><h2>Excel</h2>
-    <div class="hinweis" style="margin:0 0 8px">All Verkéf als .xlsx: pro Béier e Blat wéi an der aler Tabell, dozou Livraisons a Stock.</div>
+    <div class="hinweis" style="margin:0 0 8px">All Verkéf als .xlsx: pro Béier e Blat wéi an der aler Tabell, dozou Bestellungen a Stock.</div>
     <button class="knopf" data-excel>📊 Excel-Export (.xlsx)</button><div id="xMeld"></div></div>
   ${F.abgefuellt === 0 ? `<div class="card"><b>Fir unzefänken:</b> Ënner <b>Stock</b> déi ofgefëllte Fläschen an d'Lager androen an se dann un d'Leit verdeelen.</div>` : ""}`;
 }
@@ -963,7 +963,7 @@ function sorteDetail(s) {
         <td><b>${esc(r.kunde)}</b><br><small class="muted">${r.datum ? esc(datumKurz(r.datum)) : r.alt ? "ouni Datum" : datumText(r.zeit)} · ${esc(beim(r.kontakt))}${r.geplant ? " · geplangt" : ""}${r.remarque ? " · " + esc(r.remarque) : ""}${r.rechnung ? " · 🧾 " + esc(r.rechnung) : ""}</small></td>
         <td>${r.n}</td><td>${r.recetten ? euro(r.recetten) : "–"}</td><td>${r.bezuelt === "Jo" ? `<span style="color:var(--gruen)">${esc(r.wie || "Jo")}</span>` : esc(r.bezuelt.replace(/^Deelweis.*/, "Deelweis") + (r.wie && r.bezuelt.startsWith("Deelweis") ? " (" + r.wie + ")" : ""))}</td></tr>`).join("")}
       <tr class="summe"><td>Total</td><td>${fest.reduce((a, r) => a + r.n, 0)}</td><td>${euro(fest.reduce((a, r) => a + r.recetten, 0))}</td><td></td></tr>
-    </table></div><div class="hinweis">Gro an schréi = geplangt Livraisoun, nach net am Total.</div>` : `<div class="leer">Nach näischt.</div>`}</div>`;
+    </table></div><div class="hinweis">Gro an schréi = geplangt Bestellung, nach net am Total.</div>` : `<div class="leer">Nach näischt.</div>`}</div>`;
 }
 
 /* Excel-Export: SheetJS wird erst beim Tippen geladen (cdnjs, feste Version). */
@@ -1043,20 +1043,20 @@ function renderLListe() {
       ${status}<div class="knopfe">${knoepfe}</div></div>`;
   };
   box.innerHTML = `<div class="card"><h2>Geplangt (${geplant.length})</h2>
-      ${geplant.length ? geplant.map(karte).join("") : `<div class="leer">Keng Livraisoun geplangt.</div>`}</div>
+      ${geplant.length ? geplant.map(karte).join("") : `<div class="leer">Keng Bestellung geplangt.</div>`}</div>
     <div class="card"><h2>Geliwwert</h2>
       ${fertig.length ? fertig.slice(0, 40).map(karte).join("") : `<div class="leer">Nach keng.</div>`}</div>`;
   box.querySelectorAll("[data-geliwwert]").forEach(b => b.onclick = () => {
     const L = Z.livraisons.find(x => x.id === b.dataset.geliwwert); if (!L) return;
     const kurz = L.posten.filter(p => p.n > hat(Z, L.aus, p.sorte));
-    let frage = `Livraisoun un ${L.kunde} geliwwert?\n\n${postenText(L.posten)} · ${euro(L.betrag)}`;
+    let frage = `Bestellung vu ${L.kunde} geliwwert?\n\n${postenText(L.posten)} · ${euro(L.betrag)}`;
     if (kurz.length) frage += `\n\nAchtung: laut der App huet ${de(L.aus)} just ${kurz.map(p => `${hat(Z, L.aus, p.sorte)} × ${postenText([p]).replace(/^\d+ × /, "")}`).join(", ")}.`;
     if (!confirm(frage)) return;
     eintragen([{ art: "verkauf", verkaeufer: L.kontakt, kaeufer: L.kunde, posten: L.posten, betrag: L.betrag, aus: L.aus, liv: L.id }]);
   });
   box.querySelectorAll("[data-lweg]").forEach(b => b.onclick = () => {
     const L = Z.livraisons.find(x => x.id === b.dataset.lweg); if (!L) return;
-    if (confirm(`Livraisoun un ${L.kunde} (${datumKurz(L.datum)}) läschen?`)) eintragen([{ art: "storno", ref: L.id }]);
+    if (confirm(`Bestellung vu ${L.kunde} (${datumKurz(L.datum)}) läschen?`)) eintragen([{ art: "storno", ref: L.id }]);
   });
   box.querySelectorAll("[data-rechnung]").forEach(b => b.onclick = () => eintragen([{ art: "rechnung", ref: b.dataset.rechnung }]));
   box.querySelectorAll("[data-lbezuelt]").forEach(b => b.onclick = () => {
@@ -1067,10 +1067,10 @@ function renderLListe() {
 function renderLForm(egal) {
   const box = $("#lForm");
   if (!egal && tipptIn(box)) return;
-  if (!L_NEU) { box.innerHTML = `<button class="haupt" id="lAuf">+ Nei Livraisoun plangen</button><div id="lMeld">${LFORM && LFORM.meldung ? `<div class="meldung ok">${esc(LFORM.meldung)}</div>` : ""}</div>`; $("#lAuf").onclick = () => { L_NEU = true; LFORM = leereLivraison(); renderLForm(); }; return; }
+  if (!L_NEU) { box.innerHTML = `<button class="haupt" id="lAuf">+ Nei Bestellung plangen</button><div id="lMeld">${LFORM && LFORM.meldung ? `<div class="meldung ok">${esc(LFORM.meldung)}</div>` : ""}</div>`; $("#lAuf").onclick = () => { L_NEU = true; LFORM = leereLivraison(); renderLForm(); }; return; }
   const F = LFORM;
   const opt = (liste, wert, txt = x => x) => liste.map(x => `<option value="${esc(x)}" ${x === wert ? "selected" : ""}>${esc(txt(x))}</option>`).join("");
-  box.innerHTML = `<div class="card"><h2>Nei Livraisoun</h2>
+  box.innerHTML = `<div class="card"><h2>Nei Bestellung</h2>
     <label for="lKunde">Client</label><input id="lKunde" list="kaeuferListe" autocomplete="off" autocapitalize="words" value="${esc(F.kunde)}" placeholder="z. B. Ferro Forum">
     <div class="zeile"><div><label for="lDatum">Datum</label><input id="lDatum" type="date" value="${esc(F.datum)}"></div>
       <div><label for="lKontakt">Kontakt</label><select id="lKontakt">${opt(Z.cfg.leute, F.kontakt)}</select></div></div>
@@ -1086,7 +1086,7 @@ function renderLForm(egal) {
       <small class="muted" id="lAutoT" style="flex:1.4">anere Präis (z. B. 2,50 €/Fl)? Einfach Betrag änneren.</small></div>
     <label class="check"><input type="checkbox" id="lRechnung" ${F.rechnung ? "checked" : ""}> Rechnung maachen</label>
     <label for="lNotiz">Remarque (fräiwëlleg)</label><input id="lNotiz" value="${esc(F.notiz)}">
-    <button class="haupt" id="lOk">Livraisoun plangen</button>
+    <button class="haupt" id="lOk">Bestellung plangen</button>
     <button class="haupt" id="lZu" style="background:var(--card2);color:var(--text)">Ofbriechen</button>
     <div id="lMeld"></div></div>`;
   const bind = (id, k, ev = "oninput") => { const el = $(id); el[ev] = () => { F[k] = el.value; }; };
@@ -1147,7 +1147,7 @@ function zahlKnoepfe(gewaehlt, mitSpaeter) {
   return `<div class="seg zahl">${Object.entries(ZAHLARTEN).map(([k, t]) => `<button data-bez="${k}" class="zbtn ${gewaehlt === k ? "an gruen" : ""}">${zahlInhalt(k)}</button>`).join("")}
     ${mitSpaeter ? `<button data-bez="spaeter" class="breit ${gewaehlt === "spaeter" ? "an gelb" : ""}">Bezillt méi spéit</button>` : ""}</div>`;
 }
-const fehltText = (wer, liste) => liste.map(p => `${p.n} × ${artikelText(p.sorte)}: ${de(wer)} huet ${p.hat}` + (p.res ? `, dovun ${p.res} reservéiert fir Livraisons → fräi ${Math.max(0, p.frei)}` : "")).join("\n");
+const fehltText = (wer, liste) => liste.map(p => `${p.n} × ${artikelText(p.sorte)}: ${de(wer)} huet ${p.hat}` + (p.res ? `, dovun ${p.res} reservéiert fir Bestellungen → fräi ${Math.max(0, p.frei)}` : "")).join("\n");
 
 function renderVerkaufen(egal) {
   if (!FORM) FORM = leeresFormular();
@@ -1303,7 +1303,7 @@ function renderOffen() {
   </div>
   ${liste.length ? liste.map((K, i) => `<div class="card kunde">
     <div class="kopfz"><h2 style="margin:0">${esc(K.name)}</h2><span class="betrag">${euro(K.sichtOffen)}</span></div>
-    ${K.sicht.map(v => `<div class="vk"><span>${v.livraison ? `🚚 Livraisoun ${esc(datumKurz(v.livraison.datum))}` : datumText(v.zeit)} · ${esc(postenText(v.posten))}<br><small class="muted">${esc(beim(v.verkaeufer))}${v.bezahlt ? ` · ${euro(v.bezahlt)} scho bezuelt` : ""}</small></span><span>${euro(v.offen)}</span></div>`).join("")}
+    ${K.sicht.map(v => `<div class="vk"><span>${v.livraison ? `🚚 Bestellung ${esc(datumKurz(v.livraison.datum))}` : datumText(v.zeit)} · ${esc(postenText(v.posten))}<br><small class="muted">${esc(beim(v.verkaeufer))}${v.bezahlt ? ` · ${euro(v.bezahlt)} scho bezuelt` : ""}</small></span><span>${euro(v.offen)}</span></div>`).join("")}
     <div class="knopfe">
       <button class="knopf gruen" data-alles="${i}">Alles bezuelt ✓</button>
       <button class="knopf" data-teil="${i}">Deelbetrag…</button>
@@ -1355,7 +1355,7 @@ function restVon(bier) {
     if (wo.length) zeilen.push(`• ${istFass(k) ? `Fass ${zerlege(k).l} l` : "Fläschen"}: ${wo.join(", ")}`);
   }
   const geplant = Z.livraisons.filter(L => !L.verkauf && L.posten.some(p => zerlege(p.sorte).bier === bier));
-  if (geplant.length) zeilen.push(`• geplangt Livraisons: ${geplant.map(L => `${L.kunde} (${datumKurz(L.datum)})`).join(", ")}`);
+  if (geplant.length) zeilen.push(`• geplangt Bestellungen: ${geplant.map(L => `${L.kunde} (${datumKurz(L.datum)})`).join(", ")}`);
   return zeilen;
 }
 
@@ -1723,7 +1723,7 @@ function renderBestand() {
     <tr><th></th>${faesser.map(k => `<th>${esc(bierText(zerlege(k).bier))}<br>${zerlege(k).l} l</th>`).join("")}</tr>
     ${Z.halter.filter(h => faesser.some(k => hat(Z, h, k))).map(h => `<tr><td>${h === LAGER ? "📦 Lager" : esc(h)}</td>${faesser.map(k => `<td>${hat(Z, h, k) || "–"}</td>`).join("")}</tr>`).join("")}
   </table></div>` : ""}
-  ${res.length ? `<div class="meldung warn">🚚 Reservéiert fir geplangt Livraisons: ${esc(res.join(" · "))}</div>` : ""}
+  ${res.length ? `<div class="meldung warn">🚚 Reservéiert fir geplangt Bestellungen: ${esc(res.join(" · "))}</div>` : ""}
   ${Z.halter.some(h => [...sorten, ...faesser].some(s => hat(Z, h, s) < 0)) ? `<div class="meldung warn">Rout Zuelen: Do gouf méi verkaaft oder weiderginn, wéi laut der App do war. Wahrscheinlech feelt eng Verdeelung.</div>` : ""}
   </div>`;
   renderBForm();

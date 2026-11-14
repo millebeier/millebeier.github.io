@@ -34,7 +34,7 @@ await p.fill(`#lN${idx("Hopfenkönig (01.10.2026)")}`, "100"); await p.fill(`#lN
 ist("Betrag mit Fasspreis", await p.inputValue("#lBetrag"), "580");
 await p.click("#lOk"); await warte(200);
 ist("reserviert", await p.evaluate(() => [frei(Z, "Lager", "Hopfenkönig (01.10.2026)"), frei(Z, "Lager", "Hopfenkönig (01.10.2026) Keg 20l"), hat(Z, "Lager", "Hopfenkönig (01.10.2026)")]), [20, 1, 120]);
-ist("Stock zeigt Reservierung", (await p.evaluate(() => { TAB = "bestand"; render(); return document.querySelector("#bTabelle").innerText; })), s => s.includes("Reservéiert fir geplangt Livraisons") && s.includes("100 × Hopfenkönig (01.10.2026)"));
+ist("Stock zeigt Reservierung", (await p.evaluate(() => { TAB = "bestand"; render(); return document.querySelector("#bTabelle").innerText; })), s => s.includes("Reservéiert fir geplangt Bestellungen") && s.includes("100 × Hopfenkönig (01.10.2026)"));
 
 // Zweite Livraison, die nicht mehr reicht → Warnung, abgelehnt → nichts geplant
 await p.evaluate(() => { TAB = "livraisons"; render(); });
