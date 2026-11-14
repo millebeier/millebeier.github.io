@@ -90,6 +90,17 @@ ist("Knopf heißt + Neien Béier", await p.locator("#bierNeu").innerText(), "+ N
 await warte(900);
 await p.click("#bierNeu"); await p.fill("#biName", "Rusty"); await p.fill("#biBrau", "2027-03-15"); await p.fill("#biPreis", "3"); await p.click("#biOk"); await warte(300);
 ist("zweiter Sud: eigenes Bier", await p.evaluate(() => Z.cfg.sorten.map(c => c.name).filter(n => n.startsWith("Rusty ("))), ["Rusty (06.02.2026)", "Rusty (15.03.2027)"]);
+// Gleich aussehende Biere verhindern: neues „NEIPA (28.07.2026)“, dann altes „NEIPA“ auf denselben Tag setzen → abgelehnt
+await warte(900);
+await p.evaluate(() => { TAB = "bestand"; BIERFORM = null; render(); });
+await p.click("#bierNeu"); await p.fill("#biName", "NEIPA"); await p.fill("#biBrau", "2026-07-28"); await p.fill("#biPreis", "3"); await p.click("#biOk"); await warte(300);
+ist("neues NEIPA mit Datum neben altem NEIPA", await p.evaluate(() => Z.cfg.sorten.map(c => c.name).filter(n => n.startsWith("NEIPA"))), ["NEIPA", "NEIPA (28.07.2026)"]);
+await p.click("#biZu"); await warte(900);
+await p.click('[data-bed="NEIPA"]'); await p.fill("#biBrau", "2026-07-28"); await p.click("#biOk"); await warte(300);
+ist("altes NEIPA auf gleichen Tag: abgelehnt", [await p.locator("#biMeld").innerText(), await p.evaluate(() => bierText("NEIPA"))], v => v[0].includes("gesäit aus wéi e Béier") && v[1] === "NEIPA");
+await warte(900);
+await p.fill("#biBrau", "2026-07-20"); await p.click("#biOk"); await warte(300);
+ist("anderer Tag: erlaubt", await p.evaluate(() => bierText("NEIPA")), "NEIPA (20.07.2026)");
 ist("keine Seitenfehler", seitenfehler, []);
 await b.close();
 console.log(fehler ? `${fehler} Fehler` : "Biere: alles bestanden");

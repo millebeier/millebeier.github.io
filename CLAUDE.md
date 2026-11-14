@@ -56,7 +56,10 @@ beim Verkaufen/Livraison und „Fläsche beweegen“ an, solange jemand welche h
   neue Biere heißen „NEIPA (28.07.2026)“ (Datum beim Anlegen angehängt) → zweiter Sud = eigenes Bier, eigenes Excel-Blatt;
   ältere Biere zeigen das Datum nur an (`bierText`/`artikelText`, `BRAUDATEN`); Namen mit Datum oder „MM/JJJJ“ bleiben.
   Doppelt = gleicher Name samt Datum. **Datum nachtragen/ändern** (vom Nutzer gefragt, Fassung s): Name/Bestand bleiben, die
-  Anzeige nimmt immer das aktuelle Braudatum (ein Datum im Namen wird nur in der Anzeige ersetzt); Test in `logik.mjs`. Knopf „+ Neien Béier“ (vom Nutzer, nicht „Neit“). Beim Anlegen optional Flaschen → `abfuellung`.
+  Anzeige nimmt immer das aktuelle Braudatum (ein Datum im Namen wird nur in der Anzeige ersetzt); Test in `logik.mjs`.
+  Ein Datum gibt es nur, wenn jemand es einträgt (nichts automatisch). **Nie zwei gleich aussehende Biere** (Fassung t):
+  Anlegen/Ändern wird abgelehnt, wenn die Anzeige einem anderen Bier gleicht (altes „NEIPA“ + 28.07. vs. neues
+  „NEIPA (28.07.2026)“); Excel-Blattnamen werden trotzdem eindeutig gemacht („… (2)“), sonst bricht SheetJS ab. Knopf „+ Neien Béier“ (vom Nutzer, nicht „Neit“). Beim Anlegen optional Flaschen → `abfuellung`.
   **Archiv** = nicht mehr verkaufbar, bleibt in Iwwersiicht (📦) und Excel. **Erst wenn nichts mehr da ist** (vom Nutzer,
   Fassung o): liegt noch etwas (Flaschen/Fässer bei irgendwem) oder ist eine Livraison geplant, kommt ein Hinweis mit
   „wo“ (`restVon`) und es wird nicht archiviert. Der Import der alten Biere archiviert trotzdem (alte Fässer liegen noch). **Läschen** = zwei Rückfragen, verschwindet

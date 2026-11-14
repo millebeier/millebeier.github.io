@@ -69,6 +69,12 @@ if (XLSX_JS && existsSync(XLSX_JS)) {
   ist("Excel: Euro-Format", wb.Sheets.NEIPA[X.utils.encode_cell({ r: kopf + 1, c: 5 })].z, '#,##0.00 "€"');
   const liv = X.utils.sheet_to_json(wb.Sheets.Livraisons, { header: 1, defval: "" });
   ist("Excel Livraisons", liv.filter(r => r[1] === "Ferro Forum" || r[1] === "BEST").map(r => [r[1], r[6], r[7], r[8], r[9]]), [["Ferro Forum", "Jo", "gemaach", "Jo", "Iwwerweisung"], ["BEST", "geplangt", "nach ze maachen", "–", ""]]);
+  // Altbestand mit zwei gleich aussehenden Bieren: Export klappt trotzdem, Blattnamen eindeutig
+  await p.evaluate(() => eintragen([{ art: "bier", name: "NEIPA", preis: 3, braudatum: "2026-07-28" }, { art: "bier", name: "NEIPA (28.07.2026)", preis: 3, braudatum: "2026-07-28" }, { art: "abfuellung", sorte: "NEIPA (28.07.2026)", n: 5 }]));
+  await warte(900);
+  const [dl2] = await Promise.all([p.waitForEvent("download"), p.click("[data-excel]")]);
+  const wb2 = X.read(readFileSync(await dl2.path()));
+  ist("Excel: gleiche Namen → eindeutige Blätter", wb2.SheetNames.filter(n => n.startsWith("NEIPA")), ["NEIPA (28.07.2026)", "NEIPA (28.07.2026) (2)"]);
 } else console.log("– Excel-Teil übersprungen (XLSX_JS nicht gesetzt)");
 // Alter Worker (kennt „livraison“ nicht): normale Verkäufe dürfen nicht hängen bleiben.
 {

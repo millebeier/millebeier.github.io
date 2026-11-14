@@ -232,7 +232,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px}
 <script>
 /* Adresse des Cloudflare-Workers. Leer = Probe-Modus (alles nur auf diesem Handy). */
 const WORKER_URL = "https://millebeier.rjtp6r9s9h.workers.dev/";
-const FASSUNG = "14.11.2026 s";
+const FASSUNG = "14.11.2026 t";
 
 /* === Logik === (kein DOM; test/logik.mjs schneidet diesen Block aus) */
 const LAGER = "Lager";
@@ -995,7 +995,10 @@ async function excelExport(meldBox) {
         if (!/Präis|Recetten|Betrag/.test(k)) return;
         for (let r = kopfZeile + 1; r < aoa.length; r++) { const z = ws[X.utils.encode_cell({ r, c })]; if (z && z.t === "n") z.z = '#,##0.00 "€"'; }
       });
-      X.utils.book_append_sheet(wb, ws, b.name.replace(/[\\/?*\[\]:]/g, " ").slice(0, 31));
+      // Blattnamen: max. 31 Zeichen, keine Sonderzeichen, und nie doppelt (Excel lehnt das ab)
+      let blatt = b.name.replace(/[\\/?*\[\]:]/g, " ").slice(0, 31), nr = 2;
+      while (wb.SheetNames.some(n => n.toLowerCase() === blatt.toLowerCase())) blatt = (b.name.replace(/[\\/?*\[\]:]/g, " ").slice(0, 26) + ` (${nr++})`);
+      X.utils.book_append_sheet(wb, ws, blatt);
     }
     const daten = X.write(wb, { bookType: "xlsx", type: "array" });
     const name = `Millebeier-${new Date().toISOString().slice(0, 10)}.xlsx`;
@@ -1669,6 +1672,11 @@ function renderBierForm(box) {
     const anz = t => String(t || "").trim() ? parseInt(t, 10) : 0, f20 = anz(F.f20), f30 = anz(F.f30);
     if (!grund) return meld("Wéi heescht d'Béier?");
     if (F.neu && (Z.cfg.sorten.some(c => c.name.toLowerCase() === name.toLowerCase()) || name === LAGER)) return meld("Dee Numm gëtt et schonn.");
+    // Zwei Biere dürfen auch nicht gleich AUSSEHEN (z. B. altes „NEIPA“ + Datum 28.07. und neues „NEIPA (28.07.2026)“):
+    // sonst kann man sie nicht unterscheiden, und im Excel hießen zwei Blätter gleich.
+    { const sicht = (F.braudatum ? `${grund.replace(/ \(\d{1,2}\.\d{1,2}\.\d{4}\)$/, "")} (${datumLang(F.braudatum)})` : (F.neu ? name : bierText(name))).toLowerCase();
+      const gleich = Z.cfg.sorten.find(c => c.name !== name && bierText(c.name).toLowerCase() === sicht);
+      if (gleich) return meld(`Dat gesäit aus wéi e Béier, dat et schonn gëtt: „${bierText(gleich.name)}“. Aneren Numm oder anert Braudatum huelen.`); }
     if (preis == null || isNaN(preis)) return meld("Wat kascht eng Fläsch?");
     if (Number.isNaN(alk) || Number.isNaN(liter)) return meld("Alkohol a Liter just als Zuel, z. B. 5,6.");
     if (fl && !ganz(fl)) return meld("Fläschen: just eng ganz Zuel.");
