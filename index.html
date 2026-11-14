@@ -234,7 +234,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px}
 <script>
 /* Adresse des Cloudflare-Workers. Leer = Probe-Modus (alles nur auf diesem Handy). */
 const WORKER_URL = "https://millebeier.rjtp6r9s9h.workers.dev/";
-const FASSUNG = "14.11.2026 x";
+const FASSUNG = "14.11.2026 y";
 
 /* === Logik === (kein DOM; test/logik.mjs schneidet diesen Block aus) */
 const LAGER = "Lager";
@@ -1013,7 +1013,7 @@ async function excelExport(meldBox) {
 }
 
 /* ---------- Livraisons ---------- */
-let LFORM = null, L_NEU = false;
+let LFORM = null, L_NEU = false, L_NUR_MEINE = false;
 function leereLivraison() {
   const morgen = new Date(Date.now() + 86400000).toLocaleDateString("sv-SE", { timeZone: TZ });
   // „Huelen aus“: Vorgabe ist, wer einträgt (vom Nutzer, Fassung x); ändern nur über den Knopf „Änneren“
@@ -1029,8 +1029,10 @@ function renderLivraisons() {
 function renderLListe() {
   const box = $("#lListe");
   const heute = new Date().toLocaleDateString("sv-SE", { timeZone: TZ });
-  const geplant = Z.livraisons.filter(L => !L.verkauf);
-  const fertig = Z.livraisons.filter(L => L.verkauf).reverse();
+  // All / Just meng wie bei Ausstoend (vom Nutzer, Fassung y): „meng“ = ich bin Kontakt oder es kommt aus meinem Bestand
+  const meine = L => !L_NUR_MEINE || L.kontakt === EIN.ich || L.aus === EIN.ich;
+  const geplant = Z.livraisons.filter(L => !L.verkauf && meine(L));
+  const fertig = Z.livraisons.filter(L => L.verkauf && meine(L)).reverse();
   const karte = L => {
     const v = L.verkauf;
     const status = v ? `<span class="chip ok">✓ geliwwert</span>
@@ -1045,10 +1047,12 @@ function renderLListe() {
       ${L.anlass || L.notiz ? `<div class="hinweis" style="margin-top:4px">${esc([L.anlass, L.notiz].filter(Boolean).join(" · "))}</div>` : ""}
       ${status}<div class="knopfe">${knoepfe}</div></div>`;
   };
-  box.innerHTML = `<div class="card"><h2>Geplangt (${geplant.length})</h2>
+  box.innerHTML = `<div class="card" style="padding:10px 14px"><div class="seg" style="margin:0"><button data-lmeine="0" class="${L_NUR_MEINE ? "" : "an"}">All</button><button data-lmeine="1" class="${L_NUR_MEINE ? "an" : ""}">Just meng</button></div></div>
+    <div class="card"><h2>Geplangt (${geplant.length})</h2>
       ${geplant.length ? geplant.map(karte).join("") : `<div class="leer">Keng Bestellung geplangt.</div>`}</div>
     <div class="card"><h2>Geliwwert</h2>
       ${fertig.length ? fertig.slice(0, 40).map(karte).join("") : `<div class="leer">Nach keng.</div>`}</div>`;
+  box.querySelectorAll("[data-lmeine]").forEach(b => b.onclick = () => { L_NUR_MEINE = b.dataset.lmeine === "1"; renderLListe(); });
   box.querySelectorAll("[data-geliwwert]").forEach(b => b.onclick = () => {
     const L = Z.livraisons.find(x => x.id === b.dataset.geliwwert); if (!L) return;
     const kurz = L.posten.filter(p => p.n > hat(Z, L.aus, p.sorte));

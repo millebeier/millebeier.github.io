@@ -48,6 +48,17 @@ ist("Kasse", await p.evaluate(() => Z.kasse), 90);
 // zweite Livraison nur planen
 await p.click("#lAuf"); await p.fill("#lKunde", "BEST"); await p.fill("#lDatum", "2026-12-20"); await p.click('[data-lplus="0"]'); await p.click("#lOk"); await warte(200);
 
+// All / Just meng: Bestellung von Jeff (Kontakt Jeff, aus Lager) nur bei All
+await p.evaluate(() => eintragen([{ art: "livraison", kunde: "Rock Solid", kontakt: "Jeff", aus: "Lager", datum: "2026-12-30", posten: [{ sorte: "NEIPA", n: 6 }], betrag: 18, rechnung: false }]));
+await warte(300);
+const kunden = async () => (await p.locator("#lListe").innerText());
+ist("All: alle Bestellungen", await kunden(), t => t.includes("Rock Solid") && t.includes("BEST") && t.includes("Ferro Forum"));
+await p.click('[data-lmeine="1"]');
+ist("Just meng (Marc): ohne Jeffs Bestellung", await kunden(), t => !t.includes("Rock Solid") && t.includes("BEST") && t.includes("Ferro Forum"));
+await p.click('[data-lmeine="0"]');
+ist("zurück auf All", await kunden(), t => t.includes("Rock Solid"));
+await p.evaluate(() => eintragen([{ art: "storno", ref: Z.livraisons.find(L => L.kunde === "Rock Solid").id }])); await warte(200);
+
 // Liste pro Bier in der Iwwersiicht
 await p.click('[data-tab="uebersicht"]');
 await p.click('tr[data-sorte="NEIPA"]');
