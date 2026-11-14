@@ -53,7 +53,9 @@ beim Verkaufen/Livraison und „Fläsche beweegen“ an, solange jemand welche h
   **Biere** (vom Nutzer, 14.11.2026): angelegt und geändert unter **Stock → Eis Béieren** (nicht mehr in ⚙️; die
   Sortenliste aus `einstellungen` bleibt Grundlage für Altbestand und wird beim Speichern der Leute unverändert
   mitgeschickt — `Z.basisSorten`). Name nicht änderbar (Bestand hängt dran). Beim Anlegen optional Flaschen → `abfuellung`.
-  **Archiv** = nicht mehr verkaufbar, bleibt in Iwwersiicht (📦) und Excel. **Läschen** = zwei Rückfragen, verschwindet
+  **Archiv** = nicht mehr verkaufbar, bleibt in Iwwersiicht (📦) und Excel. **Erst wenn nichts mehr da ist** (vom Nutzer,
+  Fassung o): liegt noch etwas (Flaschen/Fässer bei irgendwem) oder ist eine Livraison geplant, kommt ein Hinweis mit
+  „wo“ (`restVon`) und es wird nicht archiviert. Der Import der alten Biere archiviert trotzdem (alte Fässer liegen noch). **Läschen** = zwei Rückfragen, verschwindet
   überall (`Z.geloescht`), Verkäufe bleiben im Verlauf und in der Kasse; zurück über den Verlauf oder neues Anlegen.
   Excel-Blatt je Bier zeigt die Eigenschaften (Braugang, Alk, Liter, Haltbar, ARCHIVÉIERT).
   **Dateien je Bier** (vom Nutzer, 14.11.2026): im Bier-Bearbeiten „📎 Dokumenter“ mit festen Feldern Etikett, Rezept,

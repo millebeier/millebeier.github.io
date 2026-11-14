@@ -29,6 +29,10 @@ ist("Ändern: Felder vorbelegt", [await p.inputValue("#biAlk"), await p.inputVal
 await p.fill("#biPreis", "3,5"); await p.click("#biOk"); await warte(200);
 ist("Preis geändert", await p.evaluate(() => Z.cfg.sorten.find(c => c.name === "Rusty").preis), 3.5);
 
+// Mit Bestand: Archivieren geht nicht, Hinweis sagt wo
+await p.click('[data-barch="Rusty"]'); await warte(200);
+ist("Archivieren mit Bestand blockiert", [fragen[fragen.length - 1], await p.evaluate(() => Z.cfg.sorten.find(c => c.name === "Rusty").archiv)], v => v[0].includes("kann nach net archivéiert ginn") && v[0].includes("Fläschen: Lager 288") && !v[1]);
+await p.evaluate(() => eintragen([{ art: "abgang", sorte: "Rusty", n: 288, wer: "Lager", grund: "sonst" }])); await warte(900);
 await p.click('[data-barch="Rusty"]'); await warte(200);
 ist("archiviert: nicht mehr verkaufbar", await p.evaluate(() => vSorten().some(s => s.name === "Rusty")), false);
 await p.click("#archivAuf");

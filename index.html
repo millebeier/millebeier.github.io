@@ -223,7 +223,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px}
 <script>
 /* Adresse des Cloudflare-Workers. Leer = Probe-Modus (alles nur auf diesem Handy). */
 const WORKER_URL = "https://millebeier.rjtp6r9s9h.workers.dev/";
-const FASSUNG = "14.11.2026 n";
+const FASSUNG = "14.11.2026 o";
 
 /* === Logik === (kein DOM; test/logik.mjs schneidet diesen Block aus) */
 const LAGER = "Lager";
@@ -1321,6 +1321,18 @@ function bierInfo(c) {
   return [m.stil, m.alk != null ? zahlText(m.alk) + " %" : "", euro(c.preis) + "/Fl", ...fp,
     m.braudatum ? "gebraut " + datumKurz(m.braudatum) : "", m.liter != null ? zahlText(m.liter) + " L" : "", m.mhd ? "haltbar bis " + datumKurz(m.mhd) : ""].filter(Boolean).join(" · ");
 }
+/* Was von einem Bier (Flaschen und Fässer) noch irgendwo liegt oder für Livraisons geplant ist — als Textzeilen. */
+function restVon(bier) {
+  const zeilen = [];
+  for (const k of [bier, ...FAESSER.map(F => fassKey(bier, F.l))]) {
+    const wo = Z.halter.filter(h => hat(Z, h, k) > 0).map(h => `${h === LAGER ? "Lager" : h} ${hat(Z, h, k)}`);
+    if (wo.length) zeilen.push(`• ${istFass(k) ? `Fass ${zerlege(k).l} l` : "Fläschen"}: ${wo.join(", ")}`);
+  }
+  const geplant = Z.livraisons.filter(L => !L.verkauf && L.posten.some(p => zerlege(p.sorte).bier === bier));
+  if (geplant.length) zeilen.push(`• geplangt Livraisons: ${geplant.map(L => `${L.kunde} (${datumKurz(L.datum)})`).join(", ")}`);
+  return zeilen;
+}
+
 function renderBiere() {
   const box = $("#bBiere");
   if (BIERFORM && !BIERFORM.neu && $("#bierDok")) { renderDok(BIERFORM.name); return; } // Formular stehen lassen
@@ -1351,8 +1363,11 @@ function renderBiere() {
     renderBiere();
   });
   box.querySelectorAll("[data-barch]").forEach(b => b.onclick = () => {
-    const n = b.dataset.barch, da = Z.sorten[n] ? Z.sorten[n].da : 0;
-    if (!confirm(`${n} archivéieren?\n\nEt kann een et dann net méi verkafen. An der Iwwersiicht an am Excel bleift et.` + (da ? `\n\nAchtung: et sinn nach ${da} do.` : ""))) return;
+    const n = b.dataset.barch;
+    // Erst archivieren, wenn alles weg ist (vom Nutzer, Fassung n): sonst Hinweis, wo noch etwas liegt.
+    const rest = restVon(n);
+    if (rest.length) { alert(`${n} kann nach net archivéiert ginn.\n\nEt ass nach eppes do:\n${rest.join("\n")}\n\nFir d'Archiv muss alles verkaaft, geliwwert oder als „Fort“ agedroe sinn.`); return; }
+    if (!confirm(`${n} archivéieren?\n\nEt kann een et dann net méi verkafen. An der Iwwersiicht an am Excel bleift et.`)) return;
     eintragen([{ art: "bierstatus", name: n, status: "archiv" }]);
   });
   box.querySelectorAll("[data-bzr]").forEach(b => b.onclick = () => eintragen([{ art: "bierstatus", name: b.dataset.bzr, status: "aktiv" }]));
