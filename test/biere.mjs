@@ -16,6 +16,8 @@ await p.click("#bierNeu");
 await p.fill("#biName", "Rusty"); await p.fill("#biStil", "Red Ale"); await p.fill("#biBrau", "2026-02-06");
 await p.fill("#biAlk", "5,6"); await p.fill("#biLiter", "156"); await p.fill("#biPreis", "3"); await p.fill("#biFl", "288");
 await p.click("#biOk"); await warte(200);
+ist("nach dem Anlegen gleich Dokumente", await p.locator("#bierDok").innerText(), s => s.includes("Etikett") && s.includes("Brauprotokoll"));
+await p.click("#biZu"); await warte(100);
 ist("angelegt mit 288 im Lager", await p.evaluate(() => [Z.cfg.sorten.some(c => c.name === "Rusty"), hat(Z, "Lager", "Rusty")]), [true, 288]);
 ist("Liste zeigt Eigenschaften", await p.locator("#bBiere").innerText(), s => s.includes("Rusty") && s.includes("Red Ale · 5,6 % · 3 €/Fl · gebraut 6.2.2026 · 156 L"));
 await p.click("#bierNeu"); await p.fill("#biName", "rusty"); await p.click("#biOk");

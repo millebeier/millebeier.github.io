@@ -4,7 +4,7 @@ const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
 const a = html.indexOf("/* === Logik ===");
 const b = html.indexOf("/* === Oberfläche ===");
 if (a < 0 || b < 0) { console.error("Marken nicht gefunden"); process.exit(1); }
-const L = new Function(html.slice(a, b) + "; return {rechne, gueltig, euro, verteile, erinnerung, csv, beschreibe, hat, LAGER, STANDARD, proSorte, exportBlaetter, anteil};")();
+const L = new Function(html.slice(a, b) + "; return {rechne, gueltig, euro, verteile, erinnerung, csv, beschreibe, hat, LAGER, STANDARD, proSorte, exportBlaetter, anteil, dateienVon};")();
 
 let fehler = 0, n = 0;
 const ist = (was, wert, soll) => { n++; const ok = JSON.stringify(wert) === JSON.stringify(soll); if (!ok) { fehler++; console.log(`✗ ${was}: ${JSON.stringify(wert)} statt ${JSON.stringify(soll)}`); } };
@@ -155,6 +155,27 @@ ist("CSV Zeilen", c.trim().split("\r\n").length, 4);
   ist("Bier ungültig: Lager als Name", L.gueltig({ ...rusty, name: "Lager" }), false);
   ist("Bier ungültig: Alkohol zu hoch", L.gueltig({ ...rusty, alk: 55 }), false);
   ist("Verlauf-Text", L.beschreibe(rusty), "🍺 Béier: Rusty · Red Ale · 5,6 % · 3 € · gebraut 6.2.2026");
+}
+
+// Dateien je Bier: feste Felder nehmen die neueste, „anner“ sammelt; Löschen per storno
+{
+  let k4 = 0, t4 = 200000;
+  const D = x => ({ id: "da-" + String(++k4).padStart(5, "0"), zeit: t4 += 1000, art: "datei", durch: "Laurent", groesse: 1000, teile: 1, typ: "application/pdf", ...x });
+  const e1 = D({ fid: "fid-etikett-1", name: "etikett-alt.pdf", bier: "Rusty", feld: "etikett" });
+  const e2 = D({ fid: "fid-etikett-2", name: "etikett-neu.pdf", bier: "Rusty", feld: "etikett" });
+  const a1 = D({ fid: "fid-anner-001", name: "foto.jpg", bier: "Rusty", feld: "anner" });
+  const a2 = D({ fid: "fid-anner-002", name: "zoll.pdf", bier: "Rusty", feld: "anner" });
+  const g1 = D({ fid: "fid-allgem-01", name: "hygiene.pdf", bier: "", feld: "anner" });
+  let Y = L.rechne([e1, e2, a1, a2, g1]);
+  let d = L.dateienVon(Y, "Rusty");
+  ist("Etikett: neueste gilt", d.etikett.name, "etikett-neu.pdf");
+  ist("Aner: neueste zuerst", d.anner.map(x => x.name), ["zoll.pdf", "foto.jpg"]);
+  ist("Anzahl", [d.anzahl, d.rezept], [3, null]);
+  ist("allgemein getrennt", L.dateienVon(Y, "").anner.map(x => x.name), ["hygiene.pdf"]);
+  Y = L.rechne([e1, e2, a1, a2, g1, { id: "da-st-1", zeit: t4 += 1000, art: "storno", ref: e2.id }]);
+  ist("neueste gelöscht → alte wieder da", L.dateienVon(Y, "Rusty").etikett.name, "etikett-alt.pdf");
+  ist("Datei ungültig: böse fid", L.gueltig({ ...e1, fid: "../x" }), false);
+  ist("Datei ungültig: falsches Feld", L.gueltig({ ...e1, feld: "foto" }), false);
 }
 
 console.log(fehler ? `${fehler} von ${n} Prüfungen fehlgeschlagen` : `Alle ${n} Prüfungen bestanden`);

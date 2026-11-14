@@ -1,15 +1,6 @@
 // Worker mit nachgebauter D1 (Map statt SQL).
 import worker from "../worker.js";
-function fakeD1() {
-  const rows = new Map();
-  const st = sql => ({
-    sql, args: [],
-    bind(...a) { return { ...this, args: a }; },
-    async run() { if (sql.startsWith("INSERT OR IGNORE")) { const [id, zeit, daten] = this.args; if (!rows.has(id)) rows.set(id, { id, zeit, daten }); } return {}; },
-    async all() { return { results: [...rows.values()].sort((a, b) => a.zeit - b.zeit || (a.id < b.id ? -1 : 1)) }; },
-  });
-  return { rows, prepare: st, async batch(l) { for (const s of l) await s.run(); return []; } };
-}
+import { fakeD1 } from "./fake-d1.mjs";
 let fehler = 0;
 const ist = (was, a, b) => { if (JSON.stringify(a) !== JSON.stringify(b)) { fehler++; console.log("✗", was, JSON.stringify(a), "statt", JSON.stringify(b)); } };
 const env = { DB: fakeD1(), CODE: "hopfen" };
@@ -32,6 +23,18 @@ ist("neue Art livraison", [s, j.eintraege.length], [200, 3]);
 ist("liste", [s, j.eintraege.length], [200, 3]);
 [s, j] = await post({ code: "hopfen", aktion: "liste" }, { DB: env.DB });
 ist("ohne CODE", s, 500);
+[s, j] = await post({ code: "hopfen", aktion: "teil_hoch", fid: "datei-abc-123", nr: 0, daten: "SGFsbG8=" });
+ist("Stück hoch", [s, j.ok], [200, true]);
+[s, j] = await post({ code: "hopfen", aktion: "teil_holen", fid: "datei-abc-123", nr: 0 });
+ist("Stück holen", [s, j.daten], [200, "SGFsbG8="]);
+[s, j] = await post({ code: "hopfen", aktion: "teil_holen", fid: "datei-abc-123", nr: 1 });
+ist("fehlendes Stück", s, 404);
+[s, j] = await post({ code: "hopfen", aktion: "teil_hoch", fid: "../boese", nr: 0, daten: "x" });
+ist("böse fid", s, 400);
+[s, j] = await post({ code: "falsch", aktion: "teil_holen", fid: "datei-abc-123", nr: 0 });
+ist("Stück nur mit Code", s, 401);
+[s, j] = await post({ code: "hopfen", aktion: "liste" });
+ist("Stücke nicht in der Liste", j.eintraege.length, 3);
 const r = await worker.fetch(new Request("https://x/", { method: "OPTIONS" }), env);
 ist("OPTIONS", r.status, 204);
 console.log(fehler ? `${fehler} Fehler` : "Worker: alles bestanden");

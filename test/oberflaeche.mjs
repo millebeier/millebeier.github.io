@@ -3,17 +3,12 @@
 import { readFileSync } from "node:fs";
 const pw = await import(process.env.PLAYWRIGHT || "/opt/node22/lib/node_modules/playwright/index.mjs");
 import worker from "../worker.js";
+import { fakeD1 } from "./fake-d1.mjs";
 
 const URL_W = "https://worker.test/";
 let html = readFileSync(new URL("../index.html", import.meta.url), "utf8").replace(/const WORKER_URL = "[^"]*";/, `const WORKER_URL = "${URL_W}";`);
 const icon = readFileSync(new URL("../bilder/icon-180.png", import.meta.url));
-const rows = new Map();
-const DB = {
-  prepare: sql => ({ args: [], bind(...a) { return { ...this, args: a }; },
-    async run() { if (sql.startsWith("INSERT")) { const [id, zeit, daten] = this.args; if (!rows.has(id)) rows.set(id, { id, zeit, daten }); } },
-    async all() { return { results: [...rows.values()].sort((a, b) => a.zeit - b.zeit || (a.id < b.id ? -1 : 1)) }; } }),
-  async batch(l) { for (const s of l) await s.run(); },
-};
+const DB = fakeD1();
 let SERVER_AN = true;
 const env = { DB, CODE: "hopfen" };
 

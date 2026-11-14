@@ -138,6 +138,22 @@ input[type=date]{min-height:44px}
 textarea{width:100%;font:16px/1.4 inherit;padding:10px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--text)}
 .check{display:flex;align-items:center;gap:10px;margin-top:12px;font-size:15px}
 .check input{width:22px;height:22px;-webkit-appearance:checkbox;appearance:auto}
+.dok{display:flex;gap:12px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
+.dok:first-of-type{border-top:0}
+.dok .bild{width:64px;height:64px;flex:none;border-radius:8px;background:var(--card2);display:flex;align-items:center;justify-content:center;
+  font-size:26px;overflow:hidden;border:1px solid var(--line);cursor:pointer;padding:0}
+.dok .bild img{width:100%;height:100%;object-fit:cover}
+.dok .bild.leer{border-style:dashed;color:var(--muted);font-size:28px}
+.dok .txt{flex:1;min-width:0}
+.dok .txt b{display:block;font-size:14px}
+.dok .txt span{display:block;font-size:13px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dok .knopf{padding:7px 9px;font-size:13px}
+.dok-titel{font-size:13px;color:var(--muted);margin:14px 0 2px;text-transform:uppercase;letter-spacing:.5px}
+#ansicht{position:fixed;inset:0;z-index:20;background:#000;overflow:auto;-webkit-overflow-scrolling:touch}
+.ansicht-kopf{position:sticky;top:0;display:flex;gap:8px;align-items:center;padding:10px 12px;background:#111;border-bottom:2px solid var(--akzent)}
+.ansicht-kopf b{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#ansichtInhalt{padding:8px}
+#ansichtInhalt img,#ansichtInhalt canvas{display:block;width:100%;height:auto;margin:0 auto 8px;background:#fff}
 footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px}
 .versteckt{display:none !important}
 </style>
@@ -172,11 +188,15 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px}
   <footer id="fuss"></footer>
 </main>
 <datalist id="kaeuferListe"></datalist>
+<input type="file" id="dateiWahl" class="versteckt">
+<div id="ansicht" class="versteckt"><div class="ansicht-kopf"><b id="ansichtName"></b>
+  <button class="knopf" id="ansichtTeilen">⬆️ Deelen</button><button class="knopf rot" id="ansichtZu" aria-label="Zoumaachen">✕</button></div>
+  <div id="ansichtInhalt"></div></div>
 
 <script>
 /* Adresse des Cloudflare-Workers. Leer = Probe-Modus (alles nur auf diesem Handy). */
 const WORKER_URL = "https://millebeier.rjtp6r9s9h.workers.dev/";
-const FASSUNG = "14.11.2026 e";
+const FASSUNG = "14.11.2026 f";
 
 /* === Logik === (kein DOM; test/logik.mjs schneidet diesen Block aus) */
 const LAGER = "Lager";
@@ -185,7 +205,8 @@ const STANDARD = {
   leute: ["Jeff", "Marc", "Claude", "Laurent"],
 };
 const GRUENDE = { getrunken: "selwer gedronk", verschenkt: "verschenkt / Prouf", kaputt: "futti", sonst: "soss eppes" };
-const ARTEN = ["abfuellung", "bewegung", "abgang", "verkauf", "zahlung", "einstellungen", "storno", "livraison", "rechnung", "bier", "bierstatus"];
+const ARTEN = ["abfuellung", "bewegung", "abgang", "verkauf", "zahlung", "einstellungen", "storno", "livraison", "rechnung", "bier", "bierstatus", "datei"];
+const FELDER = { etikett: "Etikett", rezept: "Rezept", protokoll: "Brauprotokoll", anner: "Aner Dateien" };
 
 const ganz = n => Number.isInteger(n) && n > 0 && n <= 100000;
 const geld = x => typeof x === "number" && isFinite(x) && x >= 0 && x <= 1000000;
@@ -221,6 +242,10 @@ function gueltig(e) {
       return text(e.name, 30) && e.name !== LAGER && geld(e.preis) && optDatum(e.braudatum) && optDatum(e.mhd) &&
         optZahl(e.alk, 0, 30) && optZahl(e.liter, 0, 100000) && optText(e.stil, 40) && optText(e.notiz, 300);
     case "bierstatus": return text(e.name, 30) && ["aktiv", "archiv", "weg"].includes(e.status);
+    case "datei":
+      return typeof e.fid === "string" && /^[A-Za-z0-9_-]{8,80}$/.test(e.fid) && text(e.name, 120) && optText(e.typ, 100) &&
+        Number.isInteger(e.groesse) && e.groesse > 0 && Number.isInteger(e.teile) && e.teile >= 1 && e.teile <= 200 &&
+        typeof e.bier === "string" && e.bier.length <= 30 && e.feld in FELDER;
     case "zahlung": return typeof e.ref === "string" && geld(e.betrag) && e.betrag > 0;
     case "einstellungen":
       return Array.isArray(e.sorten) && e.sorten.length > 0 && e.sorten.length <= 30 &&
@@ -337,6 +362,7 @@ function rechne(eintraege) {
     verkaeufe: [...vk.values()],
     vkNachId: vk,
     livraisons: [...liv.values()].sort((a, b) => a.datum.localeCompare(b.datum) || ordnung(a, b)),
+    dateien: aktiv.filter(e => e.art === "datei"),
     kaeufer: [...kaeufer.values()].sort((a, b) => b.offen - a.offen || a.name.localeCompare(b.name, "de")),
     kasse, offen,
     umsatz: runde([...vk.values()].reduce((a, v) => a + v.betrag, 0)),
@@ -369,6 +395,7 @@ function beschreibe(e, Z) {
     }
     case "bier": return `🍺 Béier: ${e.name}` + [e.stil, e.alk != null ? String(e.alk).replace(".", ",") + " %" : "", euro(e.preis), e.braudatum ? "gebraut " + datumKurz(e.braudatum) : ""].filter(Boolean).map(x => " · " + x).join("");
     case "bierstatus": return { archiv: "📦 Archivéiert: ", aktiv: "↩️ Aus dem Archiv zréck: ", weg: "✕ Béier geläscht: " }[e.status] + e.name;
+    case "datei": return `📎 ${FELDER[e.feld]}${e.bier ? " · " + e.bier : ""}: ${e.name}`;
     case "einstellungen": return `⚙️ Zorten/Präisser/Leit geännert: ${e.sorten.filter(s => !s.aus).map(s => `${s.name} ${euro(s.preis)}`).join(", ")}`;
     case "storno": {
       const z = Z && Z.nachId.get(e.ref);
@@ -413,6 +440,16 @@ function csv(Z, zeitText) {
 
 const datumKurz = d => { const [j, m, t] = d.split("-"); return `${+t}.${+m}.${j}`; };
 const istFass = sorte => /keg|fass|fût/i.test(sorte);
+
+/* Dateien eines Biers (bier "" = allgemein): je festes Feld die neueste, „anner“ alle (neueste zuerst). */
+function dateienVon(Z, bier) {
+  const d = Z.dateien.filter(x => x.bier === bier);
+  const out = { anner: d.filter(x => x.feld === "anner").reverse() };
+  for (const f of ["etikett", "rezept", "protokoll"]) out[f] = d.filter(x => x.feld === f).pop() || null;
+  out.anzahl = ["etikett", "rezept", "protokoll"].filter(f => out[f]).length + out.anner.length;
+  return out;
+}
+const groesseText = b => b < 1024 * 1024 ? Math.max(1, Math.round(b / 1024)) + " KB" : (b / 1048576).toFixed(1).replace(".", ",") + " MB";
 
 /* Anteil eines Postens am Betrag (gewichtet nach Listenpreis; ohne Preise nach Flaschen). */
 function anteil(cfg, posten, betrag, p) {
@@ -1026,12 +1063,14 @@ function bierInfo(c) {
 }
 function renderBiere() {
   const box = $("#bBiere");
+  if (BIERFORM && !BIERFORM.neu && $("#bierDok")) { renderDok(BIERFORM.name); return; } // Formular stehen lassen
   if (tipptIn(box)) return;
   if (BIERFORM) return renderBierForm(box);
   const aktivB = Z.cfg.sorten.filter(c => !c.archiv), archiv = Z.cfg.sorten.filter(c => c.archiv);
   const zeile = c => `<div class="bier"><div class="kopfz"><b>${esc(c.name)}</b><span class="muted">${Z.sorten[c.name] ? Z.sorten[c.name].da : 0} do</span></div>
       <div class="hinweis" style="margin-top:2px">${esc(bierInfo(c))}</div>
       ${c.meta && c.meta.notiz ? `<div class="hinweis" style="margin-top:2px">${esc(c.meta.notiz)}</div>` : ""}
+      ${dateienVon(Z, c.name).anzahl ? `<div class="hinweis" style="margin-top:2px">📎 ${["etikett", "rezept", "protokoll"].filter(f => dateienVon(Z, c.name)[f]).map(f => FELDER[f]).concat(dateienVon(Z, c.name).anner.length ? [dateienVon(Z, c.name).anner.length + " aner"] : []).join(" · ")}</div>` : ""}
       <div class="knopfe"><button class="knopf" data-bed="${esc(c.name)}">✎ Änneren</button>
         ${c.archiv ? `<button class="knopf" data-bzr="${esc(c.name)}">↩️ Zréckhuelen</button>` : `<button class="knopf" data-barch="${esc(c.name)}">📦 Archiv</button>`}
         <button class="knopf rot" data-bweg="${esc(c.name)}">✕ Läschen</button></div></div>`;
@@ -1064,6 +1103,194 @@ function renderBiere() {
     eintragen([{ art: "bierstatus", name: n, status: "weg" }]);
   });
 }
+/* ---------- Dateien ----------
+   Stücke à 1 000 000 Zeichen Base64 (≈ 730 KB) über teil_hoch/teil_holen; Vorschaubild als eigenes Stück
+   „<fid>-t“ (JPEG, 240 px; PDFs über pdf.js, erst beim Hochladen geladen). Der Eintrag „datei“ kommt erst,
+   wenn alle Stücke oben sind — sonst stünde eine Datei in der Liste, die es nicht gibt. */
+const STUECK = 1000000, MAX_DATEI = 10 * 1024 * 1024;
+const PDFJS = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js";
+const PDFJS_WORKER = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+const SP_TEILE = "millebeier_v1_probe_teile";
+let UPLOAD = null;                 // {bier, feld, text} während des Hochladens
+const THUMBS = new Map(), DATEN = new Map();
+
+async function teilHoch(fid, nr, daten) {
+  if (PROBE) { const t = lade(SP_TEILE, {}); t[fid + "#" + nr] = daten; try { localStorage.setItem(SP_TEILE, JSON.stringify(t)); } catch { throw new Error("Prouf-Modus: Späicher voll"); } return; }
+  await anfrage({ aktion: "teil_hoch", fid, nr, daten });
+}
+async function teilHolen(fid, nr) {
+  if (PROBE) { const d = lade(SP_TEILE, {})[fid + "#" + nr]; if (d == null) { const f = new Error("net fonnt"); f.status = 404; throw f; } return d; }
+  return (await anfrage({ aktion: "teil_holen", fid, nr })).daten;
+}
+function pdfjsLaden() {
+  if (window.pdfjsLib) return Promise.resolve(window.pdfjsLib);
+  return new Promise((ok, nok) => {
+    const sc = document.createElement("script"); sc.src = PDFJS;
+    sc.onload = () => { window.pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS_WORKER; ok(window.pdfjsLib); };
+    sc.onerror = () => nok(new Error("PDF-Lieser net geluede (Internet?)"));
+    document.head.appendChild(sc);
+  });
+}
+const istPdf = (typ, name) => typ === "application/pdf" || /\.pdf$/i.test(name || "");
+const istBild = typ => /^image\//.test(typ || "");
+async function aufLeinwand(quelle, breite) {
+  const c = document.createElement("canvas");
+  const f = Math.min(1, breite / quelle.width);
+  c.width = Math.round(quelle.width * f); c.height = Math.round(quelle.height * f);
+  const g = c.getContext("2d"); g.fillStyle = "#fff"; g.fillRect(0, 0, c.width, c.height);
+  g.drawImage(quelle, 0, 0, c.width, c.height);
+  return c;
+}
+async function vorschau(datei) {
+  try {
+    if (istBild(datei.type)) {
+      const url = URL.createObjectURL(datei);
+      const img = await new Promise((ok, nok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = nok; i.src = url; });
+      const c = await aufLeinwand(img, 240); URL.revokeObjectURL(url);
+      return c.toDataURL("image/jpeg", 0.7);
+    }
+    if (istPdf(datei.type, datei.name)) {
+      const pdfjs = await pdfjsLaden();
+      const doc = await pdfjs.getDocument({ data: new Uint8Array(await datei.arrayBuffer()) }).promise;
+      const seite = await doc.getPage(1);
+      const v0 = seite.getViewport({ scale: 1 }), v = seite.getViewport({ scale: 240 / v0.width });
+      const c = document.createElement("canvas"); c.width = Math.round(v.width); c.height = Math.round(v.height);
+      await seite.render({ canvasContext: c.getContext("2d"), viewport: v }).promise;
+      return c.toDataURL("image/jpeg", 0.7);
+    }
+  } catch (f) { console.warn("Vorschau", f); }
+  return null;
+}
+function alsBase64(datei) {
+  return new Promise((ok, nok) => { const r = new FileReader(); r.onload = () => ok(String(r.result).split(",")[1] || ""); r.onerror = () => nok(r.error); r.readAsDataURL(datei); });
+}
+async function dateiHochladen(datei, bier, feld) {
+  if (UPLOAD) return;
+  if (datei.size > MAX_DATEI) { alert(`${datei.name} ass ${groesseText(datei.size)} grouss — maximal 10 MB.`); return; }
+  if (!PROBE && navigator.onLine === false) { alert("Fir Dateien eropzelueden brauchs de Internet."); return; }
+  UPLOAD = { bier, feld, text: "Gëtt virbereet…" }; renderDok(bier);
+  try {
+    const fid = "f-" + neueId().replace(/[^A-Za-z0-9-]/g, "");
+    const thumb = await vorschau(datei);
+    const b64 = await alsBase64(datei);
+    const n = Math.max(1, Math.ceil(b64.length / STUECK));
+    if (thumb) { await teilHoch(fid + "-t", 0, thumb); THUMBS.set(fid, thumb); }
+    for (let i = 0; i < n; i++) {
+      UPLOAD.text = `Eroplueden… ${Math.round(i / n * 100)} %`; renderDok(bier);
+      await teilHoch(fid, i, b64.slice(i * STUECK, (i + 1) * STUECK));
+    }
+    DATEN.set(fid, datei);
+    UPLOAD = null;
+    eintragen([{ art: "datei", fid, name: datei.name.slice(0, 120) || "Datei", typ: (datei.type || "").slice(0, 100), groesse: datei.size, teile: n, bier, feld, thumb: !!thumb }]);
+  } catch (f) {
+    UPLOAD = null; renderDok(bier);
+    alert("Eroplueden huet net geklappt: " + (f.message || f) + (f.status === 400 ? "\n\nVläicht muss de Worker aktualiséiert ginn." : ""));
+  }
+}
+async function dateiDaten(D) {
+  if (DATEN.has(D.fid)) return DATEN.get(D.fid);
+  let b64 = "";
+  for (let i = 0; i < D.teile; i++) b64 += await teilHolen(D.fid, i);
+  const bin = atob(b64), bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  const datei = new File([bytes], D.name, { type: D.typ || "application/octet-stream" });
+  DATEN.set(D.fid, datei);
+  return datei;
+}
+async function thumbLaden(D) {
+  if (!D.thumb || THUMBS.has(D.fid)) return;
+  THUMBS.set(D.fid, "");
+  try { THUMBS.set(D.fid, await teilHolen(D.fid + "-t", 0)); } catch { THUMBS.set(D.fid, "-"); }
+  const img = document.querySelector(`[data-thumb="${D.fid}"]`);
+  if (img && THUMBS.get(D.fid) && THUMBS.get(D.fid) !== "-") img.innerHTML = `<img src="${THUMBS.get(D.fid)}" alt="">`;
+}
+const symbol = D => istPdf(D.typ, D.name) ? "📄" : istBild(D.typ) ? "🖼️" : "📎";
+function bildHtml(D) {
+  const t = THUMBS.get(D.fid);
+  return t && t !== "-" ? `<img src="${t}" alt="">` : symbol(D);
+}
+let ANSICHT = null;
+async function dateiZeigen(D) {
+  ANSICHT = D;
+  $("#ansichtName").textContent = D.name;
+  const inhalt = $("#ansichtInhalt");
+  inhalt.innerHTML = `<div class="leer">Gëtt gelueden… (${groesseText(D.groesse)})</div>`;
+  $("#ansicht").classList.remove("versteckt");
+  document.body.style.overflow = "hidden";
+  try {
+    const datei = await dateiDaten(D);
+    if (ANSICHT !== D) return;
+    if (istBild(D.typ)) { inhalt.innerHTML = ""; const img = new Image(); img.src = URL.createObjectURL(datei); inhalt.appendChild(img); return; }
+    if (istPdf(D.typ, D.name)) {
+      const pdfjs = await pdfjsLaden();
+      const doc = await pdfjs.getDocument({ data: new Uint8Array(await datei.arrayBuffer()) }).promise;
+      inhalt.innerHTML = "";
+      const breite = Math.min(inhalt.clientWidth - 16, 1200) * Math.min(2, window.devicePixelRatio || 1);
+      for (let n = 1; n <= doc.numPages && ANSICHT === D; n++) {
+        const seite = await doc.getPage(n);
+        const v0 = seite.getViewport({ scale: 1 }), v = seite.getViewport({ scale: breite / v0.width });
+        const c = document.createElement("canvas"); c.width = Math.round(v.width); c.height = Math.round(v.height);
+        inhalt.appendChild(c);
+        await seite.render({ canvasContext: c.getContext("2d"), viewport: v }).promise;
+      }
+      return;
+    }
+    inhalt.innerHTML = `<div class="leer">Keng Virschau fir dës Datei. Mat „⬆️ Deelen“ an enger anerer App opmaachen.</div>`;
+  } catch (f) { if (ANSICHT === D) inhalt.innerHTML = `<div class="meldung fehler">${esc(f.message || "Datei konnt net gelueden ginn.")}</div>`; }
+}
+function ansichtZu() { ANSICHT = null; $("#ansicht").classList.add("versteckt"); $("#ansichtInhalt").innerHTML = ""; document.body.style.overflow = ""; }
+$("#ansichtZu").onclick = ansichtZu;
+$("#ansichtTeilen").onclick = async () => {
+  if (!ANSICHT) return;
+  try {
+    const datei = await dateiDaten(ANSICHT);
+    if (navigator.canShare && navigator.canShare({ files: [datei] })) { await navigator.share({ files: [datei] }); return; }
+    const a = document.createElement("a"); a.href = URL.createObjectURL(datei); a.download = datei.name; a.click();
+  } catch (f) { if (!f || f.name !== "AbortError") alert(f.message || "Deelen huet net geklappt."); }
+};
+$("#dateiWahl").onchange = e => {
+  const inp = e.target, datei = inp.files && inp.files[0];
+  const { bier, feld } = inp.dataset;
+  inp.value = "";
+  if (datei) dateiHochladen(datei, bier, feld);
+};
+function dateiWaehlen(bier, feld) {
+  const inp = $("#dateiWahl");
+  inp.dataset.bier = bier; inp.dataset.feld = feld;
+  inp.accept = feld === "etikett" ? "application/pdf,image/*" : "";
+  inp.click();
+}
+function renderDok(bier) {
+  const box = $("#bierDok");
+  if (!box) return;
+  const d = dateienVon(Z, bier);
+  const laeuft = f => UPLOAD && UPLOAD.bier === bier && UPLOAD.feld === f;
+  const zeile = (D, f) => D
+    ? `<div class="dok"><button class="bild" data-thumb="${esc(D.fid)}" data-auf="${esc(D.fid)}" aria-label="Opmaachen">${bildHtml(D)}</button>
+        <div class="txt">${f !== "anner" ? `<b>${FELDER[f]}</b>` : ""}<span>${esc(D.name)}</span><span>${groesseText(D.groesse)} · ${datumText(D.zeit)} · ${esc(D.durch || "?")}</span></div>
+        ${f !== "anner" ? `<button class="knopf" data-hoch="${f}">Ersetzen</button>` : ""}<button class="knopf rot" data-dweg="${esc(D.fid)}" aria-label="Läschen">✕</button></div>`
+    : `<div class="dok"><button class="bild leer" data-hoch="${f}" aria-label="${FELDER[f]} derbäisetzen">+</button>
+        <div class="txt"><b>${FELDER[f]}</b><span>${laeuft(f) ? esc(UPLOAD.text) : "nach keng Datei"}</span></div>
+        ${laeuft(f) ? "" : `<button class="knopf" data-hoch="${f}">+ Derbäisetzen</button>`}</div>`;
+  const neu = ["etikett", "rezept", "protokoll"].map(f => laeuft(f) && d[f] ? zeile(null, f) : zeile(d[f], f)).join("") +
+    `<div class="dok-titel">Aner Dateien</div>` + d.anner.map(D => zeile(D, "anner")).join("") +
+    (laeuft("anner") ? `<div class="hinweis">${esc(UPLOAD.text)}</div>` : `<button class="knopf" data-hoch="anner" style="width:100%;margin-top:8px">+ Datei derbäisetzen</button>`) +
+    `<div class="hinweis">PDF, Fotoen oder all aner Datei, bis 10 MB. Gespäichert fir all véier.</div>`;
+  const alle = [d.etikett, d.rezept, d.protokoll, ...d.anner].filter(Boolean);
+  // Nur neu bauen, wenn sich etwas geändert hat — sonst ginge ein Tipp verloren, der genau in den
+  // Neuaufbau nach einem Abgleich fällt (im Test gesehen).
+  if (box.dataset.sig === neu) { alle.forEach(thumbLaden); return; }
+  box.dataset.sig = neu;
+  box.innerHTML = neu;
+  alle.forEach(thumbLaden);
+  box.querySelectorAll("[data-hoch]").forEach(b => b.onclick = () => { if (!UPLOAD) dateiWaehlen(bier, b.dataset.hoch); });
+  box.querySelectorAll("[data-auf]").forEach(b => b.onclick = () => { const D = alle.find(x => x.fid === b.dataset.auf); if (D) dateiZeigen(D); });
+  box.querySelectorAll("[data-dweg]").forEach(b => b.onclick = () => {
+    const D = alle.find(x => x.fid === b.dataset.dweg); if (!D) return;
+    if (confirm(`${D.name} läschen?`)) eintragen([{ art: "storno", ref: D.id }]);
+  });
+}
+
 function renderBierForm(box) {
   const F = BIERFORM;
   box.innerHTML = `<div class="card"><h2>${F.neu ? "Neit Béier" : esc(F.name) + " änneren"}</h2>
@@ -1080,7 +1307,9 @@ function renderBierForm(box) {
     <div class="hinweis">Fässer als eegent Béier uleeën, z. B. „Rusty Keg 30l“ mat 180 € als Präis.</div>
     <button class="haupt" id="biOk">${F.neu ? "Béier uleeën" : "Späicheren"}</button>
     <button class="haupt" id="biZu" style="background:var(--card2);color:var(--text)">Ofbriechen</button>
-    <div id="biMeld"></div></div>`;
+    <div id="biMeld">${F.meldung ? `<div class="meldung ok">${esc(F.meldung)}</div>` : ""}</div></div>
+    ${F.neu ? `<div class="card hinweis">📎 Etikett, Rezept a Brauprotokoll kanns de derbäisetzen, soubal d'Béier ugeluecht ass.</div>` : `<div class="card"><h2>📎 Dokumenter</h2><div id="bierDok"></div></div>`}`;
+  if (!F.neu) renderDok(F.name);
   const bind = (id, k) => { const el = $(id); if (el) el.oninput = el.onchange = () => { F[k] = el.value; }; };
   bind("#biName", "name"); bind("#biStil", "stil"); bind("#biBrau", "braudatum"); bind("#biAlk", "alk"); bind("#biLiter", "liter");
   bind("#biPreis", "preis"); bind("#biMhd", "mhd"); bind("#biFl", "flaschen"); bind("#biNotiz", "notiz");
@@ -1100,9 +1329,17 @@ function renderBierForm(box) {
     if (F.neu && fl) teile.push({ art: "abfuellung", sorte: name, n: fl });
     if (document.activeElement) document.activeElement.blur();
     if (!eintragen(teile).length) return;
-    BIERFORM = null; FORM = null; BFORM = null; LFORM = null;
+    FORM = null; BFORM = null; LFORM = null;
+    if (F.neu) {
+      // Gleich in die Bearbeitung, damit man Etikett & Co. anhängen kann.
+      const m = e;
+      BIERFORM = { neu: false, name, stil: m.stil, braudatum: m.braudatum, alk: zahlText(m.alk), liter: zahlText(m.liter), preis: zahlText(m.preis), mhd: m.mhd, notiz: m.notiz, flaschen: "",
+        meldung: `✓ ${name} ugeluecht${fl ? `, ${fl} Fläschen am Lager` : ""}. Elo kanns de Dateien derbäisetzen.` };
+      renderBiere(); return;
+    }
+    BIERFORM = null;
     renderBiere();
-    $("#bierMeld").innerHTML = `<div class="meldung ok">✓ ${esc(name)} ${F.neu ? "ugeluecht" + (fl ? `, ${fl} Fläschen am Lager` : "") : "gespäichert"}</div>`;
+    $("#bierMeld").innerHTML = `<div class="meldung ok">✓ ${esc(name)} gespäichert</div>`;
   };
 }
 
@@ -1305,7 +1542,7 @@ function mittenImEintrag() {
   if (TAB === "einst" && EFORM) return true;
   if (FORM && (FORM.kaeufer.trim() || Object.values(FORM.n).some(n => n > 0) || FORM.betrag != null)) return true;
   if (BFORM && String(BFORM.n).trim()) return true;
-  if (L_NEU || BIERFORM) return true;
+  if (L_NEU || BIERFORM || UPLOAD || ANSICHT) return true;
   return false;
 }
 function neuLaden() {

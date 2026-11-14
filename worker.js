@@ -9,8 +9,12 @@
  *   4. Worker → Settings → Variables and Secrets → Secret  CODE  = euer gemeinsamer Code.
  * Die Tabelle legt der Worker beim ersten Aufruf selbst an.
  *
- * Anfragen: POST, Text mit JSON  {code, aktion: "liste"}  oder  {code, aktion: "neu", eintraege: [...]}.
- * Antwort immer: {eintraege: [...alle...]}.
+ * Anfragen: POST, Text mit JSON  {code, aktion: "liste"}  oder  {code, aktion: "neu", eintraege: [...]}
+ * → Antwort {eintraege: [...alle...]}.
+ * Dateien (seit 14.11.2026): in Stücken (Base64-Text, je höchstens 1,4 MB) in der Tabelle `teile`.
+ *   {code, aktion: "teil_hoch", fid, nr, daten} → {ok: true}
+ *   {code, aktion: "teil_holen", fid, nr}       → {daten}
+ * Welche Dateien es gibt (Name, Bier, Feld, Anzahl Stücke), steht als normaler Eintrag (art "datei") in `eintraege`.
  */
 
 // Jede Art aus Kleinbuchstaben wird gespeichert — was sie bedeutet, prüft die App. So muss der Worker
@@ -38,10 +42,12 @@ function gleich(a, b) {
 }
 
 async function tabelle(db) {
-  await db.prepare(
-    "CREATE TABLE IF NOT EXISTS eintraege (id TEXT PRIMARY KEY, zeit INTEGER NOT NULL, daten TEXT NOT NULL, angekommen INTEGER NOT NULL)"
-  ).run();
+  await db.batch([
+    db.prepare("CREATE TABLE IF NOT EXISTS eintraege (id TEXT PRIMARY KEY, zeit INTEGER NOT NULL, daten TEXT NOT NULL, angekommen INTEGER NOT NULL)"),
+    db.prepare("CREATE TABLE IF NOT EXISTS teile (fid TEXT NOT NULL, nr INTEGER NOT NULL, daten TEXT NOT NULL, PRIMARY KEY (fid, nr))"),
+  ]);
 }
+const FID = /^[A-Za-z0-9_-]{8,80}$/;
 
 async function alle(db) {
   const { results } = await db.prepare("SELECT daten FROM eintraege ORDER BY zeit, id").all();
@@ -62,7 +68,7 @@ function pruefe(e) {
 export default {
   async fetch(req, env) {
     if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: CORS });
-    if (req.method !== "POST") return antwort({ ok: true, app: "millebeier", db: !!env.DB, code: !!env.CODE });
+    if (req.method !== "POST") return antwort({ ok: true, app: "millebeier", db: !!env.DB, code: !!env.CODE, dateien: true });
     if (!env.DB) return antwort({ fehler: "Server: Datebank net verbonnen (Binding DB feelt)." }, 500);
     if (!env.CODE) return antwort({ fehler: "Server: kee Code ageriicht (Secret CODE feelt)." }, 500);
 
@@ -87,6 +93,18 @@ export default {
       return antwort({ eintraege: await alle(env.DB) });
     }
     if (b.aktion === "liste") return antwort({ eintraege: await alle(env.DB) });
+    if (b.aktion === "teil_hoch") {
+      if (typeof b.fid !== "string" || !FID.test(b.fid) || !Number.isInteger(b.nr) || b.nr < 0 || b.nr > 200 ||
+          typeof b.daten !== "string" || !b.daten.length || b.daten.length > 1400000) return antwort({ fehler: "Ongëltegt Stéck." }, 400);
+      await env.DB.prepare("INSERT OR REPLACE INTO teile (fid, nr, daten) VALUES (?, ?, ?)").bind(b.fid, b.nr, b.daten).run();
+      return antwort({ ok: true });
+    }
+    if (b.aktion === "teil_holen") {
+      if (typeof b.fid !== "string" || !FID.test(b.fid) || !Number.isInteger(b.nr)) return antwort({ fehler: "Ongëlteg Ufro." }, 400);
+      const r = await env.DB.prepare("SELECT daten FROM teile WHERE fid = ? AND nr = ?").bind(b.fid, b.nr).first();
+      if (!r) return antwort({ fehler: "Stéck net fonnt." }, 404);
+      return antwort({ daten: r.daten });
+    }
     return antwort({ fehler: "Onbekannt Aktioun." }, 400);
   },
 };

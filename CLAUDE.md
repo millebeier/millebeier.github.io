@@ -22,7 +22,8 @@ Der Excel-Export der App bildet dieses Format nach (s. u.).
 
 ## Aufbau
 - `index.html` — Einzeldatei, kein Build, kein Framework. GitHub Pages: Organisation `millebeier`, Repo `millebeier.github.io` → https://millebeier.github.io/ (wie beim FC Koeppchen, vom Nutzer 13.11.2026).
-- `worker.js` — Cloudflare Worker + D1 (Binding `DB`, Secret `CODE`). Speichert nur Einträge,
+- `worker.js` — Cloudflare Worker + D1 (Binding `DB`, Secret `CODE`). **Seit 14.11.2026 (Dateien) vom Nutzer neu
+  einzufügen** — ohne den neuen Worker schlägt das Hochladen mit 400 fehl (Hinweis in der App). Speichert nur Einträge,
   rechnet nichts. Tabelle `eintraege` legt er selbst an. **Seit 14.11.2026 nimmt er jede Art `^[a-z_]{2,24}$`** —
   neue Eintragsarten brauchen kein Neu-Einfügen mehr (die Fassung davor kannte nur die ersten sieben).
   Lehnt der Server ein Bündel ab (400), schickt die App einzeln; Abgelehntes bleibt im Ausgang mit Hinweis
@@ -39,6 +40,16 @@ Der Excel-Export der App bildet dieses Format nach (s. u.).
   **Archiv** = nicht mehr verkaufbar, bleibt in Iwwersiicht (📦) und Excel. **Läschen** = zwei Rückfragen, verschwindet
   überall (`Z.geloescht`), Verkäufe bleiben im Verlauf und in der Kasse; zurück über den Verlauf oder neues Anlegen.
   Excel-Blatt je Bier zeigt die Eigenschaften (Braugang, Alk, Liter, Haltbar, ARCHIVÉIERT).
+  **Dateien je Bier** (vom Nutzer, 14.11.2026): im Bier-Bearbeiten „📎 Dokumenter“ mit festen Feldern Etikett, Rezept,
+  Brauprotokoll (je die neueste gilt, „Ersetzen“ lädt neu; ✕ = storno, dann gilt wieder die vorige) und „Aner Dateien“
+  (beliebig viele). Nach „Béier uleeën“ springt die App gleich ins Bearbeiten. Eintrag `datei` (fid, name, typ, groesse,
+  teile, bier, feld, thumb); der Inhalt liegt **nicht** in `eintraege`, sondern als Base64-Stücke à 1 000 000 Zeichen in
+  der D1-Tabelle `teile` (Worker `teil_hoch`/`teil_holen`), Vorschaubild als Stück `<fid>-t` (JPEG 240 px; PDFs über
+  pdf.js 3.11.174 von cdnjs, erst bei Bedarf geladen). Der Eintrag kommt erst, wenn alle Stücke oben sind. Max. 10 MB.
+  Öffnen in eigener Anzeige (`#ansicht`: Bild bzw. alle PDF-Seiten als Canvas, „⬆️ Deelen“) — **nicht** per blob-URL,
+  das gibt im Home-Bildschirm eine weiße Seite (Lehre aus pizza.html). `renderDok` baut nur bei Änderung neu
+  (Signatur), sonst ging ein Tipp verloren, der in den Neuaufbau nach einem Abgleich fiel. Gelöschte Dateien bleiben
+  als Stücke in D1 (zurückholbar über den Verlauf).
   **Livraison** (vom Nutzer, 14.11.2026): geplant, bis ein Verkauf mit `liv` = ihre id existiert („Geliwwert ✓“ legt ihn an,
   Flaschen aus `aus`, meist Lager — Verkauf hat dafür optional `aus`). Verkauf rückgängig → wieder geplant. Rechnung
   „gemaach“ = Eintrag `rechnung`. Geplantes zählt nirgends als verkauft.
@@ -72,7 +83,7 @@ Der Excel-Export der App bildet dieses Format nach (s. u.).
   `navigator.share`.
 - **`FASSUNG`** unten in `index.html` bei jeder Änderung hochzählen — daran hängt auch das **automatische Update** (vom Nutzer, 13.11.2026): beim Öffnen und bei jeder Rückkehr holt `updatePruefen()` die Seite mit `cache:"reload"`, steht dort eine andere FASSUNG, lädt die App neu; mitten im Eintrag (`mittenImEintrag`) stattdessen roter Knopf oben. Je Zielfassung ein Versuch in 5 min (`millebeier_v1_update`), gegen Schleifen bei altem CDN-Stand. Ohne Hochzählen kommt kein Update an. (Die Apps in panini-wm-2026 haben das nicht.)
 
-## Testen — vor jedem Push alle sechs, jeder mit eigenem Rückgabewert
+## Testen — vor jedem Push alle sieben, jeder mit eigenem Rückgabewert
 - `node test/logik.mjs` — schneidet `Logik`…`Oberfläche` aus der HTML (Gegenprobe gemacht).
 - `node test/worker.mjs` — Worker mit nachgebauter D1.
 - `node test/oberflaeche.mjs` — Playwright, zwei Handys gegen den echten Worker-Code, offline.
@@ -80,11 +91,15 @@ Der Excel-Export der App bildet dieses Format nach (s. u.).
 - `XLSX_JS=…/xlsx.full.min.js node test/livraisons.mjs` — Livraison planen/liefern/Rechnung/bezahlen, Liste pro Bier,
   Excel-Export (Datei wird mit SheetJS zurückgelesen), alter Worker. cdnjs ist in der Cloud-Umgebung gesperrt:
   SheetJS 0.18.5 per `npm install xlsx@0.18.5` in den Scratchpad, Pfad über `XLSX_JS`; ohne wird der Excel-Teil übersprungen.
+- `PDFJS_DIR=…/pdfjs-dist/build node test/dateien.mjs` — Dateien: PDF mit Vorschau, Foto, 1,5 MB in 3 Stücken (Byte für
+  Byte auf dem zweiten Handy, Gegenprobe gemacht), Anzeige, Ersetzen, Löschen, > 10 MB abgelehnt. pdf.js per
+  `npm install pdfjs-dist@3.11.174` in den Scratchpad. `test/fake-d1.mjs` = gemeinsame nachgebaute D1. Achtung beim
+  Testen: derselbe Knopf zweimal < 800 ms zählt einmal (Doppeltipp-Schutz) — Tests müssen warten wie ein Mensch.
 - `node test/biere.mjs` — Bier anlegen/ändern/archivieren/zurückholen/löschen (zwei Rückfragen, Gegenprobe gemacht),
   rotes ✕ im Verlauf, rotes Dreieck.
 
 ## Ideen, nicht gebaut
-Dateien je Bier (Etiketten-PDFs u. a., vom Nutzer 14.11.2026 gefragt — Plan: D1 in Stücken oder R2, Worker neu nötig);
+Allgemeine Dateien ohne Bier (Logik kann `bier: ""` schon);
 Excel-Datei, die sich ständig selbst aktualisiert (vom Nutzer gefragt 14.11.2026, Wege besprochen, noch offen);
 Ausgaben (Malz, Hopfen, Flaschen) → Gewinn; Daueraufträge (in der alten Tabelle rot); Reservierungen; Kisten-Preis; Kassensturz (Ist-Betrag
 in der Kasse gegen App).
