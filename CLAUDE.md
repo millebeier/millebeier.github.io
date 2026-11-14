@@ -84,7 +84,11 @@ Laurent/Willy ohne Preis = 0 € mit Vermerk. BEST (Livraisons-Blatt, 24 Rusty +
   bestätigen geht trotzdem. Stock zeigt „🚚 Reservéiert fir geplangt Livraisons“.
   **Zahlungsarten** (vom Nutzer): `zahlung.wie` ∈ wero|sumup|bank|bar (WERO, SumUp, Iwwerweisung, Bar); Verkaufen hat
   vier Knöpfe + „Bezillt méi spéit“, Ausstoend/Livraisons ein Auswahlfenster (`zahlartWaehlen`, Abbrechen = nichts).
-  `Z.kasseNach` je Art (Iwwersiicht unter „an der Kees“), Excel „Jo (WERO)“. Alte Zahlungen ohne Art = „ouni Aart“.
+  `Z.kasseNach` je Art (Iwwersiicht unter „an der Kees“). **Art eigens sichtbar** (vom Nutzer): Liste pro Bier zeigt
+  in „bezuel?“ direkt WERO/SumUp/…, Excel hat eigene Spalte „bezuelt per“ (Bier-Blätter und Livraisons; `wieListe`).
+  Alte Zahlungen ohne Art = „ouni Aart“. **Knöpfe mit Bild + Name** (Bilder vom Nutzer, 14.11.2026, zugeschnitten auf
+  240×96: `bilder/zahl-wero.jpg`, `zahl-sumup.png`, `zahl-bank.png` (Spuerkeess-Logo, Rot #de0000), `zahl-bar.jpg`
+  (Ausschnitt der Geldscheine)); gewählt = grüner Rahmen + ✓.
   `rechne()` baut daraus den ganzen Stand. Rückgängig = storno, nie löschen; ein storniertes
   Verkauf nimmt seine Zahlungen mit. Storno eines Storno zählt nicht.
 - **`durch` = wer eingetragen hat** (nicht `von` — das ist bei `bewegung` die Herkunft; die

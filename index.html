@@ -79,6 +79,14 @@ select{background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),
 .seg button.an{background:var(--akzent);color:#fff;border-color:var(--akzent)}
 .seg button.an.gruen{background:var(--gruen);border-color:var(--gruen);color:#0d1f0e}
 .seg.zahl{grid-template-columns:1fr 1fr;margin-top:4px} .seg button.breit{grid-column:1/-1}
+/* Zahlungsart-Knöpfe: Bild oben, Name darunter; gewählt = grüner Rahmen, das Bild bleibt sichtbar */
+.seg button.zbtn{display:flex;flex-direction:column;align-items:center;gap:5px;padding:7px 7px 6px}
+.seg button.zbtn img{display:block;width:100%;height:48px;object-fit:cover;border-radius:8px}
+.seg button.zbtn span{font-size:13px}
+.seg button.zbtn.an{background:var(--card2);color:var(--text);border-color:var(--gruen);box-shadow:0 0 0 2px var(--gruen) inset}
+.seg button.zbtn.an span::before{content:"✓ ";color:var(--gruen)}
+#zahlWahl .seg button.zbtn{padding:8px}
+#zahlWahl .seg button.zbtn img{height:56px}
 .seg button.an.gelb{background:var(--gelb);border-color:var(--gelb);color:#231d05}
 .haupt{width:100%;margin-top:14px;padding:14px;border:0;border-radius:12px;background:var(--akzent);color:#fff;
   font-size:17px;font-weight:700;cursor:pointer}
@@ -207,7 +215,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px}
 <script>
 /* Adresse des Cloudflare-Workers. Leer = Probe-Modus (alles nur auf diesem Handy). */
 const WORKER_URL = "https://millebeier.rjtp6r9s9h.workers.dev/";
-const FASSUNG = "14.11.2026 j";
+const FASSUNG = "14.11.2026 l";
 
 /* === Logik === (kein DOM; test/logik.mjs schneidet diesen Block aus) */
 const LAGER = "Lager";
@@ -225,6 +233,7 @@ const zerlege = key => { const m = /^(.*) Keg (20|30)l$/.exec(key); return m ? {
 const istFass = key => zerlege(key).l > 0;
 const gebindeText = key => { const l = zerlege(key).l; return l ? `Fass ${l} l` : "Fläsch"; };
 const ZAHLARTEN = { wero: "WERO", sumup: "SumUp", bank: "Iwwerweisung", bar: "Bar" };
+const ZAHLBILD = { wero: "bilder/zahl-wero.jpg", sumup: "bilder/zahl-sumup.png", bank: "bilder/zahl-bank.png", bar: "bilder/zahl-bar.jpg" }; // vom Nutzer, 14.11.2026
 const FELDER = { etikett: "Etikett", rezept: "Rezept", protokoll: "Brauprotokoll", anner: "Aner Dateien" };
 
 const ganz = n => Number.isInteger(n) && n > 0 && n <= 100000;
@@ -520,8 +529,9 @@ function anteil(cfg, posten, betrag, p) {
   const n = posten.reduce((a, x) => a + x.n, 0);
   return n ? runde(betrag * p.n / n) : 0;
 }
-const wieText = v => v.wie && v.wie.length ? " (" + v.wie.map(w => ZAHLARTEN[w]).join(", ") + ")" : "";
-const bezahltText = v => v.offen <= 0 ? "Jo" + wieText(v) : v.bezahlt > 0 ? `Deelweis (${euro(v.offen)} op)` : "Nee";
+// Zahlungsart eigens (vom Nutzer: in Iwwersiicht und Excel muss klar stehen, wie bezahlt wurde)
+const wieListe = v => v && v.wie && v.wie.length ? v.wie.map(w => ZAHLARTEN[w]).join(", ") : "";
+const bezahltText = v => v.offen <= 0 ? "Jo" : v.bezahlt > 0 ? `Deelweis (${euro(v.offen)} op)` : "Nee";
 
 /* Alle Zeilen einer Sorte, wie ein Blatt in der alten Excel-Tabelle: wer hat was wem verkauft. */
 function proSorte(Z, sorte) {
@@ -532,7 +542,7 @@ function proSorte(Z, sorte) {
     const r = anteil(Z.cfg, v.posten, v.betrag, p);
     const L = v.livraison;
     zeilen.push({ geb: gebindeText(p.sorte), zeit: v.zeit, datum: L ? L.datum : null, kunde: v.kaeufer, kontakt: v.verkaeufer, n: p.n,
-      preis: runde(r / p.n), recetten: r, geliwwert: "Jo", bezuelt: bezahltText(v),
+      preis: runde(r / p.n), recetten: r, geliwwert: "Jo", bezuelt: bezahltText(v), wie: wieListe(v) || (v.bezahlt > 0 ? "ouni Aart" : ""),
       rechnung: L && L.rechnung ? (v.rechnungGemacht ? "gemaach" : "nach ze maachen") : "",
       remarque: L ? [L.anlass, L.notiz].filter(Boolean).join(" · ") : "", id: v.id });
   }
@@ -557,11 +567,11 @@ function proSorte(Z, sorte) {
    Reine Daten (Zeilen als Arrays), damit der Test ohne Excel-Bibliothek prüfen kann. */
 function exportBlaetter(Z, zeitFmt) {
   const blaetter = [];
-  const kopf = ["Datum", "Client", "Kontakt", "Unzuel", "Gebinde", "Präis", "Recetten", "geliwwert?", "bezuel?", "Rechnung", "Remarquen"];
+  const kopf = ["Datum", "Client", "Kontakt", "Unzuel", "Gebinde", "Präis", "Recetten", "geliwwert?", "bezuel?", "bezuelt per", "Rechnung", "Remarquen"];
   for (const s of Z.sortenNamen) {
     const z = proSorte(Z, s), x = Z.sorten[s];
     if (!z.length && !x.abgefuellt && !x.da && !(Z.cfg.sorten.find(y => y.name === s) || {}).meta) continue;
-    const zeilen = z.map(r => [r.datum ? datumKurz(r.datum) : r.alt ? "" : zeitFmt(r.zeit), r.kunde, r.kontakt, r.n, r.geb, r.preis, r.recetten, r.geliwwert, r.bezuelt, r.rechnung, r.remarque]);
+    const zeilen = z.map(r => [r.datum ? datumKurz(r.datum) : r.alt ? "" : zeitFmt(r.zeit), r.kunde, r.kontakt, r.n, r.geb, r.preis, r.recetten, r.geliwwert, r.bezuelt, r.wie || "", r.rechnung, r.remarque]);
     const fest = z.filter(r => !r.geplant), festFl = fest.filter(r => r.geb === "Fläsch");
     const c = Z.cfg.sorten.find(y => y.name === s) || {}, m = c.meta || {};
     blaetter.push({ name: s, titel: s, info: [
@@ -571,13 +581,13 @@ function exportBlaetter(Z, zeitFmt) {
       ...fassNamen(Z, s).map(k => { const y = Z.sorten[k]; return `${gebindeText(k)} — ofgefëllt: ${y.abgefuellt} · verkaaft: ${y.verkauft} · fort: ${y.abgang} · nach do: ${y.da}`; }),
       `Verkafspräis: ${euro(preisVon(Z.cfg, s))} pro Fläsch` + fassNamen(Z, s).map(k => ` · ${euro(preisVon(Z.cfg, k))} pro ${gebindeText(k)}`).join(""), m.notiz || ""].filter(Boolean),
       kopf, zeilen,
-      summe: ["Total", "", "", festFl.reduce((a, r) => a + r.n, 0), "Fläschen", "", runde(fest.reduce((a, r) => a + r.recetten, 0)), "", "", "", "Recetten mat Fässer, ouni geplangten"] });
+      summe: ["Total", "", "", festFl.reduce((a, r) => a + r.n, 0), "Fläschen", "", runde(fest.reduce((a, r) => a + r.recetten, 0)), "", "", "", "", "Recetten mat Fässer, ouni geplangten"] });
   }
   blaetter.push({ name: "Livraisons", titel: "Livraisons", info: [],
-    kopf: ["Datum", "Client", "Kontakt", "Wat", "Betrag", "Anlass", "geliwwert?", "Rechnung", "bezuel?", "Remarquen"],
+    kopf: ["Datum", "Client", "Kontakt", "Wat", "Betrag", "Anlass", "geliwwert?", "Rechnung", "bezuel?", "bezuelt per", "Remarquen"],
     zeilen: Z.livraisons.map(L => [datumKurz(L.datum), L.kunde, L.kontakt, postenText(L.posten), L.betrag, L.anlass || "",
       L.verkauf ? "Jo" : "geplangt", L.rechnung ? (L.verkauf && L.verkauf.rechnungGemacht ? "gemaach" : "nach ze maachen") : "",
-      L.verkauf ? bezahltText(L.verkauf) : "–", L.notiz || ""]), summe: null });
+      L.verkauf ? bezahltText(L.verkauf) : "–", L.verkauf ? wieListe(L.verkauf) : "", L.notiz || ""]), summe: null });
   const alleK = Z.sortenNamen.flatMap(s => artikelVon(Z, s));
   blaetter.push({ name: "Stock", titel: "Stock", info: ["Total = Fläschen; Fässer an hiren eegene Kolonnen."], kopf: ["", ...alleK.map(k => istFass(k) ? `${zerlege(k).bier} (Fass ${zerlege(k).l} l)` : k), "Total Fl."],
     zeilen: Z.halter.map(h => [h, ...alleK.map(k => hat(Z, h, k)), Z.sortenNamen.reduce((a, s) => a + hat(Z, h, s), 0)]),
@@ -904,7 +914,7 @@ function sorteDetail(s) {
       <tr><th>Client</th><th>Fl.</th><th>Recetten</th><th>bezuel?</th></tr>
       ${z.map(r => `<tr class="${r.geplant ? "geplant" : ""}">
         <td><b>${esc(r.kunde)}</b><br><small class="muted">${r.datum ? esc(datumKurz(r.datum)) : r.alt ? "ouni Datum" : datumText(r.zeit)} · ${esc(beim(r.kontakt))}${r.geplant ? " · geplangt" : ""}${r.remarque ? " · " + esc(r.remarque) : ""}${r.rechnung ? " · 🧾 " + esc(r.rechnung) : ""}</small></td>
-        <td>${r.n}</td><td>${r.recetten ? euro(r.recetten) : "–"}</td><td>${esc(r.bezuelt.replace(/^Deelweis.*/, "Deelweis"))}</td></tr>`).join("")}
+        <td>${r.n}</td><td>${r.recetten ? euro(r.recetten) : "–"}</td><td>${r.bezuelt === "Jo" ? `<span style="color:var(--gruen)">${esc(r.wie || "Jo")}</span>` : esc(r.bezuelt.replace(/^Deelweis.*/, "Deelweis") + (r.wie && r.bezuelt.startsWith("Deelweis") ? " (" + r.wie + ")" : ""))}</td></tr>`).join("")}
       <tr class="summe"><td>Total</td><td>${fest.reduce((a, r) => a + r.n, 0)}</td><td>${euro(fest.reduce((a, r) => a + r.recetten, 0))}</td><td></td></tr>
     </table></div><div class="hinweis">Gro an schréi = geplangt Livraisoun, nach net am Total.</div>` : `<div class="leer">Nach näischt.</div>`}</div>`;
 }
@@ -930,7 +940,7 @@ async function excelExport(meldBox) {
       const aoa = [[`MILLEBÉIER – ${b.titel.toUpperCase()}`], [`Stand: ${heute}`], ...b.info.map(i => [i]), [], b.kopf, ...b.zeilen];
       if (b.summe) aoa.push([], b.summe);
       const ws = X.utils.aoa_to_sheet(aoa);
-      ws["!cols"] = b.kopf.map((k, i) => ({ wch: i === 1 || i === 9 ? 28 : i === 3 && b.name === "Livraisons" ? 30 : 12 }));
+      ws["!cols"] = b.kopf.map((k, i) => ({ wch: k === "Client" || k === "Remarquen" ? 28 : k === "Wat" ? 30 : k === "bezuelt per" ? 14 : 12 }));
       ws["!merges"] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: Math.max(3, b.kopf.length - 1) } }];
       // Euro-Format für Geldspalten
       const kopfZeile = 3 + b.info.length;
@@ -1079,8 +1089,9 @@ function artikelListe(wer, gewaehlt) {
 const vArtikel = () => artikelListe(FORM.verkaeufer, FORM.n);
 function vAutoBetrag() { return runde(vArtikel().reduce((a, x) => a + (FORM.n[x.key] || 0) * x.preis, 0)); }
 function vFlaschen() { return vArtikel().filter(x => !x.fass).reduce((a, x) => a + (FORM.n[x.key] || 0), 0); }
+const zahlInhalt = k => `<img src="${ZAHLBILD[k]}" alt=""><span>${ZAHLARTEN[k]}</span>`;
 function zahlKnoepfe(gewaehlt, mitSpaeter) {
-  return `<div class="seg zahl">${Object.entries(ZAHLARTEN).map(([k, t]) => `<button data-bez="${k}" class="${gewaehlt === k ? "an gruen" : ""}">${t}</button>`).join("")}
+  return `<div class="seg zahl">${Object.entries(ZAHLARTEN).map(([k, t]) => `<button data-bez="${k}" class="zbtn ${gewaehlt === k ? "an gruen" : ""}">${zahlInhalt(k)}</button>`).join("")}
     ${mitSpaeter ? `<button data-bez="spaeter" class="breit ${gewaehlt === "spaeter" ? "an gelb" : ""}">Bezillt méi spéit</button>` : ""}</div>`;
 }
 const fehltText = (wer, liste) => liste.map(p => `${p.n} × ${istFass(p.sorte) ? zerlege(p.sorte).bier + " (Fass " + zerlege(p.sorte).l + " l)" : p.sorte}: ${de(wer)} huet ${p.hat}` + (p.res ? `, dovun ${p.res} reservéiert fir Livraisons → fräi ${Math.max(0, p.frei)}` : "")).join("\n");
@@ -1180,7 +1191,7 @@ function zahlartWaehlen(titel) {
   return new Promise(fertig => {
     const box = $("#zahlWahl");
     $("#zahlTitel").textContent = titel;
-    box.querySelector(".seg").innerHTML = Object.entries(ZAHLARTEN).map(([k, t]) => `<button data-wie="${k}">${t}</button>`).join("");
+    box.querySelector(".seg").innerHTML = Object.keys(ZAHLARTEN).map(k => `<button data-wie="${k}" class="zbtn">${zahlInhalt(k)}</button>`).join("");
     box.classList.remove("versteckt");
     const zu = wie => { box.classList.add("versteckt"); fertig(wie); };
     box.querySelectorAll("[data-wie]").forEach(b => b.onclick = () => zu(b.dataset.wie));

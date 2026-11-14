@@ -232,7 +232,9 @@ ist("CSV Zeilen", c.trim().split("\r\n").length, 4);
   const z1 = E5("zahlung", { ref: v1.id, betrag: 400, wie: "bank" }), z2 = E5("zahlung", { ref: v1.id, betrag: 60, wie: "bar" });
   Y = L.rechne([ne, ...ab, L1, v1, z1, z2]);
   ist("Kasse nach Art", Y.kasseNach, { bank: 400, bar: 60 });
-  ist("bezuel? mit Art", L.proSorte(Y, "NEIPA")[0].bezuelt, "Jo (Iwwerweisung, Bar)");
+  ist("bezuel? und Art getrennt", [L.proSorte(Y, "NEIPA")[0].bezuelt, L.proSorte(Y, "NEIPA")[0].wie], ["Jo", "Iwwerweisung, Bar"]);
+  const blN = L.exportBlaetter(Y, () => "").find(b => b.name === "NEIPA");
+  ist("Excel: Spalte „bezuelt per“", [blN.kopf[9], blN.zeilen[0][8], blN.zeilen[0][9]], ["bezuelt per", "Jo", "Iwwerweisung, Bar"]);
   ist("Zahlung: unbekannte Art ungültig", L.gueltig({ ...z1, wie: "paypal" }), false);
   ist("Verlauf: Zahlart", L.beschreibe(z2, Y), "✓ 60 € bezuelt per Bar: BEST (beim Jeff)");
 }

@@ -72,6 +72,8 @@ const ueb = await p.locator("#t-uebersicht").innerText();
 ist("Kasse nach Art", ueb, s => s.includes("SumUp 580 €") && s.includes("Bar 3 €"));
 ist("Fass-Zeilen unter dem Bier", ueb, s => s.includes("🛢️ Fass 20 l") && s.includes("🛢️ Fass 30 l"));
 ist("Pro Persoun: Flaschen und Fässer getrennt", await p.evaluate(() => [...document.querySelectorAll("#t-uebersicht table")].pop().innerText), t => /Marc\t9\t101 \+ 2 F\./.test(t) && /Lager\t10 \+ 3 F\./.test(t));
+await p.evaluate(() => { OFFEN_SORTE = "Hopfenkönig"; render(); });
+ist("Liste pro Bier: Zahlungsart sichtbar", await p.locator("#t-uebersicht").innerText(), t => t.includes("SumUp") && /Paul[\s\S]*Bar/.test(t));
 ist("keine Seitenfehler", seitenfehler, []);
 await p.screenshot({ path: process.env.BILD || "/dev/null", fullPage: true }).catch(() => {});
 await b.close();

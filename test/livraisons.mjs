@@ -63,12 +63,12 @@ if (XLSX_JS && existsSync(XLSX_JS)) {
   const neipa = X.utils.sheet_to_json(wb.Sheets.NEIPA, { header: 1, defval: "" });
   const kopf = neipa.findIndex(r => r[0] === "Datum");
   ist("Excel NEIPA: Kopf", neipa[kopf].slice(0, 9), ["Datum", "Client", "Kontakt", "Unzuel", "Gebinde", "Präis", "Recetten", "geliwwert?", "bezuel?"]);
-  ist("Excel NEIPA: Ferro Forum", neipa[kopf + 1].slice(0, 9), ["5.12.2026", "Ferro Forum", "Marc", 24, "Fläsch", 2.5, 60, "Jo", "Jo (Iwwerweisung)"]);
+  ist("Excel NEIPA: Ferro Forum", neipa[kopf + 1].slice(0, 10), ["5.12.2026", "Ferro Forum", "Marc", 24, "Fläsch", 2.5, 60, "Jo", "Jo", "Iwwerweisung"]);
   ist("Excel NEIPA: BEST geplant", neipa[kopf + 2].slice(1, 8), ["BEST", "Marc", 1, "Fläsch", 3, 3, "geplangt 20.12.2026"]);
   ist("Excel NEIPA: Total ohne geplant", neipa[neipa.length - 1].slice(0, 7), ["Total", "", "", 24, "Fläschen", "", 60]);
   ist("Excel: Euro-Format", wb.Sheets.NEIPA[X.utils.encode_cell({ r: kopf + 1, c: 5 })].z, '#,##0.00 "€"');
   const liv = X.utils.sheet_to_json(wb.Sheets.Livraisons, { header: 1, defval: "" });
-  ist("Excel Livraisons", liv.filter(r => r[1] === "Ferro Forum" || r[1] === "BEST").map(r => [r[1], r[6], r[7], r[8]]), [["Ferro Forum", "Jo", "gemaach", "Jo (Iwwerweisung)"], ["BEST", "geplangt", "nach ze maachen", "–"]]);
+  ist("Excel Livraisons", liv.filter(r => r[1] === "Ferro Forum" || r[1] === "BEST").map(r => [r[1], r[6], r[7], r[8], r[9]]), [["Ferro Forum", "Jo", "gemaach", "Jo", "Iwwerweisung"], ["BEST", "geplangt", "nach ze maachen", "–", ""]]);
 } else console.log("– Excel-Teil übersprungen (XLSX_JS nicht gesetzt)");
 // Alter Worker (kennt „livraison“ nicht): normale Verkäufe dürfen nicht hängen bleiben.
 {
