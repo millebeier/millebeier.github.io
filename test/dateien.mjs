@@ -7,6 +7,8 @@ import worker from "../worker.js";
 import { fakeD1 } from "./fake-d1.mjs";
 const pw = await import(process.env.PLAYWRIGHT || "/opt/node22/lib/node_modules/playwright/index.mjs");
 const PDFJS_DIR = process.env.PDFJS_DIR || "";
+const XLSX_JS = process.env.XLSX_JS || "";
+const mitXlsx = XLSX_JS && existsSync(XLSX_JS);
 const mitPdfjs = PDFJS_DIR && existsSync(PDFJS_DIR + "/pdf.min.js");
 let fehler = 0;
 const ist = (was, a, b) => { const ok = typeof b === "function" ? b(a) : JSON.stringify(a) === JSON.stringify(b); console.log(ok ? "✓" : "✗", was, ok ? "" : "→ " + JSON.stringify(a)); if (!ok) fehler++; };
@@ -36,6 +38,7 @@ async function handy(ich) {
     const res = await worker.fetch(new Request("https://w/", { method: "POST", body: r.request().postData() }), env);
     r.fulfill({ status: res.status, body: await res.text(), contentType: "application/json" });
   });
+  await p.route(/cdnjs\.cloudflare\.com\/ajax\/libs\/xlsx/, r => mitXlsx ? r.fulfill({ body: readFileSync(XLSX_JS), contentType: "text/javascript" }) : r.abort());
   await p.route(/cdnjs\.cloudflare\.com\/ajax\/libs\/pdf\.js/, r => {
     const datei = r.request().url().split("/").pop();
     return mitPdfjs ? r.fulfill({ body: readFileSync(PDFJS_DIR + "/" + datei), contentType: "text/javascript" }) : r.abort();
@@ -101,6 +104,20 @@ await B.click(`#bierDok [data-dweg="${await B.evaluate(() => dateienVon(Z, "Rust
 ist("Foto gelöscht", await B.evaluate(() => dateienVon(Z, "Rusty").anner.map(d => d.name)), ["gross.bin"]);
 await A.evaluate(() => abgleichen()); await warte(400);
 ist("Handy 1 sieht Ersetzen und Löschen", await A.evaluate(() => [dateienVon(Z, "Rusty").etikett.name, dateienVon(Z, "Rusty").anner.length]), ["rusty-etikett-v2.pdf", 1]);
+// Tabelle (.ods, wie das Brauprotokoll des Nutzers) als Brauprotokoll anhängen und ansehen
+if (mitXlsx) {
+  const { createRequire } = await import("node:module");
+  const X = createRequire(import.meta.url)(XLSX_JS);
+  const wb = X.utils.book_new();
+  X.utils.book_append_sheet(wb, X.utils.aoa_to_sheet([["BRAUPROTOKOLL"], ["REZEPT:", "White IPA"], ["Malz:", "Pale Weizen", 3500, "g"], ["DATUM:", new Date(Date.UTC(2026, 8, 26))]], { cellDates: true }), "Blatt1");
+  const ods = Buffer.from(X.write(wb, { bookType: "ods", type: "array" }));
+  await hoch(B, "protokoll", "Brauprotokoll_White_IPA.ods", "application/vnd.oasis.opendocument.spreadsheet", ods);
+  ist("Tabelle: Symbol 📊", await B.evaluate(() => document.querySelector(`#bierDok [data-thumb="${dateienVon(Z, "Rusty").protokoll.fid}"]`).textContent.trim()), "📊");
+  await B.click(`#bierDok [data-auf="${await B.evaluate(() => dateienVon(Z, "Rusty").protokoll.fid)}"]`);
+  await B.waitForSelector("#ansichtInhalt .tabelle table", { timeout: 15000 });
+  ist("Tabelle angezeigt mit Inhalt und Datum", await B.locator("#ansichtInhalt").innerText(), t => t.includes("BRAUPROTOKOLL") && t.includes("Pale Weizen") && t.includes("3500") && /26\.09\.2026/.test(t));
+  await B.click("#ansichtZu");
+} else console.log("– Tabellen-Anzeige übersprungen (XLSX_JS nicht gesetzt)");
 ist("zu groß wird abgelehnt", await A.evaluate(async () => { let m = ""; const alt = window.alert; window.alert = t => { m = t; }; await dateiHochladen(new File([new Uint8Array(11 * 1024 * 1024)], "riesig.bin"), "Rusty", "anner"); window.alert = alt; return m; }), s => s.includes("maximal 10 MB"));
 ist("keine Seitenfehler", [...A.seitenfehler, ...B.seitenfehler], []);
 if (!mitPdfjs) console.log("– PDF-Vorschau/Anzeige übersprungen (PDFJS_DIR nicht gesetzt)");

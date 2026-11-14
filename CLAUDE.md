@@ -64,7 +64,8 @@ beim Verkaufen/Livraison und „Fläsche beweegen“ an, solange jemand welche h
   teile, bier, feld, thumb); der Inhalt liegt **nicht** in `eintraege`, sondern als Base64-Stücke à 1 000 000 Zeichen in
   der D1-Tabelle `teile` (Worker `teil_hoch`/`teil_holen`), Vorschaubild als Stück `<fid>-t` (JPEG 240 px; PDFs über
   pdf.js 3.11.174 von cdnjs, erst bei Bedarf geladen). Der Eintrag kommt erst, wenn alle Stücke oben sind. Max. 10 MB.
-  Öffnen in eigener Anzeige (`#ansicht`: Bild bzw. alle PDF-Seiten als Canvas, „⬆️ Deelen“) — **nicht** per blob-URL,
+  Öffnen in eigener Anzeige (`#ansicht`: Bild bzw. alle PDF-Seiten als Canvas; **Tabellen** .ods/.xlsx/.xls/.csv über
+  SheetJS `sheet_to_html` (vom Nutzer: Brauprotokoll als .ods), Datum ohne eigenes Format → TT.MM.JJJJ; „⬆️ Deelen“) — **nicht** per blob-URL,
   das gibt im Home-Bildschirm eine weiße Seite (Lehre aus pizza.html). `renderDok` baut nur bei Änderung neu
   (Signatur), sonst ging ein Tipp verloren, der in den Neuaufbau nach einem Abgleich fiel. Gelöschte Dateien bleiben
   als Stücke in D1 (zurückholbar über den Verlauf).
@@ -139,7 +140,7 @@ Nutzer. Rückweg: D1 Time Travel (Restore auf einen Zeitpunkt davor).
 - `XLSX_JS=…/xlsx.full.min.js node test/livraisons.mjs` — Livraison planen/liefern/Rechnung/bezahlen, Liste pro Bier,
   Excel-Export (Datei wird mit SheetJS zurückgelesen), alter Worker. cdnjs ist in der Cloud-Umgebung gesperrt:
   SheetJS 0.18.5 per `npm install xlsx@0.18.5` in den Scratchpad, Pfad über `XLSX_JS`; ohne wird der Excel-Teil übersprungen.
-- `PDFJS_DIR=…/pdfjs-dist/build node test/dateien.mjs` — Dateien: PDF mit Vorschau, Foto, 1,5 MB in 3 Stücken (Byte für
+- `XLSX_JS=… PDFJS_DIR=…/pdfjs-dist/build node test/dateien.mjs` (mit XLSX_JS auch .ods-Anzeige) — Dateien: PDF mit Vorschau, Foto, 1,5 MB in 3 Stücken (Byte für
   Byte auf dem zweiten Handy, Gegenprobe gemacht), Anzeige, Ersetzen, Löschen, > 10 MB abgelehnt. pdf.js per
   `npm install pdfjs-dist@3.11.174` in den Scratchpad. `test/fake-d1.mjs` = gemeinsame nachgebaute D1. Achtung beim
   Testen: derselbe Knopf zweimal < 800 ms zählt einmal (Doppeltipp-Schutz) — Tests müssen warten wie ein Mensch.

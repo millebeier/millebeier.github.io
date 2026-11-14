@@ -174,6 +174,11 @@ textarea{width:100%;font:16px/1.4 inherit;padding:10px;border-radius:10px;border
 .ansicht-kopf{position:sticky;top:0;display:flex;gap:8px;align-items:center;padding:10px 12px;background:#111;border-bottom:2px solid var(--akzent)}
 .ansicht-kopf b{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #ansichtInhalt{padding:8px}
+#ansichtInhalt .tabelle{overflow:auto;-webkit-overflow-scrolling:touch;background:#fff;color:#111;border-radius:6px;margin-bottom:12px}
+#ansichtInhalt .tabelle table{border-collapse:collapse;font-size:12px;width:auto;min-width:100%}
+#ansichtInhalt .tabelle td{border:1px solid #ccc;padding:3px 6px;text-align:left;white-space:nowrap;color:#111}
+#ansichtInhalt .tabelle td:empty{min-width:14px}
+#ansichtInhalt .blattname{color:var(--text);margin:8px 0 4px}
 #ansichtInhalt img,#ansichtInhalt canvas{display:block;width:100%;height:auto;margin:0 auto 8px;background:#fff}
 footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px}
 .versteckt{display:none !important}
@@ -223,7 +228,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px}
 <script>
 /* Adresse des Cloudflare-Workers. Leer = Probe-Modus (alles nur auf diesem Handy). */
 const WORKER_URL = "https://millebeier.rjtp6r9s9h.workers.dev/";
-const FASSUNG = "14.11.2026 o";
+const FASSUNG = "14.11.2026 p";
 
 /* === Logik === (kein DOM; test/logik.mjs schneidet diesen Block aus) */
 const LAGER = "Lager";
@@ -1409,6 +1414,8 @@ function pdfjsLaden() {
   });
 }
 const istPdf = (typ, name) => typ === "application/pdf" || /\.pdf$/i.test(name || "");
+// Tabellen (vom Nutzer: Brauprotokoll als .ods) — SheetJS liest ods/xlsx/xls/csv
+const istTabelle = (typ, name) => /\.(ods|xlsx|xlsm|xls|csv)$/i.test(name || "") || /spreadsheet|ms-excel|text\/csv/.test(typ || "");
 const istBild = typ => /^image\//.test(typ || "");
 async function aufLeinwand(quelle, breite) {
   const c = document.createElement("canvas");
@@ -1481,7 +1488,7 @@ async function thumbLaden(D) {
   const img = document.querySelector(`[data-thumb="${D.fid}"]`);
   if (img && THUMBS.get(D.fid) && THUMBS.get(D.fid) !== "-") img.innerHTML = `<img src="${THUMBS.get(D.fid)}" alt="">`;
 }
-const symbol = D => istPdf(D.typ, D.name) ? "📄" : istBild(D.typ) ? "🖼️" : "📎";
+const symbol = D => istPdf(D.typ, D.name) ? "📄" : istBild(D.typ) ? "🖼️" : istTabelle(D.typ, D.name) ? "📊" : "📎";
 function bildHtml(D) {
   const t = THUMBS.get(D.fid);
   return t && t !== "-" ? `<img src="${t}" alt="">` : symbol(D);
@@ -1510,6 +1517,24 @@ async function dateiZeigen(D) {
         inhalt.appendChild(c);
         await seite.render({ canvasContext: c.getContext("2d"), viewport: v }).promise;
       }
+      return;
+    }
+    if (istTabelle(D.typ, D.name)) {
+      const X = await sheetjsLaden();
+      const wb = X.read(new Uint8Array(await datei.arrayBuffer()), { type: "array", cellDates: true, dateNF: "dd.mm.yyyy" });
+      if (ANSICHT !== D) return;
+      // Datum ohne eigenes Format käme amerikanisch („9/26/26“) → TT.MM.JJJJ
+      for (const n of wb.SheetNames) for (const [k, c] of Object.entries(wb.Sheets[n])) {
+        if (k[0] === "!" || !c || c.t !== "d" || !(c.v instanceof Date)) continue;
+        if (!c.z || /^m+\/d+\/y+/i.test(c.z)) {
+          const d = c.v, zwei = x => String(x).padStart(2, "0");
+          const zeit = d.getUTCHours() || d.getUTCMinutes() ? ` ${zwei(d.getUTCHours())}:${zwei(d.getUTCMinutes())}` : "";
+          c.w = `${zwei(d.getUTCDate())}.${zwei(d.getUTCMonth() + 1)}.${d.getUTCFullYear()}${zeit}`;
+        }
+      }
+      // sheet_to_html maskiert die Zellinhalte selbst; verbundene Zellen bleiben verbunden, Werte formatiert (Datum, Uhrzeit)
+      inhalt.innerHTML = wb.SheetNames.map(n => `${wb.SheetNames.length > 1 ? `<h3 class="blattname">${esc(n)}</h3>` : ""}<div class="tabelle">${X.utils.sheet_to_html(wb.Sheets[n], { header: "", footer: "" })}</div>`).join("") ||
+        `<div class="leer">D'Tabell ass eidel.</div>`;
       return;
     }
     inhalt.innerHTML = `<div class="leer">Keng Virschau fir dës Datei. Mat „⬆️ Deelen“ an enger anerer App opmaachen.</div>`;
