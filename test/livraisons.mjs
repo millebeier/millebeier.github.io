@@ -84,6 +84,7 @@ if (XLSX_JS && existsSync(XLSX_JS)) {
     }
     r.fulfill({ body: JSON.stringify({ eintraege: db }), contentType: "application/json" });
   });
+  await p2.addInitScript(() => { window.OHNE_ALTIMPORT = true; }); // nur der Test-Eintrag, keine alten Verkäufe
   await p2.goto(new URL("../index.html", import.meta.url).href);
   await p2.evaluate(() => { localStorage.clear(); EIN = { code: "x", ich: "Jeff" }; render(); });
   await p2.evaluate(() => {
