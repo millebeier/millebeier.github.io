@@ -82,6 +82,12 @@ Laurent/Willy ohne Preis = 0 € mit Vermerk. BEST (Livraisons-Blatt, 24 Rusty +
   **Reserviert** (vom Nutzer): geplante Livraisons belegen den Bestand bei `aus` (`Z.reserviert`, `frei()`); beim
   Planen, Verkaufen, Weitergeben und Fort Warnung mit „huet X, dovun Y reservéiert → fräi Z“ (`zuWenig`, `fehltText`),
   bestätigen geht trotzdem. Stock zeigt „🚚 Reservéiert fir geplangt Livraisons“.
+  **Verkaufen ohne eigenen Bestand** (vom Nutzer, Fassung m): statt Warnung Fenster „feelt: … — woher?“
+  (`fehlendesHolen`, `frageWaehlen`): „📦 Aus dem Lager huelen“ / „Vum Jeff huelen“ (nur wer für alles Fehlende genug
+  **frei** hat) → Umbuchung(en) `bewegung` + Verkauf in einem `eintragen`; „Trotzdeem androen“ = wie früher (Minus);
+  Ofbriechen = nichts. Ausstoend markiert Verkäufe aus Livraisons mit „🚚 Livraisoun <Datum>“.
+  Gemeldet 14.11.: „Livraison bezahlt, Ausstoend zeigt noch offen“ — am nachgebauten iPhone nicht nachstellbar
+  (Kasse und Ausstoend stimmen); vermutet: doppelt eingetragen (Livraison + Verkauf) oder zweites Handy vor Abgleich.
   **Zahlungsarten** (vom Nutzer): `zahlung.wie` ∈ wero|sumup|bank|bar (WERO, SumUp, Iwwerweisung, Bar); Verkaufen hat
   vier Knöpfe + „Bezillt méi spéit“, Ausstoend/Livraisons ein Auswahlfenster (`zahlartWaehlen`, Abbrechen = nichts).
   `Z.kasseNach` je Art (Iwwersiicht unter „an der Kees“). **Art eigens sichtbar** (vom Nutzer): Liste pro Bier zeigt

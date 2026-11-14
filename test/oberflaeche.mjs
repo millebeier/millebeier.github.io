@@ -77,6 +77,7 @@ await A.fill("#vKaeufer", "Anne"); await A.click('[data-plus="0"]'); await A.cli
 await A.fill("#vBetrag", "5"); await A.click('[data-bez="bar"]'); await A.click("#vSpeichern");
 // mehr verkaufen als da → Nachfrage (wird bestätigt)
 await A.fill("#vKaeufer", "paul"); await A.fill("#vN0", "20"); await A.click('[data-bez="spaeter"]'); await A.click("#vSpeichern");
+await A.waitForSelector("#frageWahl:not(.versteckt)"); await A.click('#frageWahl [data-wahl="trotzdem"]');
 await warte(400);
 ist("Name in bekannter Schreibweise", await A.evaluate(() => Z.kaeufer.map(k => k.name)), ["Paul", "Anne"]);
 // den letzten Verkauf rückgängig

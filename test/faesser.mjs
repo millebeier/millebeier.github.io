@@ -74,6 +74,24 @@ ist("Fass-Zeilen unter dem Bier", ueb, s => s.includes("🛢️ Fass 20 l") && s
 ist("Pro Persoun: Flaschen und Fässer getrennt", await p.evaluate(() => [...document.querySelectorAll("#t-uebersicht table")].pop().innerText), t => /Marc\t9\t101 \+ 2 F\./.test(t) && /Lager\t10 \+ 3 F\./.test(t));
 await p.evaluate(() => { OFFEN_SORTE = "Hopfenkönig"; render(); });
 ist("Liste pro Bier: Zahlungsart sichtbar", await p.locator("#t-uebersicht").innerText(), t => t.includes("SumUp") && /Paul[\s\S]*Bar/.test(t));
+// Verkaufen ohne eigenen Bestand: Fenster „woher nehmen?“ → aus dem Lager umbuchen
+// Lager: 10 da, 30 für BEST reserviert → frei −20, darf nicht angeboten werden. Erst nachfüllen.
+await p.evaluate(() => { eintragen([{ art: "abfuellung", sorte: "Hopfenkönig", n: 50 }]); EIN.ich = "Jeff"; TAB = "verkaufen"; FORM = null; render(); });
+const lagerVor = await p.evaluate(() => [hat(Z, "Lager", "Hopfenkönig"), frei(Z, "Lager", "Hopfenkönig")]);
+await p.fill("#vKaeufer", "Anne");
+const iH = await p.evaluate(() => vArtikel().findIndex(x => x.key === "Hopfenkönig"));
+await p.fill(`#vN${iH}`, "4"); await p.click('[data-bez="wero"]'); await warte(900);
+await p.click("#vSpeichern");
+await p.waitForSelector("#frageWahl:not(.versteckt)");
+ist("Fenster: woher nehmen", [await p.locator("#frageTitel").innerText(), await p.evaluate(() => [...document.querySelectorAll("#frageKnoepfe button")].map(b => b.dataset.wahl))],
+  v => v[0].includes("feelt: 4 × Hopfenkönig") && v[1][0] === "q:Lager" && v[1].includes("q:Marc") && v[1].at(-1) === "trotzdem");
+await p.click('#frageWahl [data-wahl="q:Lager"]'); await warte(300);
+ist("aus dem Lager umgebucht und verkauft", await p.evaluate(() => [hat(Z, "Lager", "Hopfenkönig"), hat(Z, "Jeff", "Hopfenkönig"), Z.kaeufer.some(k => k.name === "Anne")]), [lagerVor[0] - 4, 0, true]);
+ist("Meldung nennt Umbuchung", await p.locator("#vMeldung").innerText(), s => s.includes("vum Lager ëmgebucht"));
+await warte(900);
+await p.fill("#vKaeufer", "Tom"); await p.fill(`#vN${iH}`, "2"); await p.click('[data-bez="bar"]'); await warte(900);
+await p.click("#vSpeichern"); await p.waitForSelector("#frageWahl:not(.versteckt)"); await p.click("#frageZu"); await warte(200);
+ist("Ofbriechen: nichts verkauft", await p.evaluate(() => Z.kaeufer.some(k => k.name === "Tom")), false);
 ist("keine Seitenfehler", seitenfehler, []);
 await p.screenshot({ path: process.env.BILD || "/dev/null", fullPage: true }).catch(() => {});
 await b.close();

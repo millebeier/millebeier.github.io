@@ -162,6 +162,11 @@ textarea{width:100%;font:16px/1.4 inherit;padding:10px;border-radius:10px;border
 .dok .txt span{display:block;font-size:13px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .dok .knopf{padding:7px 9px;font-size:13px}
 .dok-titel{font-size:13px;color:var(--muted);margin:14px 0 2px;text-transform:uppercase;letter-spacing:.5px}
+#frageWahl{position:fixed;inset:0;z-index:25;background:rgba(0,0,0,.75);display:flex;align-items:flex-end;justify-content:center;padding:16px}
+#frageWahl .card{width:100%;max-width:520px;margin:0;max-height:90vh;overflow:auto}
+#frageKnoepfe button{display:block;width:100%;text-align:left;margin-top:8px;padding:13px 14px;border-radius:12px;border:1px solid var(--line);background:var(--card2);color:var(--text);font-size:16px;font-weight:700;cursor:pointer}
+#frageKnoepfe button small{display:block;font-weight:400;color:var(--muted);font-size:13px;margin-top:2px}
+#frageKnoepfe button.gut{border-color:var(--gruen)}
 #zahlWahl{position:fixed;inset:0;z-index:25;background:rgba(0,0,0,.75);display:flex;align-items:flex-end;justify-content:center;padding:16px}
 #zahlWahl .card{width:100%;max-width:520px;margin:0}
 #zahlWahl .seg button{padding:16px 4px;font-size:17px}
@@ -205,6 +210,9 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px}
 </main>
 <datalist id="kaeuferListe"></datalist>
 <input type="file" id="dateiWahl" class="versteckt">
+<div id="frageWahl" class="versteckt"><div class="card"><h2 id="frageTitel"></h2><div id="frageText" class="hinweis" style="margin:0 0 10px;white-space:pre-line"></div>
+  <div id="frageKnoepfe"></div>
+  <button class="haupt" id="frageZu" style="background:var(--card2);color:var(--text)">Ofbriechen</button></div></div>
 <div id="zahlWahl" class="versteckt"><div class="card"><h2 id="zahlTitel"></h2>
   <div class="seg zahl"></div>
   <button class="haupt" id="zahlZu" style="background:var(--card2);color:var(--text)">Ofbriechen</button></div></div>
@@ -215,7 +223,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px}
 <script>
 /* Adresse des Cloudflare-Workers. Leer = Probe-Modus (alles nur auf diesem Handy). */
 const WORKER_URL = "https://millebeier.rjtp6r9s9h.workers.dev/";
-const FASSUNG = "14.11.2026 l";
+const FASSUNG = "14.11.2026 m";
 
 /* === Logik === (kein DOM; test/logik.mjs schneidet diesen Block aus) */
 const LAGER = "Lager";
@@ -1089,6 +1097,7 @@ function artikelListe(wer, gewaehlt) {
 const vArtikel = () => artikelListe(FORM.verkaeufer, FORM.n);
 function vAutoBetrag() { return runde(vArtikel().reduce((a, x) => a + (FORM.n[x.key] || 0) * x.preis, 0)); }
 function vFlaschen() { return vArtikel().filter(x => !x.fass).reduce((a, x) => a + (FORM.n[x.key] || 0), 0); }
+const u0 = h => h === LAGER ? "vum Lager" : "vum " + h;
 const zahlInhalt = k => `<img src="${ZAHLBILD[k]}" alt=""><span>${ZAHLARTEN[k]}</span>`;
 function zahlKnoepfe(gewaehlt, mitSpaeter) {
   return `<div class="seg zahl">${Object.entries(ZAHLARTEN).map(([k, t]) => `<button data-bez="${k}" class="zbtn ${gewaehlt === k ? "an gruen" : ""}">${zahlInhalt(k)}</button>`).join("")}
@@ -1162,7 +1171,7 @@ function vHinweise() {
     ? `amplaz ${euro(auto)} (${vFlaschen()} Fläschen)` : (vFlaschen() ? `${vFlaschen()} Fläschen` : "");
 }
 
-function vSpeichern() {
+async function vSpeichern() {
   const zeige = (art, t) => { FORM.meldung = { art, text: t }; $("#vMeldung").innerHTML = `<div class="meldung ${art}">${esc(t)}</div>`; };
   const kaeufer = FORM.kaeufer.trim().replace(/\s+/g, " ");
   const posten = vArtikel().filter(x => FORM.n[x.key] > 0).map(x => ({ sorte: x.key, n: FORM.n[x.key] }));
@@ -1170,20 +1179,55 @@ function vSpeichern() {
   if (!posten.length) return zeige("fehler", "Wéi vill? Mindestens eng Fläsch oder ee Fass.");
   if (!FORM.wie) return zeige("fehler", "Wéi bezuelt? WERO, SumUp, Iwwerweisung, Bar — oder méi spéit. Tipp w.e.g. eent un.");
   const betrag = FORM.betrag != null ? FORM.betrag : vAutoBetrag();
-  const fehlt = zuWenig(Z, FORM.verkaeufer, posten);
-  if (fehlt.length && !confirm(`Net genuch do:\n\n${fehltText(FORM.verkaeufer, fehlt)}\n\nTrotzdeem androen?`)) return;
+  const umbuchen = await fehlendesHolen(FORM.verkaeufer, posten);
+  if (umbuchen == null) return;
   // Gleicher Name in anderer Schreibweise? Dann den bekannten nehmen.
   const bekannt = Z.kaeufer.find(k => k.name.toLowerCase() === kaeufer.toLowerCase());
   const name = bekannt ? bekannt.name : kaeufer;
-  const [v] = eintragen([{ art: "verkauf", verkaeufer: FORM.verkaeufer, kaeufer: name, posten, betrag }]);
+  const neu = eintragen([...umbuchen, { art: "verkauf", verkaeufer: FORM.verkaeufer, kaeufer: name, posten, betrag }]);
+  const v = neu.find(e => e.art === "verkauf");
   if (!v) return; // gerade eben schon gespeichert (Doppeltipp)
   const wie = FORM.wie;
   if (wie !== "spaeter" && betrag > 0) eintragen([{ art: "zahlung", ref: v.id, betrag, wie }]);
   const verk = FORM.verkaeufer;
   FORM = leeresFormular(); FORM.verkaeufer = verk;
-  FORM.meldung = { art: "ok", text: `✓ Agedroen: ${name}, ${postenText(posten)}, ${euro(betrag)} — ${wie !== "spaeter" ? "bezuelt per " + ZAHLARTEN[wie] : "steet ënner „Ausstoend“"}` };
+  FORM.meldung = { art: "ok", text: `✓ Agedroen: ${name}, ${postenText(posten)}, ${euro(betrag)} — ${wie !== "spaeter" ? "bezuelt per " + ZAHLARTEN[wie] : "steet ënner „Ausstoend“"}` +
+    (umbuchen.length ? ` (${umbuchen.map(u => postenText([u])).join(", ")} ${u0(umbuchen[0].von)} ëmgebucht)` : "") };
   if (document.activeElement) document.activeElement.blur();
   renderVerkaufen();
+}
+
+/* Auswahlfrage mit mehreren Antworten (Promise mit dem Schlüssel oder null bei Ofbriechen). */
+function frageWaehlen(titel, text, optionen) {
+  return new Promise(fertig => {
+    const box = $("#frageWahl");
+    $("#frageTitel").textContent = titel; $("#frageText").textContent = text || "";
+    $("#frageKnoepfe").innerHTML = optionen.map(o => `<button data-wahl="${esc(o.key)}" class="${o.gut ? "gut" : ""}">${esc(o.text)}${o.klein ? `<small>${esc(o.klein)}</small>` : ""}</button>`).join("");
+    box.classList.remove("versteckt");
+    const zu = k => { box.classList.add("versteckt"); fertig(k); };
+    box.querySelectorAll("[data-wahl]").forEach(b => b.onclick = () => zu(b.dataset.wahl));
+    $("#frageZu").onclick = () => zu(null);
+    box.onclick = e => { if (e.target === box) zu(null); };
+  });
+}
+/* Fehlt dem Verkäufer etwas: woher nehmen? Gibt [Umbuchungen] zurück, [] für „trotzdem“, null für Abbruch.
+   Angeboten wird nur, wer für alles Fehlende genug frei hat (Reservierungen zählen mit). Vom Nutzer, 14.11.2026. */
+async function fehlendesHolen(wer, posten) {
+  const fehlt = zuWenig(Z, wer, posten);
+  if (!fehlt.length) return [];
+  const brauch = fehlt.map(p => ({ sorte: p.sorte, n: p.n - Math.max(0, p.frei) }));
+  const was = brauch.map(p => postenText([p])).join(", ");
+  const quellen = [LAGER, ...Z.cfg.leute.filter(x => x !== wer)].filter(h => brauch.every(p => frei(Z, h, p.sorte) >= p.n));
+  const opt = quellen.map((h, i) => ({ key: "q:" + h, gut: i === 0,
+    text: h === LAGER ? "📦 Aus dem Lager huelen" : `Vum ${h} huelen`,
+    klein: brauch.map(p => `${postenText([p])} — ${h === LAGER ? "am Lager" : "huet"} fräi ${frei(Z, h, p.sorte)}`).join(" · ") }));
+  opt.push({ key: "trotzdem", text: "Trotzdeem androen", klein: `ouni ëmzebuchen — de Stock ${beim(wer)} geet an de Minus` });
+  const k = await frageWaehlen(`${de(wer)[0].toUpperCase() + de(wer).slice(1)} feelt: ${was}`,
+    fehltText(wer, fehlt) + (quellen.length ? "" : "\n\nKeen huet genuch fräi."), opt);
+  if (k == null) return null;
+  if (k === "trotzdem") return [];
+  const von = k.slice(2);
+  return brauch.map(p => ({ art: "bewegung", sorte: p.sorte, n: p.n, von, an: wer }));
 }
 
 /* Zahlungsart wählen (Ausstoend, Livraisons): Fenster mit WERO / SumUp / Iwwerweisung / Bar. Gibt die Art oder null. */
@@ -1215,7 +1259,7 @@ function renderOffen() {
   </div>
   ${liste.length ? liste.map((K, i) => `<div class="card kunde">
     <div class="kopfz"><h2 style="margin:0">${esc(K.name)}</h2><span class="betrag">${euro(K.sichtOffen)}</span></div>
-    ${K.sicht.map(v => `<div class="vk"><span>${datumText(v.zeit)} · ${esc(postenText(v.posten))}<br><small class="muted">${esc(beim(v.verkaeufer))}${v.bezahlt ? ` · ${euro(v.bezahlt)} scho bezuelt` : ""}</small></span><span>${euro(v.offen)}</span></div>`).join("")}
+    ${K.sicht.map(v => `<div class="vk"><span>${v.livraison ? `🚚 Livraisoun ${esc(datumKurz(v.livraison.datum))}` : datumText(v.zeit)} · ${esc(postenText(v.posten))}<br><small class="muted">${esc(beim(v.verkaeufer))}${v.bezahlt ? ` · ${euro(v.bezahlt)} scho bezuelt` : ""}</small></span><span>${euro(v.offen)}</span></div>`).join("")}
     <div class="knopfe">
       <button class="knopf gruen" data-alles="${i}">Alles bezuelt ✓</button>
       <button class="knopf" data-teil="${i}">Deelbetrag…</button>
@@ -1781,7 +1825,7 @@ function mittenImEintrag() {
   if (TAB === "einst" && EFORM) return true;
   if (FORM && (FORM.kaeufer.trim() || Object.values(FORM.n).some(n => n > 0) || FORM.betrag != null)) return true;
   if (BFORM && String(BFORM.n).trim()) return true;
-  if (L_NEU || BIERFORM || UPLOAD || ANSICHT || !$("#zahlWahl").classList.contains("versteckt")) return true;
+  if (L_NEU || BIERFORM || UPLOAD || ANSICHT || !$("#zahlWahl").classList.contains("versteckt") || !$("#frageWahl").classList.contains("versteckt")) return true;
   if (FORM && FORM.wie) return true;
   return false;
 }
