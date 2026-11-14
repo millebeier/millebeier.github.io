@@ -161,6 +161,16 @@ ist("CSV Zeilen", c.trim().split("\r\n").length, 4);
   ist("Excel-Blatt heißt mit Datum", L.exportBlaetter(Y, () => "").map(b => b.name).includes("Rusty (06.02.2026)"), true);
   ist("Name mit Datum oder Monat bleibt", [L.bierText("NEIPA (28.07.2026)"), L.bierText("Brown Porter 01/2026")], ["NEIPA (28.07.2026)", "Brown Porter 01/2026"]);
   ist("ohne Braudatum nichts dahinter", L.bierText("White IPA"), "White IPA");
+  // Datum nachtragen oder ändern: Bestand bleibt, Anzeige folgt dem aktuellen Datum
+  {
+    const B = (id, x) => ({ id, zeit: Date.parse("2026-11-14T10:00:00Z") + id.length, durch: "Laurent", ...x });
+    const ohne = [B("w1", { art: "bier", name: "White IPA", preis: 3 }), B("w2", { art: "abfuellung", sorte: "White IPA", n: 50 }), B("w3", { art: "bewegung", sorte: "White IPA", n: 10, von: "Lager", an: "Jeff" })];
+    let Q = L.rechne([...ohne, B("w4xx", { art: "bier", name: "White IPA", preis: 3, braudatum: "2026-09-26" })]);
+    ist("Datum nachgetragen: Bestand bleibt, Anzeige mit Datum", [L.hat(Q, "Lager", "White IPA"), L.hat(Q, "Jeff", "White IPA"), L.bierText("White IPA")], [40, 10, "White IPA (26.09.2026)"]);
+    const mit = [B("n1", { art: "bier", name: "NEIPA (28.07.2026)", preis: 3, braudatum: "2026-07-28" }), B("n2", { art: "abfuellung", sorte: "NEIPA (28.07.2026)", n: 120 })];
+    Q = L.rechne([...mit, B("n3xx", { art: "bier", name: "NEIPA (28.07.2026)", preis: 3, braudatum: "2026-07-29" })]);
+    ist("Datum geändert: Bestand bleibt, Anzeige neues Datum", [L.hat(Q, "Lager", "NEIPA (28.07.2026)"), L.bierText("NEIPA (28.07.2026)"), Q.cfg.sorten.filter(c => c.name === "NEIPA (28.07.2026)").length], [120, "NEIPA (29.07.2026)", 1]);
+  }
 }
 
 // Dateien je Bier: feste Felder nehmen die neueste, „anner“ sammelt; Löschen per storno

@@ -232,7 +232,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px}
 <script>
 /* Adresse des Cloudflare-Workers. Leer = Probe-Modus (alles nur auf diesem Handy). */
 const WORKER_URL = "https://millebeier.rjtp6r9s9h.workers.dev/";
-const FASSUNG = "14.11.2026 r";
+const FASSUNG = "14.11.2026 s";
 
 /* === Logik === (kein DOM; test/logik.mjs schneidet diesen Block aus) */
 const LAGER = "Lager";
@@ -469,7 +469,13 @@ const zuWenig = (Z, wer, posten) => posten.map(p => ({ ...p, frei: frei(Z, wer, 
    Namen; ältere bekommen es nur angezeigt. Namen, die schon ein Datum oder „MM/JJJJ“ enthalten, bleiben wie sie sind. */
 let BRAUDATEN = new Map();
 const hatDatum = n => /\(\d{1,2}\.\d{1,2}\.\d{4}\)|\d{2}\/\d{4}/.test(n);
-const bierText = name => { const d = BRAUDATEN.get(name); return d && !hatDatum(name) ? `${name} (${datumLang(d)})` : name; };
+// Angezeigt wird immer das aktuelle Braudatum: steht schon ein (älteres) Datum im Namen, wird es in der Anzeige
+// ersetzt — der Name selbst (Schlüssel des Bestands) bleibt unverändert. „MM/JJJJ“-Namen (alter Import) bleiben.
+const bierText = name => {
+  const d = BRAUDATEN.get(name);
+  if (!d || /\d{2}\/\d{4}/.test(name)) return name;
+  return `${name.replace(/ \(\d{1,2}\.\d{1,2}\.\d{4}\)$/, "")} (${datumLang(d)})`;
+};
 const datumLang = d => { const [j, m, t] = d.split("-"); return `${t}.${m}.${j}`; };
 const artikelText = key => istFass(key) ? `${bierText(zerlege(key).bier)} (Fass ${zerlege(key).l} l)` : bierText(key);
 const postenText = posten => posten.map(p => `${p.n} × ${artikelText(p.sorte)}`).join(", ");
