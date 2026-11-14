@@ -48,6 +48,21 @@ ist("Kasse", await p.evaluate(() => Z.kasse), 90);
 // zweite Livraison nur planen
 await p.click("#lAuf"); await p.fill("#lKunde", "BEST"); await p.fill("#lDatum", "2026-12-20"); await p.click('[data-lplus="0"]'); await p.click("#lOk"); await warte(200);
 
+// Geplante Bestellung ändern: Datum und Menge korrigieren
+await warte(900);
+const bestId = await p.evaluate(() => Z.livraisons.find(L => L.kunde === "BEST").id);
+await p.click(`[data-led="${bestId}"]`); await warte(200);
+ist("Formular vorbelegt", [await p.locator("#lForm h2").innerText(), await p.inputValue("#lKunde"), await p.inputValue("#lDatum"), await p.locator("#lOk").innerText()], ["Bestellung änneren", "BEST", "2026-12-20", "Späicheren"]);
+await p.fill("#lDatum", "2026-12-21");
+const iN = await p.evaluate(() => lArtikel().findIndex(x => x.key === "NEIPA"));
+await p.fill(`#lN${iN}`, "4");
+ist("Betrag rechnet neu", await p.inputValue("#lBetrag"), "12");
+await p.click("#lOk"); await warte(300);
+ist("geändert: nur noch eine BEST, neue Werte", await p.evaluate(() => Z.livraisons.filter(L => L.kunde === "BEST").map(L => [L.datum, L.posten[0].n, L.betrag])), [["2026-12-21", 4, 12]]);
+ist("Reservierung angepasst", await p.evaluate(() => reserviertBei(Z, "Marc", "NEIPA")), 4);
+ist("Meldung", await p.locator("#lMeld").innerText(), t => t.includes("Geännert: BEST"));
+ist("gelieferte Bestellung ohne Änneren", await p.evaluate(() => { const L = Z.livraisons.find(x => x.kunde === "Ferro Forum"); return !!document.querySelector(`[data-led="${L.id}"]`); }), false);
+
 // All / Just meng: Bestellung von Jeff (Kontakt Jeff, aus Lager) nur bei All
 await p.evaluate(() => eintragen([{ art: "livraison", kunde: "Rock Solid", kontakt: "Jeff", aus: "Lager", datum: "2026-12-30", posten: [{ sorte: "NEIPA", n: 6 }], betrag: 18, rechnung: false }]));
 await warte(300);
@@ -63,7 +78,7 @@ await p.evaluate(() => eintragen([{ art: "storno", ref: Z.livraisons.find(L => L
 await p.click('[data-tab="uebersicht"]');
 await p.click('tr[data-sorte="NEIPA"]');
 const detail = await p.locator("#t-uebersicht").innerText();
-ist("pro Bier: Ferro Forum und geplante BEST", detail, s => s.includes("NEIPA: wien huet wat wiem verkaaft") && s.includes("Ferro Forum") && s.includes("BEST") && s.includes("20.12.2026 · beim Marc · geplangt"));
+ist("pro Bier: Ferro Forum und geplante BEST", detail, s => s.includes("NEIPA: wien huet wat wiem verkaaft") && s.includes("Ferro Forum") && s.includes("BEST") && s.includes("21.12.2026 · beim Marc · geplangt"));
 await p.click('tr[data-sorte="NEIPA"]');
 ist("zuklappen", await p.locator("#t-uebersicht").innerText(), s => !s.includes("NEIPA: wien huet wat wiem"));
 
@@ -79,7 +94,7 @@ if (XLSX_JS && existsSync(XLSX_JS)) {
   const kopf = neipa.findIndex(r => r[0] === "Datum");
   ist("Excel NEIPA: Kopf", neipa[kopf].slice(0, 9), ["Datum", "Client", "Kontakt", "Unzuel", "Gebinde", "Präis", "Recetten", "geliwwert?", "bezuel?"]);
   ist("Excel NEIPA: Ferro Forum", neipa[kopf + 1].slice(0, 10), ["5.12.2026", "Ferro Forum", "Marc", 24, "Fläsch", 2.5, 60, "Jo", "Jo", "Iwwerweisung"]);
-  ist("Excel NEIPA: BEST geplant", neipa[kopf + 2].slice(1, 8), ["BEST", "Marc", 1, "Fläsch", 3, 3, "geplangt 20.12.2026"]);
+  ist("Excel NEIPA: BEST geplant", neipa[kopf + 2].slice(1, 8), ["BEST", "Marc", 4, "Fläsch", 3, 12, "geplangt 21.12.2026"]);
   ist("Excel NEIPA: Total ohne geplant", neipa[neipa.length - 1].slice(0, 7), ["Total", "", "", 24, "Fläschen", "", 60]);
   ist("Excel: Euro-Format", wb.Sheets.NEIPA[X.utils.encode_cell({ r: kopf + 1, c: 5 })].z, '#,##0.00 "€"');
   const liv = X.utils.sheet_to_json(wb.Sheets.Bestellungen, { header: 1, defval: "" });

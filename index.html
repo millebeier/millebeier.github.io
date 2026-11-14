@@ -234,7 +234,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px}
 <script>
 /* Adresse des Cloudflare-Workers. Leer = Probe-Modus (alles nur auf diesem Handy). */
 const WORKER_URL = "https://millebeier.rjtp6r9s9h.workers.dev/";
-const FASSUNG = "14.11.2026 y";
+const FASSUNG = "14.11.2026 z";
 
 /* === Logik === (kein DOM; test/logik.mjs schneidet diesen Block aus) */
 const LAGER = "Lager";
@@ -1039,6 +1039,7 @@ function renderLListe() {
         ${L.rechnung ? (v.rechnungGemacht ? `<span class="chip ok">🧾 Rechnung gemaach</span>` : `<span class="chip warn">🧾 Rechnung nach ze maachen</span>`) : ""}
         ${v.offen <= 0 ? `<span class="chip ok">✓ bezuelt</span>` : `<span class="chip warn">${euro(v.offen)} op</span>`}` : "";
     const knoepfe = !v ? `<button class="knopf gruen" data-geliwwert="${esc(L.id)}">Geliwwert ✓</button>
+        <button class="knopf" data-led="${esc(L.id)}">✎ Änneren</button>
         <button class="knopf" data-lweg="${esc(L.id)}">Läschen</button>`
       : `${L.rechnung && !v.rechnungGemacht ? `<button class="knopf" data-rechnung="${esc(v.id)}">🧾 Rechnung gemaach</button>` : ""}
          ${v.offen > 0 ? `<button class="knopf gruen" data-lbezuelt="${esc(v.id)}">Bezuelt ✓</button>` : ""}`;
@@ -1052,6 +1053,16 @@ function renderLListe() {
       ${geplant.length ? geplant.map(karte).join("") : `<div class="leer">Keng Bestellung geplangt.</div>`}</div>
     <div class="card"><h2>Geliwwert</h2>
       ${fertig.length ? fertig.slice(0, 40).map(karte).join("") : `<div class="leer">Nach keng.</div>`}</div>`;
+  // Geplante Bestellung korrigieren (vom Nutzer, Fassung z): Formular mit allen Angaben; Späicheren = alte löschen + neue
+  box.querySelectorAll("[data-led]").forEach(b => b.onclick = () => {
+    const L = Z.livraisons.find(x => x.id === b.dataset.led); if (!L || L.verkauf) return;
+    const n = {}; for (const p of L.posten) n[p.sorte] = (n[p.sorte] || 0) + p.n;
+    const auto = runde(L.posten.reduce((a, p) => a + p.n * preisVon(Z.cfg, p.sorte), 0));
+    LFORM = { kunde: L.kunde, kontakt: L.kontakt, aus: L.aus, ausAendern: true, anlass: L.anlass || "", datum: L.datum, n,
+      betrag: L.betrag === auto ? null : L.betrag, rechnung: !!L.rechnung, notiz: L.notiz || "", ersetzt: L.id };
+    L_NEU = true; renderLForm(true);
+    const k = $("#lForm"); if (k && k.scrollIntoView) k.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
   box.querySelectorAll("[data-lmeine]").forEach(b => b.onclick = () => { L_NUR_MEINE = b.dataset.lmeine === "1"; renderLListe(); });
   box.querySelectorAll("[data-geliwwert]").forEach(b => b.onclick = () => {
     const L = Z.livraisons.find(x => x.id === b.dataset.geliwwert); if (!L) return;
@@ -1077,7 +1088,7 @@ function renderLForm(egal) {
   if (!L_NEU) { box.innerHTML = `<button class="haupt" id="lAuf">+ Nei Bestellung plangen</button><div id="lMeld">${LFORM && LFORM.meldung ? `<div class="meldung ok">${esc(LFORM.meldung)}</div>` : ""}</div>`; $("#lAuf").onclick = () => { L_NEU = true; LFORM = leereLivraison(); renderLForm(); }; return; }
   const F = LFORM;
   const opt = (liste, wert, txt = x => x) => liste.map(x => `<option value="${esc(x)}" ${x === wert ? "selected" : ""}>${esc(txt(x))}</option>`).join("");
-  box.innerHTML = `<div class="card"><h2>Nei Bestellung</h2>
+  box.innerHTML = `<div class="card"><h2>${F.ersetzt ? "Bestellung änneren" : "Nei Bestellung"}</h2>
     <label for="lKunde">Client</label><input id="lKunde" list="kaeuferListe" autocomplete="off" autocapitalize="words" value="${esc(F.kunde)}" placeholder="z. B. Ferro Forum">
     <div class="zeile"><div><label for="lDatum">Datum</label><input id="lDatum" type="date" value="${esc(F.datum)}"></div>
       <div><label for="lKontakt">Kontakt</label><select id="lKontakt">${opt(Z.cfg.leute, F.kontakt)}</select></div></div>
@@ -1095,7 +1106,7 @@ function renderLForm(egal) {
       <small class="muted" id="lAutoT" style="flex:1.4">anere Präis (z. B. 2,50 €/Fl)? Einfach Betrag änneren.</small></div>
     <label class="check"><input type="checkbox" id="lRechnung" ${F.rechnung ? "checked" : ""}> Rechnung maachen</label>
     <label for="lNotiz">Remarque (fräiwëlleg)</label><input id="lNotiz" value="${esc(F.notiz)}">
-    <button class="haupt" id="lOk">Bestellung plangen</button>
+    <button class="haupt" id="lOk">${F.ersetzt ? "Späicheren" : "Bestellung plangen"}</button>
     <button class="haupt" id="lZu" style="background:var(--card2);color:var(--text)">Ofbriechen</button>
     <div id="lMeld"></div></div>`;
   const bind = (id, k, ev = "oninput") => { const el = $(id); el[ev] = () => { F[k] = el.value; }; };
@@ -1125,12 +1136,16 @@ function renderLForm(egal) {
       betrag: F.betrag != null ? F.betrag : lAuto(), rechnung: !!F.rechnung, anlass: F.anlass.trim(), notiz: F.notiz.trim() };
     if (!gueltig({ ...e, id: "x", zeit: 0 })) return meld("Eppes ass ze laang oder net richteg.");
     // Geplante Livraisons zählen schon (reserviert): reicht der freie Rest nicht, warnen (vom Nutzer, 14.11.2026).
-    const fehlt = zuWenig(Z, F.aus, posten);
+    // Beim Ändern zählt die alte Fassung nicht gegen sich selbst.
+    const Zp = F.ersetzt ? rechne([...SERVER, ...AUSGANG, { id: "pruef-storno", zeit: Date.now(), art: "storno", ref: F.ersetzt }]) : Z;
+    const fehlt = zuWenig(Zp, F.aus, posten);
     if (fehlt.length && !confirm(`⚠️ Net genuch fräi:\n\n${fehltText(F.aus, fehlt)}\n\nTrotzdeem plangen?`)) return;
     if (document.activeElement) document.activeElement.blur();
-    const neu = eintragen([e]);
+    const alt = F.ersetzt && Z.livraisons.find(x => x.id === F.ersetzt);
+    if (F.ersetzt && (!alt || alt.verkauf)) return meld("Dës Bestellung ass schonn geliwwert oder geläscht — net méi z'änneren.");
+    const neu = eintragen(F.ersetzt ? [{ art: "storno", ref: F.ersetzt }, e] : [e]);
     if (!neu.length) return;
-    L_NEU = false; LFORM = { meldung: `✓ Geplangt: ${e.kunde}, ${datumKurz(e.datum)}, ${postenText(posten)}` };
+    L_NEU = false; LFORM = { meldung: `✓ ${F.ersetzt ? "Geännert" : "Geplangt"}: ${e.kunde}, ${datumKurz(e.datum)}, ${postenText(posten)}` };
     renderLForm();
   };
 }

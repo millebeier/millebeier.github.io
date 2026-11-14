@@ -90,6 +90,9 @@ beim Verkaufen/Livraison und „Fläsche beweegen“ an, solange jemand welche h
   **Bestellung planen: „Huelen aus“ = wer einträgt** (vom Nutzer, Fassung x), als Text mit Knopf „Änneren“ (`ausAendern`),
   erst dann die Auswahl Lager/Leute.
   **Bestellungen: All / Just meng** (vom Nutzer, Fassung y, wie bei Ausstoend): „meng“ = Kontakt oder `aus` ist man selbst.
+  **Bestellung ändern** (vom Nutzer, Fassung z): nur geplante, Knopf „✎ Änneren“ → Formular vorbelegt (`LFORM.ersetzt`),
+  Späicheren = storno der alten + neue `livraison` in einem `eintragen`; Reservierungsprüfung ohne die alte Fassung
+  (`rechne` mit Prüf-storno). Gelieferte: kein Ändern (Verkauf/Zahlung/Rechnung hängen dran) — im Verlauf löschen.
   **Livraison** (vom Nutzer, 14.11.2026): geplant, bis ein Verkauf mit `liv` = ihre id existiert („Geliwwert ✓“ legt ihn an,
   Flaschen aus `aus`, meist Lager — Verkauf hat dafür optional `aus`). Verkauf rückgängig → wieder geplant. Rechnung
   „gemaach“ = Eintrag `rechnung`. Geplantes zählt nirgends als verkauft.
