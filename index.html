@@ -125,6 +125,8 @@ select{background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),
 .liv .kopfz b{font-size:17px}
 .liv .wann{font-size:13px;color:var(--muted)}
 .liv .wann.faellig{color:var(--gelb);font-weight:700}
+.aus-fest{align-items:center;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:6px 6px 6px 12px}
+.aus-fest b{font-size:16px}
 .chip{display:inline-block;font-size:12px;padding:3px 8px;border-radius:9px;background:var(--card2);margin:6px 4px 0 0}
 .chip.ok{background:#1f3a20;color:#bfe8c0} .chip.warn{background:#3a3115;color:#f4e2a0}
 /* Dreieck links fest, Name darf umbrechen (lange Namen wie „Brown Porter 01/2026 Keg 30l“ sprengten sonst die Tabelle) */
@@ -232,7 +234,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px}
 <script>
 /* Adresse des Cloudflare-Workers. Leer = Probe-Modus (alles nur auf diesem Handy). */
 const WORKER_URL = "https://millebeier.rjtp6r9s9h.workers.dev/";
-const FASSUNG = "14.11.2026 w";
+const FASSUNG = "14.11.2026 x";
 
 /* === Logik === (kein DOM; test/logik.mjs schneidet diesen Block aus) */
 const LAGER = "Lager";
@@ -1014,7 +1016,8 @@ async function excelExport(meldBox) {
 let LFORM = null, L_NEU = false;
 function leereLivraison() {
   const morgen = new Date(Date.now() + 86400000).toLocaleDateString("sv-SE", { timeZone: TZ });
-  return { kunde: "", kontakt: EIN.ich, aus: LAGER, anlass: "", datum: morgen, n: {}, betrag: null, rechnung: true, notiz: "" };
+  // „Huelen aus“: Vorgabe ist, wer einträgt (vom Nutzer, Fassung x); ändern nur über den Knopf „Änneren“
+  return { kunde: "", kontakt: EIN.ich, aus: EIN.ich, ausAendern: false, anlass: "", datum: morgen, n: {}, betrag: null, rechnung: true, notiz: "" };
 }
 const lArtikel = () => artikelListe(LFORM.aus, LFORM.n);
 function lAuto() { return runde(lArtikel().reduce((a, x) => a + (LFORM.n[x.key] || 0) * x.preis, 0)); }
@@ -1074,7 +1077,9 @@ function renderLForm(egal) {
     <label for="lKunde">Client</label><input id="lKunde" list="kaeuferListe" autocomplete="off" autocapitalize="words" value="${esc(F.kunde)}" placeholder="z. B. Ferro Forum">
     <div class="zeile"><div><label for="lDatum">Datum</label><input id="lDatum" type="date" value="${esc(F.datum)}"></div>
       <div><label for="lKontakt">Kontakt</label><select id="lKontakt">${opt(Z.cfg.leute, F.kontakt)}</select></div></div>
-    <label for="lAus">Huelen aus</label><select id="lAus">${opt([LAGER, ...Z.cfg.leute], F.aus, h => h === LAGER ? "📦 Lager" : h)}</select>
+    <label for="lAus">Huelen aus</label>${F.ausAendern
+      ? `<select id="lAus">${opt([LAGER, ...Z.cfg.leute], F.aus, h => h === LAGER ? "📦 Lager" : h)}</select>`
+      : `<div class="zeile aus-fest"><b id="lAusText">${esc(F.aus === LAGER ? "📦 Lager" : F.aus)}</b><button class="knopf" id="lAusAendern" style="flex:none">Änneren</button></div>`}
     <label for="lAnlass">Anlass (fräiwëlleg)</label><input id="lAnlass" value="${esc(F.anlass)}" placeholder="z. B. Oarbechterkiermes">
     <label>Wat?</label>
     ${lArtikel().map((x, i) => `<div class="posten"><div class="pn"><b>${esc(x.label)}</b><small class="muted">${euro(x.preis)} · ${esc(freiText(F.aus, x.key))}</small></div>
@@ -1093,7 +1098,8 @@ function renderLForm(egal) {
   bind("#lKunde", "kunde"); bind("#lAnlass", "anlass"); bind("#lNotiz", "notiz");
   $("#lDatum").onchange = $("#lDatum").oninput = e => { F.datum = e.target.value; };
   $("#lKontakt").onchange = e => { F.kontakt = e.target.value; };
-  $("#lAus").onchange = e => { F.aus = e.target.value; e.target.blur(); renderLForm(true); };
+  const la0 = $("#lAus"); if (la0) la0.onchange = e => { F.aus = e.target.value; e.target.blur(); renderLForm(true); };
+  const lae = $("#lAusAendern"); if (lae) lae.onclick = () => { F.ausAendern = true; renderLForm(true); const sel = $("#lAus"); if (sel) sel.focus(); };
   $("#lRechnung").onchange = e => { F.rechnung = e.target.checked; };
   const betragNach = () => { const inp = $("#lBetrag"); if (F.betrag == null && document.activeElement !== inp) inp.value = lAuto() ? String(lAuto()).replace(".", ",") : ""; };
   const la = lArtikel();

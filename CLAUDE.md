@@ -87,6 +87,8 @@ beim Verkaufen/Livraison und „Fläsche beweegen“ an, solange jemand welche h
   das gibt im Home-Bildschirm eine weiße Seite (Lehre aus pizza.html). `renderDok` baut nur bei Änderung neu
   (Signatur), sonst ging ein Tipp verloren, der in den Neuaufbau nach einem Abgleich fiel. Gelöschte Dateien bleiben
   als Stücke in D1 (zurückholbar über den Verlauf).
+  **Bestellung planen: „Huelen aus“ = wer einträgt** (vom Nutzer, Fassung x), als Text mit Knopf „Änneren“ (`ausAendern`),
+  erst dann die Auswahl Lager/Leute.
   **Livraison** (vom Nutzer, 14.11.2026): geplant, bis ein Verkauf mit `liv` = ihre id existiert („Geliwwert ✓“ legt ihn an,
   Flaschen aus `aus`, meist Lager — Verkauf hat dafür optional `aus`). Verkauf rückgängig → wieder geplant. Rechnung
   „gemaach“ = Eintrag `rechnung`. Geplantes zählt nirgends als verkauft.

@@ -26,7 +26,7 @@ ist("Abfüllen: Fass wählbar", await p.evaluate(() => [...document.querySelecto
 
 // Livraison mit Fass planen → reserviert
 await p.click('[data-tab="livraisons"]');
-await p.click("#lAuf"); await p.fill("#lKunde", "Ferro Forum"); await p.fill("#lDatum", "2026-12-05");
+await p.click("#lAuf"); await p.click("#lAusAendern"); await p.selectOption("#lAus", "Lager"); await p.fill("#lKunde", "Ferro Forum"); await p.fill("#lDatum", "2026-12-05");
 const zeilen = await p.evaluate(() => lArtikel().map(x => x.label));
 ist("Livraison: Fässer zur Auswahl", zeilen.filter(l => l.startsWith("Hopfenkönig (01.10.2026)")), ["Hopfenkönig (01.10.2026)", "Hopfenkönig (01.10.2026) · Fass 20 l", "Hopfenkönig (01.10.2026) · Fass 30 l"]);
 const idx = l => zeilen.indexOf(l);
@@ -39,7 +39,7 @@ ist("Stock zeigt Reservierung", (await p.evaluate(() => { TAB = "bestand"; rende
 // Zweite Livraison, die nicht mehr reicht → Warnung, abgelehnt → nichts geplant
 await p.evaluate(() => { TAB = "livraisons"; render(); });
 await warte(900);
-await p.click("#lAuf"); await p.fill("#lKunde", "BEST"); await p.fill("#lDatum", "2026-12-10");
+await p.click("#lAuf"); await p.click("#lAusAendern"); await p.selectOption("#lAus", "Lager"); await p.fill("#lKunde", "BEST"); await p.fill("#lDatum", "2026-12-10");
 const z2 = await p.evaluate(() => lArtikel().map(x => x.label));
 await p.fill(`#lN${z2.indexOf("Hopfenkönig (01.10.2026)")}`, "30");
 antworten = [false];

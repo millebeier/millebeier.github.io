@@ -21,6 +21,10 @@ await warte(100);
 
 await p.click('[data-tab="livraisons"]');
 await p.click("#lAuf");
+ist("Huelen aus: Vorgabe eigener Name, Auswahl erst nach Änneren", [await p.locator("#lAusText").innerText(), await p.locator("#lAus").count()], ["Marc", 0]);
+await p.click("#lAusAendern");
+ist("Änneren zeigt Auswahl", await p.evaluate(() => [...document.querySelectorAll("#lAus option")].map(o => o.value)), ["Lager", "Jeff", "Marc", "Claude", "Laurent"]);
+await p.selectOption("#lAus", "Lager");
 await p.fill("#lKunde", "Ferro Forum");
 await p.fill("#lDatum", "2026-12-05");
 await p.fill("#lAnlass", "Oarbechterkiermes");
