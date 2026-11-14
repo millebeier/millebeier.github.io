@@ -13,11 +13,11 @@ Brown Porter, 3 € je Flasche; Sorten, Preise und Leute sind in der App (⚙️
 ## Bisher: Excel-Tabelle
 Vor der App lief alles über `Iwwersiicht_Commanden_Clients_2026.xlsx` (Dropbox, vom Nutzer am 14.11.2026 hochgeladen):
 ein Blatt je Brauvorgang (Brown Porter 23.01., Rusty 06.02., NEIPA 28.07., Porter 30.09.) mit Spalten Virnumm/Numm,
-Kontakt (Kürzel JF, MW, CW, LR — vermutlich Jeff, Marc, Claude Wilwert „Willy“, Laurent; **nicht bestätigt**),
+Kontakt (Kürzel JF, MW, CW, LR = Jeff, Marc, Claude Wilwert „Willy“, Laurent; vom Nutzer bestätigt),
 Unzuel, Béier (Preis), geliwwert?, Recetten, Remarquen, bezuel?; dazu „LIVRAISONS CLIENTS“ für Firmen/Vereine
 (Ferro Forum, Rock Solid, Café Millebières, BEST, Brennerdag) mit livré/facture/payé. Fässer 30 l = 180 €, 20 l =
-150 €; Vereine 2,50 €/Fl; Geschenkpacks 12 €/4, 18 €/6. Die Geschichte 2026 wurde **nicht** übernommen (zu viele
-Unklarheiten, z. B. Brown Porter 310 Zeilen-Flaschen bei 288 gebraut) — Startstand = Zählung.
+150 €; Vereine 2,50 €/Fl; Geschenkpacks 12 €/4, 18 €/6. Zuerst wurde die Geschichte nicht übernommen (zu viele
+Unklarheiten, z. B. Brown Porter 310 Zeilen-Flaschen bei 288 gebraut) — Startstand = Zählung; dann doch, siehe unten.
 Der Excel-Export der App bildet dieses Format nach (s. u.).
 **Alte Verkäufe doch übernommen** (vom Nutzer, 14.11.2026), aber **ohne Geld**: `altImport()` (feste ids `alt26-…`,
 Knopf ⚙️ „📜 Al Verkéf 2026“, einmalig, verschwindet danach; springt in die Iwwersiicht mit offenem Archiv).
