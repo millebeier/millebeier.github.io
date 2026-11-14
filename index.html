@@ -141,6 +141,10 @@ tr.klick.klein + tr.fass td:first-child, tr.fass + tr.fass.unter td:first-child{
 .bier:first-of-type{border-top:0}
 .bier .kopfz{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
 .bier .kopfz b{font-size:17px}
+.bier .kopfz{align-items:center}
+.bier-name{display:flex;align-items:center;gap:10px;min-width:0}
+.bier-etikett{flex:none;width:44px;height:44px;padding:0;border-radius:8px;overflow:hidden;border:1px solid var(--line);background:var(--card2);font-size:22px;cursor:pointer}
+.bier-etikett img{width:100%;height:100%;object-fit:cover;display:block}
 .knopf.rot{border-color:var(--akzent);color:var(--akzent);background:none}
 .bier .knopfe{flex-wrap:nowrap} .bier .knopf{flex:1;padding:9px 4px;font-size:13px;white-space:nowrap}
 #bTabelle td:first-child{white-space:nowrap}
@@ -228,7 +232,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px}
 <script>
 /* Adresse des Cloudflare-Workers. Leer = Probe-Modus (alles nur auf diesem Handy). */
 const WORKER_URL = "https://millebeier.rjtp6r9s9h.workers.dev/";
-const FASSUNG = "14.11.2026 p";
+const FASSUNG = "14.11.2026 q";
 
 /* === Logik === (kein DOM; test/logik.mjs schneidet diesen Block aus) */
 const LAGER = "Lager";
@@ -1345,7 +1349,10 @@ function renderBiere() {
   if (BIERFORM) return renderBierForm(box);
   const aktivB = Z.cfg.sorten.filter(c => !c.archiv), archiv = Z.cfg.sorten.filter(c => c.archiv);
   const doText = c => [`${Z.sorten[c.name] ? Z.sorten[c.name].da : 0} Fl.`, ...fassNamen(Z, c.name).filter(k => Z.sorten[k].da).map(k => `${Z.sorten[k].da} × ${zerlege(k).l} l`)].join(" · ") + " do";
-  const zeile = c => `<div class="bier"><div class="kopfz"><b>${esc(c.name)}</b><span class="muted">${doText(c)}</span></div>
+  // Etikett als kleines Bild vor dem Namen (vom Nutzer, Fassung q); antippen öffnet es
+  const etikett = c => { const D = dateienVon(Z, c.name).etikett; if (!D) return ""; thumbLaden(D);
+    return `<button class="bier-etikett" data-thumb="${esc(D.fid)}" data-etikett="${esc(D.fid)}" aria-label="Etikett opmaachen">${bildHtml(D)}</button>`; };
+  const zeile = c => `<div class="bier"><div class="kopfz"><span class="bier-name">${etikett(c)}<b>${esc(c.name)}</b></span><span class="muted">${doText(c)}</span></div>
       <div class="hinweis" style="margin-top:2px">${esc(bierInfo(c))}</div>
       ${c.meta && c.meta.notiz ? `<div class="hinweis" style="margin-top:2px">${esc(c.meta.notiz)}</div>` : ""}
       ${dateienVon(Z, c.name).anzahl ? `<div class="hinweis" style="margin-top:2px">📎 ${["etikett", "rezept", "protokoll"].filter(f => dateienVon(Z, c.name)[f]).map(f => FELDER[f]).concat(dateienVon(Z, c.name).anner.length ? [dateienVon(Z, c.name).anner.length + " aner"] : []).join(" · ")}</div>` : ""}
@@ -1359,6 +1366,7 @@ function renderBiere() {
       ${ARCHIV_AUF ? archiv.map(zeile).join("") : ""}` : ""}
     <div id="bierMeld"></div></div>`;
   const finde = n => Z.cfg.sorten.find(c => c.name === n);
+  box.querySelectorAll("[data-etikett]").forEach(b => b.onclick = () => { const D = Z.dateien.find(x => x.fid === b.dataset.etikett); if (D) dateiZeigen(D); });
   $("#bierNeu").onclick = () => { BIERFORM = { neu: true, name: "", stil: "", braudatum: "", alk: "", liter: "", preis: "3", preis20: "150", preis30: "180", mhd: "", notiz: "", flaschen: "", f20: "", f30: "" }; renderBiere(); };
   const au = $("#archivAuf"); if (au) au.onclick = () => { ARCHIV_AUF = !ARCHIV_AUF; renderBiere(); };
   box.querySelectorAll("[data-bed]").forEach(b => b.onclick = () => {
@@ -1485,8 +1493,8 @@ async function thumbLaden(D) {
   if (!D.thumb || THUMBS.has(D.fid)) return;
   THUMBS.set(D.fid, "");
   try { THUMBS.set(D.fid, await teilHolen(D.fid + "-t", 0)); } catch { THUMBS.set(D.fid, "-"); }
-  const img = document.querySelector(`[data-thumb="${D.fid}"]`);
-  if (img && THUMBS.get(D.fid) && THUMBS.get(D.fid) !== "-") img.innerHTML = `<img src="${THUMBS.get(D.fid)}" alt="">`;
+  if (THUMBS.get(D.fid) && THUMBS.get(D.fid) !== "-")
+    document.querySelectorAll(`[data-thumb="${D.fid}"]`).forEach(el => el.innerHTML = `<img src="${THUMBS.get(D.fid)}" alt="">`);
 }
 const symbol = D => istPdf(D.typ, D.name) ? "📄" : istBild(D.typ) ? "🖼️" : istTabelle(D.typ, D.name) ? "📊" : "📎";
 function bildHtml(D) {
@@ -1542,13 +1550,29 @@ async function dateiZeigen(D) {
 }
 function ansichtZu() { ANSICHT = null; $("#ansicht").classList.add("versteckt"); $("#ansichtInhalt").innerHTML = ""; document.body.style.overflow = ""; }
 $("#ansichtZu").onclick = ansichtZu;
+/* Teilen (vom Nutzer: bei .ods ging es nicht). iOS teilt nicht jede Dateiart und nur direkt nach dem Tippen.
+   Darum: Datei liegt beim Öffnen schon bereit (kein Warten im Tippen); erst mit echter Art versuchen, dann als
+   allgemeine Datei; scheitert alles, sagt die Meldung, was iOS gemeldet hat. Herunterladen nur im Browser — vom
+   Home-Bildschirm gibt das eine weiße Seite (Lehre aus pizza.html). */
+function teilbareFassungen(datei) {
+  const alle = [datei];
+  for (const typ of ["application/octet-stream", ""]) if (datei.type !== typ) alle.push(new File([datei], datei.name, { type: typ }));
+  return alle;
+}
 $("#ansichtTeilen").onclick = async () => {
   if (!ANSICHT) return;
-  try {
-    const datei = await dateiDaten(ANSICHT);
-    if (navigator.canShare && navigator.canShare({ files: [datei] })) { await navigator.share({ files: [datei] }); return; }
-    const a = document.createElement("a"); a.href = URL.createObjectURL(datei); a.download = datei.name; a.click();
-  } catch (f) { if (!f || f.name !== "AbortError") alert(f.message || "Deelen huet net geklappt."); }
+  const D = ANSICHT;
+  const datei = DATEN.get(D.fid); // beim Öffnen geladen
+  if (!datei) { alert("D'Datei gëtt nach gelueden — e Moment, dann nach eng Kéier."); return; }
+  const istApp = window.navigator.standalone || matchMedia("(display-mode: standalone)").matches;
+  let letzter = null;
+  if (navigator.share) for (const f of teilbareFassungen(datei)) {
+    if (navigator.canShare && !navigator.canShare({ files: [f] })) { letzter = "canShare: nee (" + (f.type || "ouni Typ") + ")"; continue; }
+    try { await navigator.share({ files: [f] }); return; }
+    catch (e) { if (e && e.name === "AbortError") return; letzter = (e && (e.name + ": " + e.message)) || String(e); if (e && e.name === "NotAllowedError") break; }
+  }
+  if (!istApp) { const a = document.createElement("a"); a.href = URL.createObjectURL(datei); a.download = datei.name; a.click(); return; }
+  alert(`Deelen huet net geklappt.\n\n${D.name}\n\nDe Grond vum iPhone: ${letzter || "keen Deelen méiglech"}\n\nSchéck mir dësen Text, da kann ech et verbesseren.`);
 };
 $("#dateiWahl").onchange = e => {
   const inp = e.target, datei = inp.files && inp.files[0];

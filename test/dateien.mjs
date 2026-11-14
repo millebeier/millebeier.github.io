@@ -116,8 +116,33 @@ if (mitXlsx) {
   await B.click(`#bierDok [data-auf="${await B.evaluate(() => dateienVon(Z, "Rusty").protokoll.fid)}"]`);
   await B.waitForSelector("#ansichtInhalt .tabelle table", { timeout: 15000 });
   ist("Tabelle angezeigt mit Inhalt und Datum", await B.locator("#ansichtInhalt").innerText(), t => t.includes("BRAUPROTOKOLL") && t.includes("Pale Weizen") && t.includes("3500") && /26\.09\.2026/.test(t));
+  // Deelen: nachgebautes iOS, das .ods nicht teilt, eine allgemeine Datei aber schon
+  const geteilt = await B.evaluate(async () => {
+    const log = [];
+    navigator.canShare = d => !/opendocument/.test(d.files[0].type);
+    navigator.share = async d => { log.push(d.files[0].type || "ouni"); };
+    await $("#ansichtTeilen").onclick();
+    return log;
+  });
+  ist("Deelen: .ods als allgemeine Datei", geteilt, ["application/octet-stream"]);
+  // Geht gar nichts (Home-Bildschirm): klare Meldung mit Grund statt weißer Seite
+  const meldung = await B.evaluate(async () => {
+    let m = ""; const alt = window.alert; window.alert = t => { m = t; };
+    Object.defineProperty(window.navigator, "standalone", { value: true, configurable: true });
+    navigator.canShare = () => true;
+    navigator.share = async () => { const e = new Error("Permission denied"); e.name = "NotAllowedError"; throw e; };
+    await $("#ansichtTeilen").onclick();
+    window.alert = alt; delete window.navigator.standalone; return m;
+  });
+  ist("Deelen scheitert: Meldung mit Grund", meldung, m => m.includes("Deelen huet net geklappt") && m.includes("NotAllowedError"));
   await B.click("#ansichtZu");
 } else console.log("– Tabellen-Anzeige übersprungen (XLSX_JS nicht gesetzt)");
+// Etikett als Bild vor dem Biernamen im Stock
+await B.click("#biZu"); await warte(300);
+if (mitPdfjs) ist("Stock: Etikett-Bild vor dem Namen", await B.evaluate(() => { const k = [...document.querySelectorAll("#bBiere .bier")].find(x => x.textContent.includes("Rusty")); const b = k && k.querySelector(".bier-etikett"); return !!(b && b.querySelector("img") && b.nextElementSibling && b.nextElementSibling.textContent === "Rusty"); }), true);
+await B.click("#bBiere .bier-etikett");
+ist("Etikett antippen öffnet es", [await B.locator("#ansicht").isVisible(), await B.locator("#ansichtName").innerText()], [true, "rusty-etikett-v2.pdf"]);
+await B.click("#ansichtZu");
 ist("zu groß wird abgelehnt", await A.evaluate(async () => { let m = ""; const alt = window.alert; window.alert = t => { m = t; }; await dateiHochladen(new File([new Uint8Array(11 * 1024 * 1024)], "riesig.bin"), "Rusty", "anner"); window.alert = alt; return m; }), s => s.includes("maximal 10 MB"));
 ist("keine Seitenfehler", [...A.seitenfehler, ...B.seitenfehler], []);
 if (!mitPdfjs) console.log("– PDF-Vorschau/Anzeige übersprungen (PDFJS_DIR nicht gesetzt)");
