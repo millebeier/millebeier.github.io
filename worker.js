@@ -13,7 +13,9 @@
  * Antwort immer: {eintraege: [...alle...]}.
  */
 
-const ARTEN = ["abfuellung", "bewegung", "abgang", "verkauf", "zahlung", "einstellungen", "storno"];
+// Jede Art aus Kleinbuchstaben wird gespeichert — was sie bedeutet, prüft die App. So muss der Worker
+// für neue Funktionen der App nicht neu eingefügt werden (seit 14.11.2026).
+const ART = /^[a-z_]{2,24}$/;
 const CORS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
@@ -52,7 +54,7 @@ function pruefe(e) {
   if (!e || typeof e !== "object" || Array.isArray(e)) return "kein Eintrag";
   if (typeof e.id !== "string" || !/^[A-Za-z0-9-]{8,64}$/.test(e.id)) return "id";
   if (typeof e.zeit !== "number" || !isFinite(e.zeit)) return "zeit";
-  if (!ARTEN.includes(e.art)) return "art";
+  if (typeof e.art !== "string" || !ART.test(e.art)) return "art";
   if (JSON.stringify(e).length > 4000) return "zu groß";
   return "";
 }

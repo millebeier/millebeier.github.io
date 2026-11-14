@@ -1,7 +1,7 @@
 # millebeier
 
 Bestands- und Kassen-App für **Millebéier** (so geschrieben wie im Logo; Repo, Dateien und Speicherschlüssel ohne é), die kleine Brauerei von Laurent, Jeff, Marc und Claude
-(Luxemburg). **App-Texte auf Luxemburgisch** (vom Nutzer, 13.11.2026). **Reiter nach dem Ablauf** (vom Nutzer gewählt): Stock · Verkafen · Ausstoend · Iwwersiicht · Verlaf; mit dem Nutzer und in Code/Doku Deutsch, Du-Form. Angelegt 13.11.2026.
+(Luxemburg). **App-Texte auf Luxemburgisch** (vom Nutzer, 13.11.2026). **Reiter nach dem Ablauf** (vom Nutzer gewählt): Stock · Verkafen · Livraisons · Ausstoend · Iwwersiicht · Verlaf (Handy 3 je Reihe, ab 600 px 6); mit dem Nutzer und in Code/Doku Deutsch, Du-Form. Angelegt 13.11.2026.
 
 ## Was die App macht
 Flaschen werden abgefüllt (→ Lager), an die vier verteilt, von ihnen verkauft. Jeder trägt auf seinem
@@ -10,14 +10,35 @@ Person), Verkauft, Kasse und Offen. **Geld geht immer sofort in die Millebéier-
 es gibt also nur eine Schuld: Käufer → Kasse. Kein Pfand. Sorten zum Start: NEIPA, White IPA,
 Brown Porter, 3 € je Flasche; Sorten, Preise und Leute sind in der App (⚙️) für alle änderbar.
 
+## Bisher: Excel-Tabelle
+Vor der App lief alles über `Iwwersiicht_Commanden_Clients_2026.xlsx` (Dropbox, vom Nutzer am 14.11.2026 hochgeladen):
+ein Blatt je Brauvorgang (Brown Porter 23.01., Rusty 06.02., NEIPA 28.07., Porter 30.09.) mit Spalten Virnumm/Numm,
+Kontakt (Kürzel JF, MW, CW, LR — vermutlich Jeff, Marc, Claude Wilwert „Willy“, Laurent; **nicht bestätigt**),
+Unzuel, Béier (Preis), geliwwert?, Recetten, Remarquen, bezuel?; dazu „LIVRAISONS CLIENTS“ für Firmen/Vereine
+(Ferro Forum, Rock Solid, Café Millebières, BEST, Brennerdag) mit livré/facture/payé. Fässer 30 l = 180 €, 20 l =
+150 €; Vereine 2,50 €/Fl; Geschenkpacks 12 €/4, 18 €/6. Die Geschichte 2026 wurde **nicht** übernommen (zu viele
+Unklarheiten, z. B. Brown Porter 310 Zeilen-Flaschen bei 288 gebraut) — Startstand = Zählung.
+Der Excel-Export der App bildet dieses Format nach (s. u.).
+
 ## Aufbau
 - `index.html` — Einzeldatei, kein Build, kein Framework. GitHub Pages: Organisation `millebeier`, Repo `millebeier.github.io` → https://millebeier.github.io/ (wie beim FC Koeppchen, vom Nutzer 13.11.2026).
 - `worker.js` — Cloudflare Worker + D1 (Binding `DB`, Secret `CODE`). Speichert nur Einträge,
-  rechnet nichts. Tabelle `eintraege` legt er selbst an.
+  rechnet nichts. Tabelle `eintraege` legt er selbst an. **Seit 14.11.2026 nimmt er jede Art `^[a-z_]{2,24}$`** —
+  neue Eintragsarten brauchen kein Neu-Einfügen mehr (die Fassung davor kannte nur die ersten sieben).
+  Lehnt der Server ein Bündel ab (400), schickt die App einzeln; Abgelehntes bleibt im Ausgang mit Hinweis
+  „Worker muss aktualiséiert ginn“, der Rest geht durch (Test mit altem Worker, Gegenprobe gemacht).
 - **Datenmodell = Buchungsliste.** Nichts wird überschrieben; jeder Eintrag
   `{id, zeit, art, durch, …}` mit `art` ∈ abfuellung, bewegung (von/an, „Lager“ ist ein Halter),
   abgang (getrunken/verschenkt/kaputt/sonst), verkauf (verkaeufer, kaeufer, posten[], betrag),
-  zahlung (ref = Verkauf), einstellungen (sorten, leute; die letzte gilt), storno (ref).
+  zahlung (ref = Verkauf), einstellungen (sorten, leute; die letzte gilt), storno (ref),
+  livraison (kunde, kontakt, aus, datum YYYY-MM-DD, posten, betrag, rechnung, anlass?, notiz?), rechnung (ref = Verkauf).
+  **Livraison** (vom Nutzer, 14.11.2026): geplant, bis ein Verkauf mit `liv` = ihre id existiert („Geliwwert ✓“ legt ihn an,
+  Flaschen aus `aus`, meist Lager — Verkauf hat dafür optional `aus`). Verkauf rückgängig → wieder geplant. Rechnung
+  „gemaach“ = Eintrag `rechnung`. Geplantes zählt nirgends als verkauft.
+  **Pro Bier** (`proSorte`): Verkäufe, Abgänge, geplante Livraisons je Sorte; Betrag eines Mehrsorten-Verkaufs nach
+  Listenpreis aufgeteilt (`anteil`). In der Iwwersiicht Sorte antippen. **Excel-Export** (`exportBlaetter` → SheetJS
+  0.18.5 von cdnjs, erst beim Tippen geladen): je Sorte ein Blatt wie die alte Tabelle, dazu Livraisons und Stock;
+  Teilen-Leiste wie die anderen Dateien. Fässer: als eigene Sorte anlegen (z. B. „Rusty Keg 30l“, 180 €), `istFass` am Namen.
   `rechne()` baut daraus den ganzen Stand. Rückgängig = storno, nie löschen; ein storniertes
   Verkauf nimmt seine Zahlungen mit. Storno eines Storno zählt nicht.
 - **`durch` = wer eingetragen hat** (nicht `von` — das ist bei `bewegung` die Herkunft; die
@@ -38,12 +59,16 @@ Brown Porter, 3 € je Flasche; Sorten, Preise und Leute sind in der App (⚙️
   `navigator.share`.
 - **`FASSUNG`** unten in `index.html` bei jeder Änderung hochzählen — daran hängt auch das **automatische Update** (vom Nutzer, 13.11.2026): beim Öffnen und bei jeder Rückkehr holt `updatePruefen()` die Seite mit `cache:"reload"`, steht dort eine andere FASSUNG, lädt die App neu; mitten im Eintrag (`mittenImEintrag`) stattdessen roter Knopf oben. Je Zielfassung ein Versuch in 5 min (`millebeier_v1_update`), gegen Schleifen bei altem CDN-Stand. Ohne Hochzählen kommt kein Update an. (Die Apps in panini-wm-2026 haben das nicht.)
 
-## Testen — vor jedem Push alle vier, jeder mit eigenem Rückgabewert
+## Testen — vor jedem Push alle fünf, jeder mit eigenem Rückgabewert
 - `node test/logik.mjs` — schneidet `Logik`…`Oberfläche` aus der HTML (Gegenprobe gemacht).
 - `node test/worker.mjs` — Worker mit nachgebauter D1.
 - `node test/oberflaeche.mjs` — Playwright, zwei Handys gegen den echten Worker-Code, offline.
 - `node test/tippen.mjs` — nachgebautes iPhone: Doppeltipp-Zoom-Sperre, −/+, schnelle Knopffolgen.
+- `XLSX_JS=…/xlsx.full.min.js node test/livraisons.mjs` — Livraison planen/liefern/Rechnung/bezahlen, Liste pro Bier,
+  Excel-Export (Datei wird mit SheetJS zurückgelesen), alter Worker. cdnjs ist in der Cloud-Umgebung gesperrt:
+  SheetJS 0.18.5 per `npm install xlsx@0.18.5` in den Scratchpad, Pfad über `XLSX_JS`; ohne wird der Excel-Teil übersprungen.
 
 ## Ideen, nicht gebaut
-Ausgaben (Malz, Hopfen, Flaschen) → Gewinn; Reservierungen; Kisten-Preis; Kassensturz (Ist-Betrag
+Excel-Datei, die sich ständig selbst aktualisiert (vom Nutzer gefragt 14.11.2026, Wege besprochen, noch offen);
+Ausgaben (Malz, Hopfen, Flaschen) → Gewinn; Daueraufträge (in der alten Tabelle rot); Reservierungen; Kisten-Preis; Kassensturz (Ist-Betrag
 in der Kasse gegen App).

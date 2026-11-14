@@ -4,7 +4,7 @@ const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
 const a = html.indexOf("/* === Logik ===");
 const b = html.indexOf("/* === Oberfläche ===");
 if (a < 0 || b < 0) { console.error("Marken nicht gefunden"); process.exit(1); }
-const L = new Function(html.slice(a, b) + "; return {rechne, gueltig, euro, verteile, erinnerung, csv, beschreibe, hat, LAGER, STANDARD};")();
+const L = new Function(html.slice(a, b) + "; return {rechne, gueltig, euro, verteile, erinnerung, csv, beschreibe, hat, LAGER, STANDARD, proSorte, exportBlaetter, anteil};")();
 
 let fehler = 0, n = 0;
 const ist = (was, wert, soll) => { n++; const ok = JSON.stringify(wert) === JSON.stringify(soll); if (!ok) { fehler++; console.log(`✗ ${was}: ${JSON.stringify(wert)} statt ${JSON.stringify(soll)}`); } };
@@ -87,6 +87,46 @@ ist("euro", [L.euro(3), L.euro(4.5), L.euro(0.1 + 0.2)], ["3 €", "4,50 €", "
 const c = L.csv(L.rechne(ein), t => "T" + t);
 ist("CSV Kopf", c.split("\r\n")[0], '﻿"Datum";"Verkeefer";"Keefer";"NEIPA";"White IPA";"Brown Porter";"Fläschen";"Betrag";"Bezuelt";"Op"');
 ist("CSV Zeilen", c.trim().split("\r\n").length, 4);
+
+// Livraisons: geplant → geliwwert (Verkauf aus dem Lager) → Rechnung → bezahlt
+{
+  let k2 = 0, t2 = 5000;
+  const F = (art, x) => ({ id: "lv-" + String(++k2).padStart(5, "0"), zeit: t2 += 1000, art, durch: "Marc", ...x });
+  const basis = [F("abfuellung", { sorte: "NEIPA", n: 100 }), F("abfuellung", { sorte: "Brown Porter", n: 50 }),
+    F("bewegung", { sorte: "NEIPA", n: 10, von: "Lager", an: "Jeff" })];
+  const L1 = F("livraison", { kunde: "Ferro Forum", kontakt: "Marc", aus: "Lager", datum: "2026-12-05", posten: [{ sorte: "NEIPA", n: 24 }, { sorte: "Brown Porter", n: 12 }], betrag: 90, rechnung: true, anlass: "Kiermes", notiz: "" });
+  let Y = L.rechne([...basis, L1]);
+  ist("Livraison geplant: Lager unverändert", L.hat(Y, "Lager", "NEIPA"), 90);
+  ist("Livraison geplant", Y.livraisons.map(l => [l.kunde, !!l.verkauf]), [["Ferro Forum", false]]);
+  ist("geplant zählt nicht als verkauft", Y.flaschen.verkauft, 0);
+  const v = F("verkauf", { verkaeufer: "Marc", kaeufer: "Ferro Forum", posten: L1.posten, betrag: 90, aus: "Lager", liv: L1.id });
+  Y = L.rechne([...basis, L1, v]);
+  ist("geliwwert: aus dem Lager", [L.hat(Y, "Lager", "NEIPA"), L.hat(Y, "Lager", "Brown Porter"), L.hat(Y, "Marc", "NEIPA")], [66, 38, 0]);
+  ist("geliwwert: Marc hat verkauft", [Y.personen.Marc.verkauft, Y.personen.Marc.offen], [36, 90]);
+  ist("geliwwert: verknüpft", Y.livraisons[0].verkauf && Y.livraisons[0].verkauf.id, v.id);
+  ist("Anteil nach Listenpreis (gleich 3 €)", [L.anteil(Y.cfg, L1.posten, 90, L1.posten[0]), L.anteil(Y.cfg, L1.posten, 90, L1.posten[1])], [60, 30]);
+  const r = F("rechnung", { ref: v.id }), z = F("zahlung", { ref: v.id, betrag: 90 });
+  Y = L.rechne([...basis, L1, v, r, z]);
+  ist("Rechnung und bezahlt", [Y.livraisons[0].verkauf.rechnungGemacht, Y.livraisons[0].verkauf.offen, Y.kasse], [true, 0, 90]);
+  // Verkauf rückgängig → wieder geplant, Flaschen zurück
+  Y = L.rechne([...basis, L1, v, F("storno", { ref: v.id })]);
+  ist("Lieferung rückgängig: wieder geplant", [!!Y.livraisons[0].verkauf, L.hat(Y, "Lager", "NEIPA")], [false, 90]);
+  // Pro Sorte: normaler Verkauf, Livraison, Abgang, geplante Livraison
+  const L2 = F("livraison", { kunde: "BEST", kontakt: "Jeff", aus: "Jeff", datum: "2026-12-20", posten: [{ sorte: "NEIPA", n: 6 }], betrag: 15, rechnung: false });
+  const vj = F("verkauf", { verkaeufer: "Jeff", kaeufer: "Paul", posten: [{ sorte: "NEIPA", n: 2 }], betrag: 6 });
+  const ab = F("abgang", { sorte: "NEIPA", n: 1, wer: "Jeff", grund: "verschenkt" });
+  Y = L.rechne([...basis, L1, v, r, vj, ab, L2]);
+  const ps = L.proSorte(Y, "NEIPA");
+  ist("pro Sorte: Zeilen", ps.map(x => [x.kunde, x.n, x.recetten, x.geliwwert, x.bezuelt]), [
+    ["Paul", 2, 6, "Jo", "Nee"], ["verschenkt / Prouf", 1, 0, "–", "–"], ["Ferro Forum", 24, 60, "Jo", "Nee"], ["BEST", 6, 15, "geplangt 20.12.2026", "–"]]);
+  ist("pro Sorte: Rechnung und Anlass", [ps[2].rechnung, ps[2].remarque], ["gemaach", "Kiermes"]);
+  const bl = L.exportBlaetter(Y, t => "T");
+  ist("Export: Blätter", bl.map(b => b.name), ["NEIPA", "Brown Porter", "Livraisons", "Stock"]);
+  ist("Export: Summe NEIPA ohne geplant", bl[0].summe.slice(0, 6), ["Total", "", "", 27, "", 66]);
+  ist("Export: Livraisons", bl[2].zeilen.map(z => [z[1], z[6], z[7], z[8]]), [["Ferro Forum", "Jo", "gemaach", "Nee"], ["BEST", "geplangt", "", "–"]]);
+  ist("Export: Stock Lager", bl[3].zeilen[0].slice(0, 3), ["Lager", 66, 0]);
+  ist("Livraison ungültig ohne Datum", L.gueltig({ ...L2, datum: "20.12." }), false);
+}
 
 console.log(fehler ? `${fehler} von ${n} Prüfungen fehlgeschlagen` : `Alle ${n} Prüfungen bestanden`);
 process.exit(fehler ? 1 : 0);

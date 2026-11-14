@@ -24,10 +24,12 @@ ist("neu", [s, j.eintraege.map(e => e.id)], [200, ["aaaaaaaa-0", "aaaaaaaa-1"]])
 ist("doppelt gesendet", j.eintraege.length, 2);
 [s, j] = await post({ code: "hopfen", aktion: "neu", eintraege: [{ ...e1, id: "x" }] });
 ist("kaputte id", s, 400);
-[s, j] = await post({ code: "hopfen", aktion: "neu", eintraege: [{ ...e1, id: "bbbbbbbb", art: "boese" }] });
+[s, j] = await post({ code: "hopfen", aktion: "neu", eintraege: [{ ...e1, id: "bbbbbbbb", art: "Böse Art!" }] });
 ist("falsche Art", s, 400);
+[s, j] = await post({ code: "hopfen", aktion: "neu", eintraege: [{ ...e1, id: "cccccccc", art: "livraison" }] });
+ist("neue Art livraison", [s, j.eintraege.length], [200, 3]);
 [s, j] = await post({ code: "hopfen", aktion: "liste" });
-ist("liste", [s, j.eintraege.length], [200, 2]);
+ist("liste", [s, j.eintraege.length], [200, 3]);
 [s, j] = await post({ code: "hopfen", aktion: "liste" }, { DB: env.DB });
 ist("ohne CODE", s, 500);
 const r = await worker.fetch(new Request("https://x/", { method: "OPTIONS" }), env);

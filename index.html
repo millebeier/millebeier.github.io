@@ -34,9 +34,10 @@ header{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:3px so
 #sync{font-size:13px;color:var(--muted);text-align:right}
 #sync.fehler{color:var(--gelb)}
 .zahnrad{background:none;border:0;color:var(--text);font-size:22px;padding:4px 2px;cursor:pointer}
-nav{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin-top:8px}
+nav{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-top:8px}
+@media (min-width:600px){nav{grid-template-columns:repeat(6,1fr)}}
 nav button{background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:10px;
-  padding:8px 0;font-size:12.5px;font-weight:600;cursor:pointer;position:relative;white-space:nowrap;overflow:hidden;text-overflow:clip}
+  padding:8px 0;font-size:13px;font-weight:600;cursor:pointer;position:relative;white-space:nowrap}
 nav button.an{background:var(--akzent);color:#fff;border-color:var(--akzent)}
 nav .badge{position:absolute;top:-6px;right:-4px;background:var(--rot);color:#fff;border-radius:9px;
   font-size:11px;padding:1px 6px;font-weight:700}
@@ -108,6 +109,22 @@ select{background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),
 .person-ed{display:grid;grid-template-columns:1fr 32px;gap:6px;margin-bottom:6px}
 .ichwahl{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
 .ichwahl button{padding:16px 8px;font-size:18px;font-weight:700;border-radius:12px;border:1px solid var(--line);background:var(--card2);color:var(--text);cursor:pointer}
+.liv{border-top:1px solid var(--line);padding:12px 0}
+.liv:first-of-type{border-top:0}
+.liv .kopfz{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.liv .kopfz b{font-size:17px}
+.liv .wann{font-size:13px;color:var(--muted)}
+.liv .wann.faellig{color:var(--gelb);font-weight:700}
+.chip{display:inline-block;font-size:12px;padding:3px 8px;border-radius:9px;background:var(--card2);margin:6px 4px 0 0}
+.chip.ok{background:#1f3a20;color:#bfe8c0} .chip.warn{background:#3a3115;color:#f4e2a0}
+tr.klick{cursor:pointer} tr.klick td:first-child::after{content:" ▾";color:var(--muted)} tr.klick.auf td:first-child::after{content:" ▴"}
+.detail td{font-size:13px;vertical-align:top}
+.detail td:first-child,.detail th:first-child{text-align:left;padding-right:8px}
+.detail tr.geplant td{color:var(--muted);font-style:italic}
+input[type=date]{min-height:44px}
+textarea{width:100%;font:16px/1.4 inherit;padding:10px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--text)}
+.check{display:flex;align-items:center;gap:10px;margin-top:12px;font-size:15px}
+.check input{width:22px;height:22px;-webkit-appearance:checkbox;appearance:auto}
 footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px}
 .versteckt{display:none !important}
 </style>
@@ -122,6 +139,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px}
   <nav id="nav">
     <button data-tab="bestand">Stock</button>
     <button data-tab="verkaufen">Verkafen</button>
+    <button data-tab="livraisons">Livraisons</button>
     <button data-tab="offen">Ausstoend</button>
     <button data-tab="uebersicht">Iwwersiicht</button>
     <button data-tab="verlauf">Verlaf</button>
@@ -133,6 +151,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px}
   <section id="t-start" class="versteckt"></section>
   <section id="t-uebersicht" class="versteckt"></section>
   <section id="t-verkaufen" class="versteckt"><div id="vForm"></div></section>
+  <section id="t-livraisons" class="versteckt"><div id="lListe"></div><div id="lForm"></div></section>
   <section id="t-offen" class="versteckt"></section>
   <section id="t-bestand" class="versteckt"><div id="bTabelle"></div><div id="bForm"></div></section>
   <section id="t-verlauf" class="versteckt"></section>
@@ -144,7 +163,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px}
 <script>
 /* Adresse des Cloudflare-Workers. Leer = Probe-Modus (alles nur auf diesem Handy). */
 const WORKER_URL = "https://millebeier.rjtp6r9s9h.workers.dev/";
-const FASSUNG = "13.11.2026 p";
+const FASSUNG = "14.11.2026 b";
 
 /* === Logik === (kein DOM; test/logik.mjs schneidet diesen Block aus) */
 const LAGER = "Lager";
@@ -153,7 +172,7 @@ const STANDARD = {
   leute: ["Jeff", "Marc", "Claude", "Laurent"],
 };
 const GRUENDE = { getrunken: "selwer gedronk", verschenkt: "verschenkt / Prouf", kaputt: "futti", sonst: "soss eppes" };
-const ARTEN = ["abfuellung", "bewegung", "abgang", "verkauf", "zahlung", "einstellungen", "storno"];
+const ARTEN = ["abfuellung", "bewegung", "abgang", "verkauf", "zahlung", "einstellungen", "storno", "livraison", "rechnung"];
 
 const ganz = n => Number.isInteger(n) && n > 0 && n <= 100000;
 const geld = x => typeof x === "number" && isFinite(x) && x >= 0 && x <= 1000000;
@@ -165,6 +184,8 @@ function euro(x) {
   return (Number.isInteger(r) ? String(r) : r.toFixed(2).replace(".", ",")) + " €";
 }
 
+const postenOk = p => Array.isArray(p) && p.length > 0 && p.length <= 30 && p.every(x => x && text(x.sorte) && ganz(x.n));
+
 function gueltig(e) {
   if (!e || typeof e !== "object" || typeof e.id !== "string" || typeof e.zeit !== "number") return false;
   switch (e.art) {
@@ -172,8 +193,14 @@ function gueltig(e) {
     case "bewegung": return text(e.sorte) && ganz(e.n) && text(e.von) && text(e.an) && e.von !== e.an;
     case "abgang": return text(e.sorte) && ganz(e.n) && text(e.wer) && e.grund in GRUENDE;
     case "verkauf":
-      return text(e.verkaeufer) && text(e.kaeufer) && geld(e.betrag) && Array.isArray(e.posten) &&
-        e.posten.length > 0 && e.posten.every(p => p && text(p.sorte) && ganz(p.n));
+      return text(e.verkaeufer) && text(e.kaeufer) && geld(e.betrag) && postenOk(e.posten) &&
+        (e.aus === undefined || text(e.aus)) && (e.liv === undefined || typeof e.liv === "string");
+    case "livraison":
+      return text(e.kunde) && text(e.kontakt, 30) && text(e.aus, 30) && geld(e.betrag) && postenOk(e.posten) &&
+        typeof e.datum === "string" && /^\d{4}-\d{2}-\d{2}$/.test(e.datum) &&
+        (e.anlass === undefined || e.anlass === "" || text(e.anlass, 80)) &&
+        (e.notiz === undefined || (typeof e.notiz === "string" && e.notiz.length <= 300));
+    case "rechnung": return typeof e.ref === "string";
     case "zahlung": return typeof e.ref === "string" && geld(e.betrag) && e.betrag > 0;
     case "einstellungen":
       return Array.isArray(e.sorten) && e.sorten.length > 0 && e.sorten.length <= 30 &&
@@ -224,11 +251,17 @@ function rechne(eintraege) {
     else if (e.art === "abgang") { add(e.wer, e.sorte, -e.n); st(e.sorte).abgang += e.n; }
     else if (e.art === "verkauf") {
       let n = 0;
-      for (const p of e.posten) { add(e.verkaeufer, p.sorte, -p.n); st(p.sorte).verkauft += p.n; n += p.n; }
+      // Flaschen kommen von „aus“ (z. B. Lager bei einer Livraison), sonst vom Verkäufer selbst.
+      for (const p of e.posten) { add(e.aus || e.verkaeufer, p.sorte, -p.n); st(p.sorte).verkauft += p.n; n += p.n; }
       vk.set(e.id, { ...e, flaschen: n, bezahlt: 0, offen: 0 });
       const P = pe(e.verkaeufer); P.verkauft += n; P.umsatz += e.betrag;
     }
   }
+  // Livraisons: geplant, bis ein (nicht rückgängig gemachter) Verkauf mit liv = ihre id existiert.
+  const liv = new Map();
+  for (const e of aktiv) if (e.art === "livraison") { liv.set(e.id, { ...e, verkauf: null }); for (const p of e.posten) st(p.sorte); }
+  for (const v of vk.values()) if (v.liv && liv.has(v.liv)) { liv.get(v.liv).verkauf = v; v.livraison = liv.get(v.liv); }
+  for (const e of aktiv) if (e.art === "rechnung" && vk.has(e.ref)) vk.get(e.ref).rechnungGemacht = true;
   let kasse = 0;
   for (const e of aktiv) if (e.art === "zahlung") {
     const v = vk.get(e.ref);
@@ -258,6 +291,7 @@ function rechne(eintraege) {
     cfg, liste, aktiv, storniert, nachId, bestand, halter, sorten, sortenNamen, personen,
     verkaeufe: [...vk.values()],
     vkNachId: vk,
+    livraisons: [...liv.values()].sort((a, b) => a.datum.localeCompare(b.datum) || ordnung(a, b)),
     kaeufer: [...kaeufer.values()].sort((a, b) => b.offen - a.offen || a.name.localeCompare(b.name, "de")),
     kasse, offen,
     umsatz: runde([...vk.values()].reduce((a, v) => a + v.betrag, 0)),
@@ -278,10 +312,15 @@ function beschreibe(e, Z) {
     case "abfuellung": return `🍺 ${e.n} × ${e.sorte} ofgefëllt (an d'Lager)`;
     case "bewegung": return `➡️ ${e.n} × ${e.sorte}: ${e.von} → ${e.an}`;
     case "abgang": return `🗑️ ${e.n} × ${e.sorte} ${beim(e.wer)}: ${GRUENDE[e.grund]}`;
-    case "verkauf": return `💶 ${e.verkaeufer} → ${e.kaeufer}: ${postenText(e.posten)} · ${euro(e.betrag)}`;
+    case "verkauf": return `${e.liv ? "🚚 Geliwwert" : "💶"} ${e.verkaeufer} → ${e.kaeufer}: ${postenText(e.posten)} · ${euro(e.betrag)}`;
     case "zahlung": {
       const v = Z && Z.nachId.get(e.ref);
       return `✓ ${euro(e.betrag)} bezuelt` + (v ? `: ${v.kaeufer} (${beim(v.verkaeufer)})` : "");
+    }
+    case "livraison": return `🚚 Livraison geplangt: ${e.kunde}, ${postenText(e.posten)}, ${datumKurz(e.datum)} · ${euro(e.betrag)}`;
+    case "rechnung": {
+      const v = Z && Z.nachId.get(e.ref);
+      return "🧾 Rechnung gemaach" + (v ? `: ${v.kaeufer}` : "");
     }
     case "einstellungen": return `⚙️ Zorten/Präisser/Leit geännert: ${e.sorten.filter(s => !s.aus).map(s => `${s.name} ${euro(s.preis)}`).join(", ")}`;
     case "storno": {
@@ -325,6 +364,69 @@ function csv(Z, zeitText) {
   return "﻿" + zeilen.join("\r\n") + "\r\n";
 }
 
+const datumKurz = d => { const [j, m, t] = d.split("-"); return `${+t}.${+m}.${j}`; };
+const istFass = sorte => /keg|fass|fût/i.test(sorte);
+
+/* Anteil eines Postens am Betrag (gewichtet nach Listenpreis; ohne Preise nach Flaschen). */
+function anteil(cfg, posten, betrag, p) {
+  const w = x => x.n * preisVon(cfg, x.sorte);
+  const summe = posten.reduce((a, x) => a + w(x), 0);
+  if (summe > 0) return runde(betrag * w(p) / summe);
+  const n = posten.reduce((a, x) => a + x.n, 0);
+  return n ? runde(betrag * p.n / n) : 0;
+}
+const bezahltText = v => v.offen <= 0 ? "Jo" : v.bezahlt > 0 ? `Deelweis (${euro(v.offen)} op)` : "Nee";
+
+/* Alle Zeilen einer Sorte, wie ein Blatt in der alten Excel-Tabelle: wer hat was wem verkauft. */
+function proSorte(Z, sorte) {
+  const zeilen = [];
+  for (const v of Z.verkaeufe) for (const p of v.posten) if (p.sorte === sorte) {
+    const r = anteil(Z.cfg, v.posten, v.betrag, p);
+    const L = v.livraison;
+    zeilen.push({ zeit: v.zeit, datum: L ? L.datum : null, kunde: v.kaeufer, kontakt: v.verkaeufer, n: p.n,
+      preis: runde(r / p.n), recetten: r, geliwwert: "Jo", bezuelt: bezahltText(v),
+      rechnung: L && L.rechnung ? (v.rechnungGemacht ? "gemaach" : "nach ze maachen") : "",
+      remarque: L ? [L.anlass, L.notiz].filter(Boolean).join(" · ") : "", id: v.id });
+  }
+  for (const e of Z.aktiv) if (e.art === "abgang" && e.sorte === sorte)
+    zeilen.push({ zeit: e.zeit, datum: null, kunde: GRUENDE[e.grund], kontakt: e.wer, n: e.n, preis: 0, recetten: 0,
+      geliwwert: "–", bezuelt: "–", rechnung: "", remarque: "", id: e.id });
+  for (const L of Z.livraisons) if (!L.verkauf) for (const p of L.posten) if (p.sorte === sorte) {
+    const r = anteil(Z.cfg, L.posten, L.betrag, p);
+    zeilen.push({ zeit: L.zeit, datum: L.datum, kunde: L.kunde, kontakt: L.kontakt, n: p.n, preis: runde(r / p.n), recetten: r,
+      geliwwert: "geplangt " + datumKurz(L.datum), bezuelt: "–", rechnung: L.rechnung ? "nach ze maachen" : "",
+      remarque: [L.anlass, L.notiz].filter(Boolean).join(" · "), id: L.id, geplant: true });
+  }
+  return zeilen.sort((a, b) => (a.datum ? Date.parse(a.datum) : a.zeit) - (b.datum ? Date.parse(b.datum) : b.zeit));
+}
+
+/* Tabellen für den Excel-Export: je Sorte ein Blatt wie bisher, dazu Livraisons und Stock.
+   Reine Daten (Zeilen als Arrays), damit der Test ohne Excel-Bibliothek prüfen kann. */
+function exportBlaetter(Z, zeitFmt) {
+  const blaetter = [];
+  const kopf = ["Datum", "Client", "Kontakt", "Unzuel", "Präis/Fl", "Recetten", "geliwwert?", "bezuel?", "Rechnung", "Remarquen"];
+  for (const s of Z.sortenNamen) {
+    const z = proSorte(Z, s), x = Z.sorten[s];
+    if (!z.length && !x.abgefuellt && !x.da) continue;
+    const zeilen = z.map(r => [r.datum ? datumKurz(r.datum) : zeitFmt(r.zeit), r.kunde, r.kontakt, r.n, r.preis, r.recetten, r.geliwwert, r.bezuelt, r.rechnung, r.remarque]);
+    const fest = z.filter(r => !r.geplant);
+    blaetter.push({ name: s, titel: s, info: [
+      `Ofgefëllt: ${x.abgefuellt} · Verkaaft: ${x.verkauft} · Fort: ${x.abgang} · Nach do: ${x.da}`,
+      `Präis: ${euro(preisVon(Z.cfg, s))} pro ${istFass(s) ? "Fass" : "Fläsch"}`],
+      kopf, zeilen,
+      summe: ["Total", "", "", fest.reduce((a, r) => a + r.n, 0), "", runde(fest.reduce((a, r) => a + r.recetten, 0)), "", "", "", "ouni geplangten"] });
+  }
+  blaetter.push({ name: "Livraisons", titel: "Livraisons", info: [],
+    kopf: ["Datum", "Client", "Kontakt", "Wat", "Betrag", "Anlass", "geliwwert?", "Rechnung", "bezuel?", "Remarquen"],
+    zeilen: Z.livraisons.map(L => [datumKurz(L.datum), L.kunde, L.kontakt, postenText(L.posten), L.betrag, L.anlass || "",
+      L.verkauf ? "Jo" : "geplangt", L.rechnung ? (L.verkauf && L.verkauf.rechnungGemacht ? "gemaach" : "nach ze maachen") : "",
+      L.verkauf ? bezahltText(L.verkauf) : "–", L.notiz || ""]), summe: null });
+  blaetter.push({ name: "Stock", titel: "Stock", info: [], kopf: ["", ...Z.sortenNamen, "Total"],
+    zeilen: Z.halter.map(h => [h, ...Z.sortenNamen.map(s => hat(Z, h, s)), Z.sortenNamen.reduce((a, s) => a + hat(Z, h, s), 0)]),
+    summe: ["Total", ...Z.sortenNamen.map(s => Z.sorten[s].da), Z.flaschen.da] });
+  return blaetter;
+}
+
 function neueId() {
   if (typeof crypto !== "undefined" && crypto.randomUUID) return crypto.randomUUID();
   return "x" + Date.now().toString(36) + Math.random().toString(36).slice(2, 12);
@@ -352,7 +454,7 @@ const $ = s => document.querySelector(s);
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const TZ = "Europe/Luxembourg";
 const zeitText = t => new Date(t).toLocaleString("de-LU", { timeZone: TZ, weekday: "short", day: "numeric", month: "numeric", hour: "2-digit", minute: "2-digit" });
-const datumText = t => new Date(t).toLocaleDateString("de-DE", { timeZone: TZ, day: "numeric", month: "numeric", year: "2-digit" });
+const datumText = t => new Date(t).toLocaleDateString("de-DE", { timeZone: TZ, day: "numeric", month: "numeric", year: "numeric" });
 
 function neuRechnen() {
   const ids = new Set(SERVER.map(e => e.id));
@@ -383,20 +485,31 @@ async function abgleichen() {
   if (LAEUFT || !bereit()) return;
   LAEUFT = true;
   try {
-    let antwort;
-    do {
-      if (AUSGANG.length) {
-        antwort = await anfrage({ aktion: "neu", eintraege: AUSGANG.slice(0, 50) });
-      } else antwort = await anfrage({ aktion: "liste" });
-      SERVER = antwort.eintraege || [];
+    let antwort, abgelehnt = [];
+    const uebernehmen = a => {
+      SERVER = a.eintraege || [];
       const ids = new Set(SERVER.map(e => e.id));
       AUSGANG = AUSGANG.filter(e => !ids.has(e.id));
       merke(SP_DATEN, SERVER); merke(SP_AUSGANG, AUSGANG);
-    } while (AUSGANG.length && antwort);
-    STATUS = { zuletzt: Date.now(), fehler: "" };
+    };
+    do {
+      const bündel = AUSGANG.filter(e => !abgelehnt.includes(e.id)).slice(0, 50);
+      if (!bündel.length) { antwort = await anfrage({ aktion: "liste" }); uebernehmen(antwort); break; }
+      try { antwort = await anfrage({ aktion: "neu", eintraege: bündel }); uebernehmen(antwort); }
+      catch (f) {
+        if (f.status !== 400) throw f;
+        // Ein Eintrag, den der Server nicht kennt (z. B. alter Worker), darf die anderen nicht aufhalten:
+        // einzeln schicken, Abgelehntes bleibt im Ausgang.
+        for (const e of bündel) {
+          try { uebernehmen(await anfrage({ aktion: "neu", eintraege: [e] })); }
+          catch (f2) { if (f2.status !== 400) throw f2; abgelehnt.push(e.id); }
+        }
+      }
+    } while (AUSGANG.some(e => !abgelehnt.includes(e.id)));
+    STATUS = { zuletzt: Date.now(), fehler: abgelehnt.length ? `${abgelehnt.length} Agab(en) refuséiert — Worker muss aktualiséiert ginn` : "" };
   } catch (f) {
     if (f.status === 401) { EIN.code = ""; merke(SP, EIN); STATUS.fehler = "Code stëmmt net méi"; }
-    else STATUS.fehler = navigator.onLine === false ? "offline" : (f.message || "keng Verbindung");
+    else STATUS.fehler = navigator.onLine === false ? "offline" : f.status ? (f.message || "Feeler " + f.status) : "keng Verbindung"; // Browser-Meldungen („Failed to fetch“) sind englisch
   } finally {
     LAEUFT = false;
     neuRechnen(); render();
@@ -435,7 +548,9 @@ function render() {
   const nOffen = Z.kaeufer.filter(k => k.offen > 0).length;
   $('#nav [data-tab="offen"]').innerHTML = "Ausstoend" + (nOffen ? ` <span class="badge">${nOffen}</span>` : "");
   renderSync();
-  ({ start: renderStart, uebersicht: renderUebersicht, verkaufen: renderVerkaufen, offen: renderOffen,
+  const nGeplant = Z.livraisons.filter(L => !L.verkauf).length;
+  $('#nav [data-tab="livraisons"]').innerHTML = "Livraisons" + (nGeplant ? ` <span class="badge" style="background:var(--card2);border:1px solid var(--line)">${nGeplant}</span>` : "");
+  ({ start: renderStart, uebersicht: renderUebersicht, verkaufen: renderVerkaufen, offen: renderOffen, livraisons: renderLivraisons,
      bestand: renderBestand, verlauf: renderVerlauf, einst: renderEinst })[tab]();
   $("#fuss").innerHTML = `Versioun ${esc(FASSUNG)}` + (EIN.ich ? ` · Du bass ${esc(de(EIN.ich))}` : "");
 }
@@ -492,6 +607,11 @@ function renderStart() {
 
 function renderUebersicht() {
   const box = $("#t-uebersicht");
+  box.onclick = e => {
+    const z = e.target.closest && e.target.closest("tr[data-sorte]");
+    if (z) { OFFEN_SORTE = OFFEN_SORTE === z.dataset.sorte ? "" : z.dataset.sorte; renderUebersicht(); return; }
+    if (e.target.closest && e.target.closest("[data-excel]")) excelExport($("#xMeld"));
+  };
   const F = Z.flaschen;
   const leute = Z.halter.filter(h => h !== LAGER);
   const zeilen = Z.sortenNamen.filter(s => { const x = Z.sorten[s]; return x.abgefuellt || x.da || x.verkauft || !(Z.cfg.sorten.find(c => c.name === s) || {}).aus; });
@@ -505,10 +625,11 @@ function renderUebersicht() {
   </div></div>
   <div class="card"><h2>Pro Zort</h2><div class="tabwrap"><table>
     <tr><th>Zort</th><th>Ofgefëllt</th><th>Verkaaft</th><th>Fort</th><th>Nach do</th></tr>
-    ${zeilen.map(s => { const x = Z.sorten[s]; return `<tr><td>${esc(s)}</td><td>${x.abgefuellt}</td><td>${x.verkauft}</td><td>${x.abgang}</td><td><b>${x.da}</b></td></tr>`; }).join("")}
+    ${zeilen.map(s => { const x = Z.sorten[s]; return `<tr class="klick ${OFFEN_SORTE === s ? "auf" : ""}" data-sorte="${esc(s)}"><td>${esc(s)}</td><td>${x.abgefuellt}</td><td>${x.verkauft}</td><td>${x.abgang}</td><td><b>${x.da}</b></td></tr>`; }).join("")}
     <tr class="summe"><td>Total</td><td>${F.abgefuellt}</td><td>${F.verkauft}</td><td>${F.abgang}</td><td>${F.da}</td></tr>
   </table></div>
-  <div class="hinweis">„Fort“ = selwer gedronk, verschenkt oder futti.</div></div>
+  <div class="hinweis">„Fort“ = selwer gedronk, verschenkt oder futti. Eng Zort antippen: wien huet wat wiem verkaaft.</div></div>
+  ${OFFEN_SORTE && Z.sorten[OFFEN_SORTE] ? sorteDetail(OFFEN_SORTE) : ""}
   <div class="card"><h2>Pro Persoun</h2><div class="tabwrap"><table>
     <tr><th></th><th>Huet nach</th><th>Verkaaft</th><th>Ëmsaz</th><th>Op</th></tr>
     ${leute.map(p => { const P = Z.personen[p] || { verkauft: 0, umsatz: 0, offen: 0 };
@@ -516,7 +637,174 @@ function renderUebersicht() {
       return `<tr><td>${esc(p)}</td><td>${n}</td><td>${P.verkauft}</td><td>${euro(P.umsatz)}</td><td>${P.offen ? euro(P.offen) : "–"}</td></tr>`; }).join("")}
     <tr><td>Lager</td><td>${Object.values(Z.bestand[LAGER] || {}).reduce((a, b) => a + b, 0)}</td><td></td><td></td><td></td></tr>
   </table></div></div>
+  <div class="card"><h2>Excel</h2>
+    <div class="hinweis" style="margin:0 0 8px">All Verkéf als .xlsx: pro Béier e Blat wéi an der aler Tabell, dozou Livraisons a Stock.</div>
+    <button class="knopf" data-excel>📊 Excel-Export (.xlsx)</button><div id="xMeld"></div></div>
   ${F.abgefuellt === 0 ? `<div class="card"><b>Fir unzefänken:</b> Ënner <b>Stock</b> déi ofgefëllte Fläschen an d'Lager androen an se dann un d'Leit verdeelen.</div>` : ""}`;
+}
+
+let OFFEN_SORTE = "";
+function sorteDetail(s) {
+  const z = proSorte(Z, s);
+  const fest = z.filter(r => !r.geplant);
+  return `<div class="card"><h2>${esc(s)}: wien huet wat wiem verkaaft</h2>
+    ${z.length ? `<div class="tabwrap"><table class="detail">
+      <tr><th>Client</th><th>Fl.</th><th>Recetten</th><th>bezuel?</th></tr>
+      ${z.map(r => `<tr class="${r.geplant ? "geplant" : ""}">
+        <td><b>${esc(r.kunde)}</b><br><small class="muted">${r.datum ? esc(datumKurz(r.datum)) : datumText(r.zeit)} · ${esc(beim(r.kontakt))}${r.geplant ? " · geplangt" : ""}${r.remarque ? " · " + esc(r.remarque) : ""}${r.rechnung ? " · 🧾 " + esc(r.rechnung) : ""}</small></td>
+        <td>${r.n}</td><td>${r.recetten ? euro(r.recetten) : "–"}</td><td>${esc(r.bezuelt.replace(/^Deelweis.*/, "Deelweis"))}</td></tr>`).join("")}
+      <tr class="summe"><td>Total</td><td>${fest.reduce((a, r) => a + r.n, 0)}</td><td>${euro(fest.reduce((a, r) => a + r.recetten, 0))}</td><td></td></tr>
+    </table></div><div class="hinweis">Gro an schréi = geplangt Livraisoun, nach net am Total.</div>` : `<div class="leer">Nach näischt.</div>`}</div>`;
+}
+
+/* Excel-Export: SheetJS wird erst beim Tippen geladen (cdnjs, feste Version). */
+const SHEETJS = "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";
+function sheetjsLaden() {
+  if (window.XLSX) return Promise.resolve(window.XLSX);
+  return new Promise((ok, nok) => {
+    const sc = document.createElement("script");
+    sc.src = SHEETJS; sc.onload = () => ok(window.XLSX); sc.onerror = () => nok(new Error("Excel-Bibliothéik net geluede (Internet?)"));
+    document.head.appendChild(sc);
+  });
+}
+async function excelExport(meldBox) {
+  const meld = (art, t) => { if (meldBox) meldBox.innerHTML = `<div class="meldung ${art}">${esc(t)}</div>`; };
+  try {
+    meld("ok", "Excel gëtt gemaach…");
+    const X = await sheetjsLaden();
+    const wb = X.utils.book_new();
+    const heute = new Date().toLocaleDateString("de-DE", { timeZone: TZ });
+    for (const b of exportBlaetter(Z, t => new Date(t).toLocaleDateString("de-DE", { timeZone: TZ }))) {
+      const aoa = [[`MILLEBÉIER – ${b.titel.toUpperCase()}`], [`Stand: ${heute}`], ...b.info.map(i => [i]), [], b.kopf, ...b.zeilen];
+      if (b.summe) aoa.push([], b.summe);
+      const ws = X.utils.aoa_to_sheet(aoa);
+      ws["!cols"] = b.kopf.map((k, i) => ({ wch: i === 1 || i === 9 ? 28 : i === 3 && b.name === "Livraisons" ? 30 : 12 }));
+      ws["!merges"] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: Math.max(3, b.kopf.length - 1) } }];
+      // Euro-Format für Geldspalten
+      const kopfZeile = 3 + b.info.length;
+      b.kopf.forEach((k, c) => {
+        if (!/Präis|Recetten|Betrag/.test(k)) return;
+        for (let r = kopfZeile + 1; r < aoa.length; r++) { const z = ws[X.utils.encode_cell({ r, c })]; if (z && z.t === "n") z.z = '#,##0.00 "€"'; }
+      });
+      X.utils.book_append_sheet(wb, ws, b.name.replace(/[\\/?*\[\]:]/g, " ").slice(0, 31));
+    }
+    const daten = X.write(wb, { bookType: "xlsx", type: "array" });
+    const name = `Millebeier-${new Date().toISOString().slice(0, 10)}.xlsx`;
+    const datei = new File([daten], name, { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+    meld("ok", "✓ " + name);
+    try { if (navigator.canShare && navigator.canShare({ files: [datei] })) { await navigator.share({ files: [datei] }); return; } }
+    catch (f) { if (f && f.name === "AbortError") return; }
+    const a = document.createElement("a"); a.href = URL.createObjectURL(datei); a.download = name; a.click();
+  } catch (f) { meld("fehler", f.message || "Excel-Export huet net geklappt."); }
+}
+
+/* ---------- Livraisons ---------- */
+let LFORM = null, L_NEU = false;
+function leereLivraison() {
+  const morgen = new Date(Date.now() + 86400000).toLocaleDateString("sv-SE", { timeZone: TZ });
+  return { kunde: "", kontakt: EIN.ich, aus: LAGER, anlass: "", datum: morgen, n: {}, betrag: null, rechnung: true, notiz: "" };
+}
+function lAuto() { return runde(vSorten().reduce((a, s) => a + (LFORM.n[s.name] || 0) * s.preis, 0)); }
+function renderLivraisons() {
+  renderLListe();
+  renderLForm();
+}
+function renderLListe() {
+  const box = $("#lListe");
+  const heute = new Date().toLocaleDateString("sv-SE", { timeZone: TZ });
+  const geplant = Z.livraisons.filter(L => !L.verkauf);
+  const fertig = Z.livraisons.filter(L => L.verkauf).reverse();
+  const karte = L => {
+    const v = L.verkauf;
+    const status = v ? `<span class="chip ok">✓ geliwwert</span>
+        ${L.rechnung ? (v.rechnungGemacht ? `<span class="chip ok">🧾 Rechnung gemaach</span>` : `<span class="chip warn">🧾 Rechnung nach ze maachen</span>`) : ""}
+        ${v.offen <= 0 ? `<span class="chip ok">✓ bezuelt</span>` : `<span class="chip warn">${euro(v.offen)} op</span>`}` : "";
+    const knoepfe = !v ? `<button class="knopf gruen" data-geliwwert="${esc(L.id)}">Geliwwert ✓</button>
+        <button class="knopf" data-lweg="${esc(L.id)}">Läschen</button>`
+      : `${L.rechnung && !v.rechnungGemacht ? `<button class="knopf" data-rechnung="${esc(v.id)}">🧾 Rechnung gemaach</button>` : ""}
+         ${v.offen > 0 ? `<button class="knopf gruen" data-lbezuelt="${esc(v.id)}">Bezuelt ✓</button>` : ""}`;
+    return `<div class="liv"><div class="kopfz"><b>${esc(L.kunde)}</b><span>${euro(L.betrag)}</span></div>
+      <div class="wann ${!v && L.datum <= heute ? "faellig" : ""}">${!v && L.datum < heute ? "⚠️ " : ""}${esc(datumKurz(L.datum))} · ${esc(postenText(L.posten))} · ${esc(L.kontakt)}${L.aus !== L.kontakt ? ` (${esc(L.aus === LAGER ? "vum Lager" : "vum " + L.aus)})` : ""}</div>
+      ${L.anlass || L.notiz ? `<div class="hinweis" style="margin-top:4px">${esc([L.anlass, L.notiz].filter(Boolean).join(" · "))}</div>` : ""}
+      ${status}<div class="knopfe">${knoepfe}</div></div>`;
+  };
+  box.innerHTML = `<div class="card"><h2>Geplangt (${geplant.length})</h2>
+      ${geplant.length ? geplant.map(karte).join("") : `<div class="leer">Keng Livraisoun geplangt.</div>`}</div>
+    <div class="card"><h2>Geliwwert</h2>
+      ${fertig.length ? fertig.slice(0, 40).map(karte).join("") : `<div class="leer">Nach keng.</div>`}</div>`;
+  box.querySelectorAll("[data-geliwwert]").forEach(b => b.onclick = () => {
+    const L = Z.livraisons.find(x => x.id === b.dataset.geliwwert); if (!L) return;
+    const zuWenig = L.posten.filter(p => p.n > hat(Z, L.aus, p.sorte));
+    let frage = `Livraisoun un ${L.kunde} geliwwert?\n\n${postenText(L.posten)} · ${euro(L.betrag)}`;
+    if (zuWenig.length) frage += `\n\nAchtung: laut der App huet ${de(L.aus)} just ${zuWenig.map(p => `${hat(Z, L.aus, p.sorte)} × ${p.sorte}`).join(", ")}.`;
+    if (!confirm(frage)) return;
+    eintragen([{ art: "verkauf", verkaeufer: L.kontakt, kaeufer: L.kunde, posten: L.posten, betrag: L.betrag, aus: L.aus, liv: L.id }]);
+  });
+  box.querySelectorAll("[data-lweg]").forEach(b => b.onclick = () => {
+    const L = Z.livraisons.find(x => x.id === b.dataset.lweg); if (!L) return;
+    if (confirm(`Livraisoun un ${L.kunde} (${datumKurz(L.datum)}) läschen?`)) eintragen([{ art: "storno", ref: L.id }]);
+  });
+  box.querySelectorAll("[data-rechnung]").forEach(b => b.onclick = () => eintragen([{ art: "rechnung", ref: b.dataset.rechnung }]));
+  box.querySelectorAll("[data-lbezuelt]").forEach(b => b.onclick = () => {
+    const v = Z.vkNachId.get(b.dataset.lbezuelt); if (!v) return;
+    if (confirm(`${v.kaeufer}: ${euro(v.offen)} bezuelt?`)) eintragen([{ art: "zahlung", ref: v.id, betrag: v.offen }]);
+  });
+}
+function renderLForm() {
+  const box = $("#lForm");
+  if (tipptIn(box)) return;
+  if (!L_NEU) { box.innerHTML = `<button class="haupt" id="lAuf">+ Nei Livraisoun plangen</button><div id="lMeld">${LFORM && LFORM.meldung ? `<div class="meldung ok">${esc(LFORM.meldung)}</div>` : ""}</div>`; $("#lAuf").onclick = () => { L_NEU = true; LFORM = leereLivraison(); renderLForm(); }; return; }
+  const F = LFORM;
+  const opt = (liste, wert, txt = x => x) => liste.map(x => `<option value="${esc(x)}" ${x === wert ? "selected" : ""}>${esc(txt(x))}</option>`).join("");
+  box.innerHTML = `<div class="card"><h2>Nei Livraisoun</h2>
+    <label for="lKunde">Client</label><input id="lKunde" list="kaeuferListe" autocomplete="off" autocapitalize="words" value="${esc(F.kunde)}" placeholder="z. B. Ferro Forum">
+    <div class="zeile"><div><label for="lDatum">Datum</label><input id="lDatum" type="date" value="${esc(F.datum)}"></div>
+      <div><label for="lKontakt">Kontakt</label><select id="lKontakt">${opt(Z.cfg.leute, F.kontakt)}</select></div></div>
+    <label for="lAus">Fläschen huelen aus</label><select id="lAus">${opt([LAGER, ...Z.cfg.leute], F.aus, h => h === LAGER ? "📦 Lager" : h)}</select>
+    <label for="lAnlass">Anlass (fräiwëlleg)</label><input id="lAnlass" value="${esc(F.anlass)}" placeholder="z. B. Oarbechterkiermes">
+    <label>Wat?</label>
+    ${vSorten().map((s, i) => `<div class="posten"><div class="pn"><b>${esc(s.name)}</b><small class="muted">${euro(s.preis)} · am Lager ${hat(Z, LAGER, s.name)}</small></div>
+      <div class="stepper"><button data-lminus="${i}" aria-label="manner">−</button>
+      <input id="lN${i}" data-li="${i}" inputmode="numeric" pattern="[0-9]*" value="${F.n[s.name] || ""}" placeholder="0">
+      <button data-lplus="${i}" aria-label="méi">+</button></div></div>`).join("")}
+    <label for="lBetrag">Betrag (€)</label>
+    <div class="zeile"><input id="lBetrag" inputmode="decimal" value="${F.betrag != null ? String(F.betrag).replace(".", ",") : (lAuto() ? String(lAuto()).replace(".", ",") : "")}" placeholder="0">
+      <small class="muted" id="lAutoT" style="flex:1.4">anere Präis (z. B. 2,50 €/Fl)? Einfach Betrag änneren.</small></div>
+    <label class="check"><input type="checkbox" id="lRechnung" ${F.rechnung ? "checked" : ""}> Rechnung maachen</label>
+    <label for="lNotiz">Remarque (fräiwëlleg)</label><input id="lNotiz" value="${esc(F.notiz)}">
+    <button class="haupt" id="lOk">Livraisoun plangen</button>
+    <button class="haupt" id="lZu" style="background:var(--card2);color:var(--text)">Ofbriechen</button>
+    <div id="lMeld"></div></div>`;
+  const bind = (id, k, ev = "oninput") => { const el = $(id); el[ev] = () => { F[k] = el.value; }; };
+  bind("#lKunde", "kunde"); bind("#lAnlass", "anlass"); bind("#lNotiz", "notiz");
+  $("#lDatum").onchange = $("#lDatum").oninput = e => { F.datum = e.target.value; };
+  $("#lKontakt").onchange = e => { F.kontakt = e.target.value; };
+  $("#lAus").onchange = e => { F.aus = e.target.value; };
+  $("#lRechnung").onchange = e => { F.rechnung = e.target.checked; };
+  const betragNach = () => { const inp = $("#lBetrag"); if (F.betrag == null && document.activeElement !== inp) inp.value = lAuto() ? String(lAuto()).replace(".", ",") : ""; };
+  const setzeN = (i, n) => { const s = vSorten()[i]; F.n[s.name] = Math.max(0, Math.min(9999, n | 0)); const inp = $("#lN" + i); if (document.activeElement !== inp) inp.value = F.n[s.name] || ""; betragNach(); };
+  box.querySelectorAll("[data-lplus]").forEach(b => b.onclick = () => setzeN(+b.dataset.lplus, (F.n[vSorten()[+b.dataset.lplus].name] || 0) + 1));
+  box.querySelectorAll("[data-lminus]").forEach(b => b.onclick = () => setzeN(+b.dataset.lminus, (F.n[vSorten()[+b.dataset.lminus].name] || 0) - 1));
+  box.querySelectorAll("[data-li]").forEach(inp => inp.oninput = () => setzeN(+inp.dataset.li, parseInt(inp.value, 10) || 0));
+  $("#lBetrag").oninput = e => { const v = e.target.value.trim().replace(",", "."); F.betrag = v === "" ? null : (isFinite(+v) ? runde(+v) : F.betrag); };
+  $("#lZu").onclick = () => { L_NEU = false; LFORM = null; renderLForm(); };
+  $("#lOk").onclick = () => {
+    const meld = t => $("#lMeld").innerHTML = `<div class="meldung fehler">${esc(t)}</div>`;
+    const kunde = F.kunde.trim().replace(/\s+/g, " ");
+    const posten = vSorten().filter(s => F.n[s.name] > 0).map(s => ({ sorte: s.name, n: F.n[s.name] }));
+    if (!kunde) return meld("Wéi heescht de Client?");
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(F.datum)) return meld("Wéini? Datum feelt.");
+    if (!posten.length) return meld("Wat gëtt geliwwert? Mindestens eng Fläsch.");
+    const bekannt = Z.kaeufer.find(k => k.name.toLowerCase() === kunde.toLowerCase());
+    const e = { art: "livraison", kunde: bekannt ? bekannt.name : kunde, kontakt: F.kontakt, aus: F.aus, datum: F.datum, posten,
+      betrag: F.betrag != null ? F.betrag : lAuto(), rechnung: !!F.rechnung, anlass: F.anlass.trim(), notiz: F.notiz.trim() };
+    if (!gueltig({ ...e, id: "x", zeit: 0 })) return meld("Eppes ass ze laang oder net richteg.");
+    if (document.activeElement) document.activeElement.blur();
+    const neu = eintragen([e]);
+    if (!neu.length) return;
+    L_NEU = false; LFORM = { meldung: `✓ Geplangt: ${e.kunde}, ${datumKurz(e.datum)}, ${postenText(posten)}` };
+    renderLForm();
+  };
 }
 
 /* ---------- Verkaufen ---------- */
@@ -779,7 +1067,7 @@ function renderEinst() {
   </div>
   <div class="card"><h2>Donnéeën</h2>
     <div class="knopfe">
-      <button class="knopf" id="eCsv">Verkéf als Tabell (CSV)</button>
+      <button class="knopf" id="eCsv">📊 Excel-Export (.xlsx)</button>
       <button class="knopf" id="eNeu">Elo synchroniséieren</button>
       ${PROBE ? `<button class="knopf" id="eProbeWeg">Proufdonnéeë läschen</button>` : `<button class="knopf" id="eAbmelden">Code nei aginn</button>`}
     </div>
@@ -808,14 +1096,7 @@ function renderEinst() {
     EFORM = null; FORM = null; BFORM = null;
     renderEinst(); meld("ok", "✓ Gespäichert — gëllt fir all.");
   };
-  $("#eCsv").onclick = async () => {
-    const inhalt = csv(Z, t => new Date(t).toLocaleString("de-DE", { timeZone: TZ }));
-    const name = `millebeier-verkaeufe-${new Date().toISOString().slice(0, 10)}.csv`;
-    const datei = new File([inhalt], name, { type: "text/csv" });
-    try { if (navigator.canShare && navigator.canShare({ files: [datei] })) { await navigator.share({ files: [datei] }); return; } }
-    catch (f) { if (f && f.name === "AbortError") return; }
-    const a = document.createElement("a"); a.href = URL.createObjectURL(datei); a.download = name; a.click();
-  };
+  $("#eCsv").onclick = () => excelExport($("#eMeld"));
   $("#eNeu").onclick = () => abgleichen();
   const ab = $("#eAbmelden"); if (ab) ab.onclick = () => { if (confirm("Code op dësem Handy läschen?")) { EIN.code = ""; merke(SP, EIN); render(); } };
   const pw = $("#eProbeWeg"); if (pw) pw.onclick = () => {
@@ -881,6 +1162,7 @@ function mittenImEintrag() {
   if (TAB === "einst" && EFORM) return true;
   if (FORM && (FORM.kaeufer.trim() || Object.values(FORM.n).some(n => n > 0) || FORM.betrag != null)) return true;
   if (BFORM && String(BFORM.n).trim()) return true;
+  if (L_NEU) return true;
   return false;
 }
 function neuLaden() {
