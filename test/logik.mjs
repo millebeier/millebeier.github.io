@@ -4,7 +4,7 @@ const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
 const a = html.indexOf("/* === Logik ===");
 const b = html.indexOf("/* === Oberfläche ===");
 if (a < 0 || b < 0) { console.error("Marken nicht gefunden"); process.exit(1); }
-const L = new Function(html.slice(a, b) + "; return {rechne, gueltig, euro, verteile, erinnerung, csv, beschreibe, hat, LAGER, STANDARD, proSorte, exportBlaetter, anteil, dateienVon, altImport, altKorrekturen, frei, zuWenig, preisVon, fassKey, artikelVon};")();
+const L = new Function(html.slice(a, b) + "; return {rechne, gueltig, euro, verteile, erinnerung, csv, beschreibe, hat, LAGER, STANDARD, proSorte, exportBlaetter, anteil, dateienVon, altImport, altKorrekturen, bierText, postenText, frei, zuWenig, preisVon, fassKey, artikelVon};")();
 
 let fehler = 0, n = 0;
 const ist = (was, wert, soll) => { n++; const ok = JSON.stringify(wert) === JSON.stringify(soll); if (!ok) { fehler++; console.log(`✗ ${was}: ${JSON.stringify(wert)} statt ${JSON.stringify(soll)}`); } };
@@ -143,18 +143,24 @@ ist("CSV Zeilen", c.trim().split("\r\n").length, 4);
   ist("Altbestand-Sorte bekommt Preis und Eigenschaften", [Y.cfg.sorten[2].preis, Y.cfg.sorten[2].meta.alk], [3.5, 5.1]);
   const arch = B("bierstatus", { name: "Rusty", status: "archiv" });
   Y = L.rechne([rusty, ab, bp, arch]);
-  ist("archiviert: aus, bleibt in Liste und Excel", [Y.cfg.sorten[3].aus, Y.cfg.sorten[3].archiv, Y.sortenNamen.includes("Rusty"), L.exportBlaetter(Y, () => "").some(b => b.name === "Rusty")], [true, true, true, true]);
-  ist("Excel-Info mit Eigenschaften", L.exportBlaetter(Y, () => "").find(b => b.name === "Rusty").info[0], "Red Ale · Braugang vum 6.2.2026 · Alk: 5,6 % · Quantitéit: 156 L · Haltbar bis 1.2.2027 · ARCHIVÉIERT");
+  ist("archiviert: aus, bleibt in Liste und Excel", [Y.cfg.sorten[3].aus, Y.cfg.sorten[3].archiv, Y.sortenNamen.includes("Rusty"), L.exportBlaetter(Y, () => "").some(b => b.name === "Rusty (06.02.2026)")], [true, true, true, true]);
+  ist("Excel-Info mit Eigenschaften", L.exportBlaetter(Y, () => "").find(b => b.name === "Rusty (06.02.2026)").info[0], "Red Ale · Braugang vum 6.2.2026 · Alk: 5,6 % · Quantitéit: 156 L · Haltbar bis 1.2.2027 · ARCHIVÉIERT");
   Y = L.rechne([rusty, ab, bp, arch, B("bierstatus", { name: "Rusty", status: "aktiv" })]);
   ist("aus dem Archiv zurück", Y.cfg.sorten[3].aus, false);
   const weg = B("bierstatus", { name: "Rusty", status: "weg" });
   Y = L.rechne([rusty, ab, bp, weg]);
-  ist("gelöscht: überall weg", [Y.cfg.sorten.some(c => c.name === "Rusty"), Y.sortenNamen.includes("Rusty"), L.exportBlaetter(Y, () => "").some(b => b.name === "Rusty"), Y.flaschen.da], [false, false, false, 0]);
+  ist("gelöscht: überall weg", [Y.cfg.sorten.some(c => c.name === "Rusty"), Y.sortenNamen.includes("Rusty"), L.exportBlaetter(Y, () => "").some(b => b.name === "Rusty (06.02.2026)"), Y.flaschen.da], [false, false, false, 0]);
   Y = L.rechne([rusty, ab, bp, weg, B("bier", { name: "Rusty", preis: 3 })]);
   ist("neu angelegt nach Löschen: wieder da", Y.sortenNamen.includes("Rusty"), true);
   ist("Bier ungültig: Lager als Name", L.gueltig({ ...rusty, name: "Lager" }), false);
   ist("Bier ungültig: Alkohol zu hoch", L.gueltig({ ...rusty, alk: 55 }), false);
   ist("Verlauf-Text", L.beschreibe(rusty), "🍺 Béier: Rusty · Red Ale · 5,6 % · 3 € · gebraut 6.2.2026");
+  // Braudatum hinter dem Namen (Fassung r)
+  Y = L.rechne([rusty, ab]);
+  ist("Anzeige mit Braudatum", [L.bierText("Rusty"), L.postenText([{ sorte: "Rusty", n: 2 }, { sorte: "Rusty Keg 20l", n: 1 }])], ["Rusty (06.02.2026)", "2 × Rusty (06.02.2026), 1 × Rusty (06.02.2026) (Fass 20 l)"]);
+  ist("Excel-Blatt heißt mit Datum", L.exportBlaetter(Y, () => "").map(b => b.name).includes("Rusty (06.02.2026)"), true);
+  ist("Name mit Datum oder Monat bleibt", [L.bierText("NEIPA (28.07.2026)"), L.bierText("Brown Porter 01/2026")], ["NEIPA (28.07.2026)", "Brown Porter 01/2026"]);
+  ist("ohne Braudatum nichts dahinter", L.bierText("White IPA"), "White IPA");
 }
 
 // Dateien je Bier: feste Felder nehmen die neueste, „anner“ sammelt; Löschen per storno
