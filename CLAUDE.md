@@ -61,6 +61,10 @@ Der Excel-Export der App bildet dieses Format nach (s. u.).
 - **Artikel vor Namen** (vom Nutzer: „Du bass de Laurent“): Verkäufer (alle Männer) über `de()`/`beim()` („de Jeff“, „beim Jeff“, „d'Lager“, „am Lager“); Käufer können Frauen sein (d'Anne) → Sätze mit Käufernamen ohne Artikel bauen („Paul: 4 € bezuelt?“). Kommt eine Verkäuferin dazu, braucht `de()` eine Liste.
 - **Verlauf: rotes ✕ = Läschen** (= storno, Text „Dësen Agab läschen?“, „geläscht vum …“), vom Nutzer: ↶ war unklar.
   **Iwwersiicht: rotes ▶/▼** vor jeder Sorte (vom Nutzer: Dreieck war zu klein).
+  **Pro Zort zeigt nur aktuelle Biere**; archivierte (und Sorten ohne Eintrag) stehen gesammelt in einer Zeile
+  „📦 Archiv (n)“ mit ihren Summen (Total bleibt vollständig), aufklappbar, darin je Bier kleiner und eingerückt,
+  wieder mit ▶ zu den Verkäufen (vom Nutzer, 14.11.2026). Archiv zuklappen schließt ein offenes Archiv-Bier mit.
+  Kopf: Name `white-space:nowrap` — bei langem Status (offline) brach er sonst als „Millebé / ier“ um.
 - **Name im Kopf** ganz weiß, nur der Akzent auf dem é rot wie im Logo: weißes „e“ mit rotem Strich darüber (`.akz::after`), weil sich ein Akzent nicht einzeln einfärben lässt.
 - **Farben wie im Logo** (vom Nutzer, 13.11.2026): schwarz, weiß, Rot `--akzent` (#e3141b) für Knöpfe und markierte Reiter, Kopf mit rotem Strich und grauer Linie wie der Logo-Ring. Grün (bezahlt) und Gelb (offen) bleiben als Bedeutungsfarben.
 - iPhone-Regeln wie in den anderen Apps des Nutzers: kein `viewport-fit=cover`, Kasten mit

@@ -52,6 +52,19 @@ ist("Löschen des Löschens holt Bier zurück", await p.evaluate(() => Z.sortenN
 
 await p.click('[data-tab="uebersicht"]');
 ist("Iwwersiicht: rotes Dreieck", await p.evaluate(() => { const td = document.querySelector("tr.klick td"); const st = getComputedStyle(td, "::before"); return [st.content, st.color]; }), ['"▶"', "rgb(227, 20, 27)"]);
+// Iwwersiicht: archivierte Biere gesammelt unter „Archiv“, aufklappbar, darin wieder je Bier aufklappbar
+await p.evaluate(() => { eintragen([{ art: "abfuellung", sorte: "Rusty", n: 10 }]); });
+await warte(900);
+await p.evaluate(() => { eintragen([{ art: "bierstatus", name: "Rusty", status: "archiv" }]); TAB = "uebersicht"; OFFEN_SORTE = ""; render(); });
+const zeilenText = () => p.evaluate(() => [...document.querySelectorAll("#t-uebersicht tr.klick")].map(t => t.cells[0].textContent.trim()));
+ist("oben nur aktuelle, Rusty unter Archiv", await zeilenText(), ["NEIPA", "White IPA", "Brown Porter", "📦 Archiv (1)"]);
+await p.click("tr[data-archiv]");
+ist("Archiv aufgeklappt", await zeilenText(), ["NEIPA", "White IPA", "Brown Porter", "📦 Archiv (1)", "Rusty"]);
+await p.click('tr[data-sorte="Rusty"]');
+ist("archiviertes Bier: Verkäufe aufgeklappt", await p.locator("#t-uebersicht").innerText(), s => s.includes("Rusty: wien huet wat wiem verkaaft"));
+ist("Total enthält Archiv", await p.evaluate(() => [+document.querySelector("#t-uebersicht tr.summe").cells[4].textContent.trim(), Z.flaschen.da, hat(Z, "Lager", "Rusty")]), v => v[0] === v[1] && v[2] > 0 && v[0] >= v[2]);
+await p.click("tr[data-archiv]");
+ist("Archiv zu → Rusty-Liste auch zu", [await zeilenText(), (await p.locator("#t-uebersicht").innerText()).includes("Rusty: wien huet")], [["NEIPA", "White IPA", "Brown Porter", "📦 Archiv (1)"], false]);
 ist("keine Seitenfehler", seitenfehler, []);
 await b.close();
 console.log(fehler ? `${fehler} Fehler` : "Biere: alles bestanden");

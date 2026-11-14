@@ -31,7 +31,8 @@ header{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:3px so
 .kopf h1 img{width:36px;height:36px;display:block}
 .kopf h1 .akz{position:relative;display:inline-block}
 .kopf h1 .akz::after{content:"";position:absolute;left:.07em;top:.3em;width:.38em;height:.11em;background:var(--akzent);border-radius:1px;transform:rotate(-10deg)}
-#sync{font-size:13px;color:var(--muted);text-align:right}
+#sync{font-size:12px;color:var(--muted);text-align:right;min-width:0;flex-shrink:1}
+.kopf h1 > span{white-space:nowrap} /* Name nie umbrechen, auch bei langem Status daneben */
 #sync.fehler{color:var(--gelb)}
 .zahnrad{background:none;border:0;color:var(--text);font-size:22px;padding:4px 2px;cursor:pointer}
 nav{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-top:8px}
@@ -120,6 +121,9 @@ select{background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),
 tr.klick{cursor:pointer} tr.klick td:first-child{white-space:nowrap}
 tr.klick td:first-child::before{content:"▶";display:inline-block;width:20px;color:var(--akzent);font-size:15px}
 tr.klick.auf td:first-child::before{content:"▼"}
+tr.klick.klein td{font-size:13px;color:var(--muted)} tr.klick.klein td:first-child{padding-left:22px}
+tr.klick.klein td:first-child::before{font-size:11px;width:16px}
+tr.archivzeile td{border-top:1px solid var(--line)}
 .bier{border-top:1px solid var(--line);padding:12px 0}
 .bier:first-of-type{border-top:0}
 .bier .kopfz{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
@@ -172,7 +176,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px}
 <script>
 /* Adresse des Cloudflare-Workers. Leer = Probe-Modus (alles nur auf diesem Handy). */
 const WORKER_URL = "https://millebeier.rjtp6r9s9h.workers.dev/";
-const FASSUNG = "14.11.2026 d";
+const FASSUNG = "14.11.2026 e";
 
 /* === Logik === (kein DOM; test/logik.mjs schneidet diesen Block aus) */
 const LAGER = "Lager";
@@ -656,11 +660,23 @@ function renderUebersicht() {
   box.onclick = e => {
     const z = e.target.closest && e.target.closest("tr[data-sorte]");
     if (z) { OFFEN_SORTE = OFFEN_SORTE === z.dataset.sorte ? "" : z.dataset.sorte; renderUebersicht(); return; }
+    if (e.target.closest && e.target.closest("tr[data-archiv]")) {
+      ARCHIV_UEB = !ARCHIV_UEB;
+      // Archiv zu → ein offenes archiviertes Bier auch zu
+      if (!ARCHIV_UEB && OFFEN_SORTE && imArchiv(OFFEN_SORTE)) OFFEN_SORTE = "";
+      renderUebersicht(); return;
+    }
     if (e.target.closest && e.target.closest("[data-excel]")) excelExport($("#xMeld"));
   };
   const F = Z.flaschen;
   const leute = Z.halter.filter(h => h !== LAGER);
-  const zeilen = Z.sortenNamen.filter(s => { const x = Z.sorten[s]; return x.abgefuellt || x.da || x.verkauft || !(Z.cfg.sorten.find(c => c.name === s) || {}).aus; });
+  // Oben nur die aktuellen Biere; archivierte (und Sorten ohne Eintrag mehr) gesammelt unter „Archiv“ (vom Nutzer, 14.11.2026).
+  const imArchiv = s => { const c = Z.cfg.sorten.find(y => y.name === s); return !c || !!c.archiv; };
+  const benutzt = s => { const x = Z.sorten[s]; return x.abgefuellt || x.da || x.verkauft || x.abgang; };
+  const zeilen = Z.sortenNamen.filter(s => !imArchiv(s));
+  const archivZ = Z.sortenNamen.filter(s => imArchiv(s) && benutzt(s));
+  const asum = f => archivZ.reduce((a, s) => a + Z.sorten[s][f], 0);
+  const zeile = (s, klein) => { const x = Z.sorten[s]; return `<tr class="klick ${klein ? "klein" : ""} ${OFFEN_SORTE === s ? "auf" : ""}" data-sorte="${esc(s)}"><td>${esc(s)}</td><td>${x.abgefuellt}</td><td>${x.verkauft}</td><td>${x.abgang}</td><td><b>${x.da}</b></td></tr>`; };
   box.innerHTML = `
   ${PROBE ? `<div class="probe">Prouf-Modus: Agaben bleiwen just op dësem Handy.</div>` : ""}
   <div class="card"><div class="kacheln">
@@ -671,10 +687,12 @@ function renderUebersicht() {
   </div></div>
   <div class="card"><h2>Pro Zort</h2><div class="tabwrap"><table>
     <tr><th>Zort</th><th>Ofgefëllt</th><th>Verkaaft</th><th>Fort</th><th>Nach do</th></tr>
-    ${zeilen.map(s => { const x = Z.sorten[s]; return `<tr class="klick ${OFFEN_SORTE === s ? "auf" : ""}" data-sorte="${esc(s)}"><td>${esc(s)}${(Z.cfg.sorten.find(c => c.name === s) || {}).archiv ? ` <small class="muted">📦</small>` : ""}</td><td>${x.abgefuellt}</td><td>${x.verkauft}</td><td>${x.abgang}</td><td><b>${x.da}</b></td></tr>`; }).join("")}
+    ${zeilen.map(s => zeile(s, false)).join("")}
+    ${archivZ.length ? `<tr class="klick archivzeile ${ARCHIV_UEB ? "auf" : ""}" data-archiv><td>📦 Archiv (${archivZ.length})</td><td>${asum("abgefuellt")}</td><td>${asum("verkauft")}</td><td>${asum("abgang")}</td><td><b>${asum("da")}</b></td></tr>
+      ${ARCHIV_UEB ? archivZ.map(s => zeile(s, true)).join("") : ""}` : ""}
     <tr class="summe"><td>Total</td><td>${F.abgefuellt}</td><td>${F.verkauft}</td><td>${F.abgang}</td><td>${F.da}</td></tr>
   </table></div>
-  <div class="hinweis">„Fort“ = selwer gedronk, verschenkt oder futti. Op ▶ tippen: wien huet wat wiem verkaaft. 📦 = archivéiert.</div></div>
+  <div class="hinweis">„Fort“ = selwer gedronk, verschenkt oder futti. Op ▶ tippen: wien huet wat wiem verkaaft.</div></div>
   ${OFFEN_SORTE && Z.sorten[OFFEN_SORTE] ? sorteDetail(OFFEN_SORTE) : ""}
   <div class="card"><h2>Pro Persoun</h2><div class="tabwrap"><table>
     <tr><th></th><th>Huet nach</th><th>Verkaaft</th><th>Ëmsaz</th><th>Op</th></tr>
@@ -689,7 +707,7 @@ function renderUebersicht() {
   ${F.abgefuellt === 0 ? `<div class="card"><b>Fir unzefänken:</b> Ënner <b>Stock</b> déi ofgefëllte Fläschen an d'Lager androen an se dann un d'Leit verdeelen.</div>` : ""}`;
 }
 
-let OFFEN_SORTE = "";
+let OFFEN_SORTE = "", ARCHIV_UEB = false;
 function sorteDetail(s) {
   const z = proSorte(Z, s);
   const fest = z.filter(r => !r.geplant);
