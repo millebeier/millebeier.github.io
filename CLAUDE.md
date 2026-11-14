@@ -66,7 +66,8 @@ beim Verkaufen/Livraison und „Fläsche beweegen“ an, solange jemand welche h
   pdf.js 3.11.174 von cdnjs, erst bei Bedarf geladen). Der Eintrag kommt erst, wenn alle Stücke oben sind. Max. 10 MB.
   Öffnen in eigener Anzeige (`#ansicht`: Bild bzw. alle PDF-Seiten als Canvas; **Tabellen** .ods/.xlsx/.xls/.csv über
   SheetJS `sheet_to_html` (vom Nutzer: Brauprotokoll als .ods), Datum ohne eigenes Format → TT.MM.JJJJ; „⬆️ Deelen“)
-  **Deelen** (Fassung q, vom Nutzer: bei .ods ging es nicht — am Gerät **nicht** geprüft): Datei liegt seit dem Öffnen
+  **Deelen** (Fassung q, vom Nutzer: bei .ods ging es nicht — **am iPhone bestätigt: geht jetzt**, 14.11.2026; welcher
+  der Ausweichwege gegriffen hat, ist unbekannt): Datei liegt seit dem Öffnen
   bereit (`DATEN`, kein Warten im Tippen), erst echter Typ, dann als `application/octet-stream`, dann ohne Typ; scheitert
   alles, Meldung mit dem Grund von iOS (Nutzer soll ihn schicken). Herunterladen nur im Browser, nie im Home-Bildschirm.
   **Etikett-Bild vor dem Biernamen** im Stock (Fassung q, vom Nutzer), antippen öffnet es; `thumbLaden` füllt alle
