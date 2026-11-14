@@ -21,6 +21,9 @@ Unklarheiten, z. B. Brown Porter 310 Zeilen-Flaschen bei 288 gebraut) — Starts
 Der Excel-Export der App bildet dieses Format nach (s. u.).
 **Alte Verkäufe doch übernommen** (vom Nutzer, 14.11.2026), aber **ohne Geld**: `altImport()` (feste ids `alt26-…`,
 Knopf ⚙️ „📜 Al Verkéf 2026“, einmalig, verschwindet danach; springt in die Iwwersiicht mit offenem Archiv).
+**Seit Fassung j von selbst** (vom Nutzer: Knopf übersehen): nach dem ersten erfolgreichen Abgleich, wenn `alt26-bier-bp`
+weder beim Server noch im Ausgang ist (Prüfung gegen `SERVER`, nicht gegen `Z`). Tests mit leeren Daten setzen
+`window.OHNE_ALTIMPORT = true` (addInitScript); `oberflaeche.mjs` prüft das Selbst-Einspielen mit zwei Handys.
 Archivierte Biere „Brown Porter 01/2026“, „Rusty 02/2026“ mit ihren Fässern (seit Fassung i Gebinde, nicht eigene Biere) (Namen mit Monat, vom Nutzer —
 heute gibt es wieder ein Brown Porter). Verkäufe mit `alt: true` → `Z.altVerkaeufe`: zählen im Bestand und pro Bier
 (Recetten zur Info), **nie** in Kasse, Ausstoend, Umsatz je Person, Käuferliste (vom Nutzer: „gar nicht in die Kasse“).

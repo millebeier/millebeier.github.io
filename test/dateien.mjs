@@ -40,6 +40,7 @@ async function handy(ich) {
     const datei = r.request().url().split("/").pop();
     return mitPdfjs ? r.fulfill({ body: readFileSync(PDFJS_DIR + "/" + datei), contentType: "text/javascript" }) : r.abort();
   });
+  await p.addInitScript(() => { window.OHNE_ALTIMPORT = true; }); // Tests rechnen mit leeren Daten
   await p.goto("https://app.test/index.html");
   await p.evaluate(ich => { EIN = { code: "hopfen", ich }; render(); abgleichen(); }, ich);
   return p;

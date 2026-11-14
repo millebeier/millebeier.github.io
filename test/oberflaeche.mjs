@@ -31,6 +31,7 @@ async function handy() {
     const res = await worker.fetch(new Request(URL_W, { method: req.method(), body: req.postData() }), env);
     r.fulfill({ status: res.status, headers: Object.fromEntries(res.headers), body: await res.text() });
   });
+  await p.addInitScript(() => { window.OHNE_ALTIMPORT = true; }); // Tests rechnen mit leeren Daten
   await p.goto("https://app.test/index.html");
   return p;
 }
@@ -157,6 +158,19 @@ await Promise.all([B.waitForEvent("load"), B.click("#neu")]);
 ist("Knopf lädt neu", await txt(B, "#fuss"), s => s.includes("TEST-NEU"));
 await B.evaluate(() => updatePruefen()); await warte(300);
 ist("gleiche Fassung: nichts passiert", await B.locator("#neu").isVisible(), false);
+// Alte Verkäufe kommen von selbst (einmal), wenn ein Handy ohne Schalter abgleicht — auch mit zwei Handys nicht doppelt
+{
+  const C = await handy(); const D2 = await handy();
+  await C.evaluate(() => { window.OHNE_ALTIMPORT = false; }); await D2.evaluate(() => { window.OHNE_ALTIMPORT = false; });
+  await Promise.all([C.evaluate(() => { EIN = { code: "hopfen", ich: "Claude" }; abgleichen(); }), D2.evaluate(() => { EIN = { code: "hopfen", ich: "Jeff" }; abgleichen(); })]);
+  await warte(1500);
+  await C.evaluate(() => abgleichen()); await warte(500);
+  ist("alte Verkäufe von selbst da", await C.evaluate(() => [Z.sorten["Rusty 02/2026"] && Z.sorten["Rusty 02/2026"].verkauft, Z.altVerkaeufe.length]), [285, 25]);
+  ist("nicht doppelt beim Server", [...DB.rows.keys()].filter(k => k.startsWith("alt26-")).length, (await C.evaluate(() => altImport().length)));
+  const kasseVorher = await A.evaluate(() => Z.kasse);
+  ist("Kasse unberührt", await C.evaluate(() => Z.kasse), kasseVorher);
+  await C.close(); await D2.close();
+}
 ist("keine Fehler in der Konsole", [...A.konsole, ...B.konsole].filter(s => !s.includes("ERR_INTERNET_DISCONNECTED") && !s.includes("Failed to load resource")), []);
 
 await browser.close();
