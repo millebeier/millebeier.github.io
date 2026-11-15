@@ -5,6 +5,12 @@ Bestands- und Kassen-App für **Millebéier** (so geschrieben wie im Logo; Repo,
 („Bestellungen“ hieß bis Fassung w „Livraisons“ — vom Nutzer umbenannt, auch alle Texte und das Excel-Blatt; im Code
 heißen Reiter, Funktionen und die Eintragsart weiter `livraison(s)`) (Handy 3 je Reihe, ab 600 px 6); mit dem Nutzer und in Code/Doku Deutsch, Du-Form. Angelegt 13.11.2026.
 
+## Arbeitsweise (vom Nutzer, 15.11.2026)
+**Nicht einfach bauen.** Bei neuen Funktionen und größeren Änderungen (Aufbau, Reiter, Abläufe) erst einen Vorschlag
+machen und auf das Okay des Nutzers warten. Vorschläge sind erwünscht, sofortiges Bauen nicht. Anlass: Adressbuch
+wurde ohne Rückfrage in den Reiter Bestellungen gebaut — der Nutzer wollte einen eigenen Reiter „Clienten“ und den
+Verlauf ins Zahnrad. Kleine, eindeutige Korrekturen, um die er ausdrücklich bittet, dürfen direkt gemacht werden.
+
 ## Was die App macht
 Flaschen werden abgefüllt (→ Lager), an die vier verteilt, von ihnen verkauft. Jeder trägt auf seinem
 Handy ein, wer wie viele Flaschen gekauft hat und ob bezahlt ist. Die App zeigt Bestand (Lager und je
