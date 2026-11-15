@@ -93,6 +93,12 @@ beim Verkaufen/Livraison und „Fläsche beweegen“ an, solange jemand welche h
   **Bestellung ändern** (vom Nutzer, Fassung z): nur geplante, Knopf „✎ Änneren“ → Formular vorbelegt (`LFORM.ersetzt`),
   Späicheren = storno der alten + neue `livraison` in einem `eintragen`; Reservierungsprüfung ohne die alte Fassung
   (`rechne` mit Prüf-storno). Gelieferte: kein Ändern (Verkauf/Zahlung/Rechnung hängen dran) — im Verlauf löschen.
+  **Stammclienten / Adressbuch** (vom Nutzer, 15.11.2026, Fassung c): Eintrag `kunde` (kid, name, adresse, ort, tel, mail,
+  notiz; neuester je kid gilt, `weg: true` = gelöscht) → `Z.kunden`. Im Reiter Bestellungen unten „📇 Stammclienten“
+  (anlegen/ändern/löschen, tel:/mailto:-Links). Beim Tippen eines Namens (Verkafen `#vKaeufer`, Bestellung `#lKunde`)
+  Vorschläge als Knöpfe darunter (`namensFeld`, `kundenSuche`: Wortanfang, Stammclienten 📇 zuerst, dann frühere Käufer)
+  — **kein Ausklappmenü** (vom Nutzer; die alte datalist ist weg). Antippen füllt ein und zeigt Kontaktkarte; früherer
+  Käufer → „+ An d'Adressbuch“. Bestellung speichert `kid` (Grundlage für die geplante Rechnungs-Vorlage).
   **Livraison** (vom Nutzer, 14.11.2026): geplant, bis ein Verkauf mit `liv` = ihre id existiert („Geliwwert ✓“ legt ihn an,
   Flaschen aus `aus`, meist Lager — Verkauf hat dafür optional `aus`). Verkauf rückgängig → wieder geplant. Rechnung
   „gemaach“ = Eintrag `rechnung`. Geplantes zählt nirgends als verkauft.
@@ -156,7 +162,7 @@ einstellungen/`alt26-…`; Löschungen (storno) bleiben nur, wenn ihr Ziel bleib
 geprüft (Gegenprobe gemacht). Die Datenbank ist von der Cloud-Umgebung aus nicht erreichbar — ausführen kann nur der
 Nutzer. Rückweg: D1 Time Travel (Restore auf einen Zeitpunkt davor).
 
-## Testen — vor jedem Push alle acht, jeder mit eigenem Rückgabewert
+## Testen — vor jedem Push alle neun, jeder mit eigenem Rückgabewert
 - `node test/logik.mjs` — schneidet `Logik`…`Oberfläche` aus der HTML (Gegenprobe gemacht).
 - `node test/worker.mjs` — Worker mit nachgebauter D1.
 - `node test/oberflaeche.mjs` — Playwright, zwei Handys gegen den echten Worker-Code, offline.
@@ -169,6 +175,7 @@ Nutzer. Rückweg: D1 Time Travel (Restore auf einen Zeitpunkt davor).
   `npm install pdfjs-dist@3.11.174` in den Scratchpad. `test/fake-d1.mjs` = gemeinsame nachgebaute D1. Achtung beim
   Testen: derselbe Knopf zweimal < 800 ms zählt einmal (Doppeltipp-Schutz) — Tests müssen warten wie ein Mensch.
 - `node test/faesser.mjs` — Bier mit Fässern, Fass-Zeilen, Reservierung + Warnung (Gegenprobe gemacht), Zahlungsarten.
+- `node test/kunden.mjs` — Adressbuch, Vorschläge beim Tippen, Kontaktkarte, kid in Bestellung (Gegenprobe gemacht).
 - `node test/biere.mjs` — Bier anlegen/ändern/archivieren/zurückholen/löschen (zwei Rückfragen, Gegenprobe gemacht),
   rotes ✕ im Verlauf, rotes Dreieck.
 
