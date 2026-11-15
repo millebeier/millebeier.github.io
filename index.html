@@ -134,6 +134,15 @@ h3 .flasche{width:12px;height:24px;vertical-align:-5px;margin-right:4px}
 .kundeinfo:empty{display:none}
 .kundeinfo a{color:var(--akzent2);text-decoration:none}
 .kundeinfo .knopf{margin-top:6px}
+.kz{border-top:1px solid var(--line);padding:4px 0}
+.kz:first-of-type{border-top:0}
+.kz-kopf{display:flex;align-items:center;width:100%;background:none;border:0;color:var(--text);font-size:17px;font-weight:700;padding:10px 0;text-align:left;cursor:pointer}
+.kz-kopf .drei{color:var(--akzent);width:22px;flex:none;font-size:14px}
+.kz-kopf.klein{font-size:15px;font-weight:600;padding:6px 0}
+.kz-kopf.klein .drei{font-size:11px}
+.kz-inhalt{padding:0 0 8px 22px}
+.kz-inhalt a{color:var(--akzent2);text-decoration:none}
+.kauf{font-size:14px;padding:6px 0 6px 22px;border-top:1px dashed var(--line)}
 .kunde-zeile{border-top:1px solid var(--line);padding:10px 0}
 .kunde-zeile:first-of-type{border-top:0}
 .kunde-zeile b{font-size:16px}
@@ -217,7 +226,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px}
     <button data-tab="livraisons">Bestellungen</button>
     <button data-tab="offen">Ausstoend</button>
     <button data-tab="uebersicht">Iwwersiicht</button>
-    <button data-tab="verlauf">Verlaf</button>
+    <button data-tab="kunden">Client</button>
   </nav>
   <button id="neu" class="versteckt"></button>
 </div></header>
@@ -226,7 +235,8 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px}
   <section id="t-start" class="versteckt"></section>
   <section id="t-uebersicht" class="versteckt"></section>
   <section id="t-verkaufen" class="versteckt"><div id="vForm"></div></section>
-  <section id="t-livraisons" class="versteckt"><div id="lListe"></div><div id="lForm"></div><div id="kBuch"></div></section>
+  <section id="t-livraisons" class="versteckt"><div id="lListe"></div><div id="lForm"></div></section>
+  <section id="t-kunden" class="versteckt"><div class="card" style="padding:10px 14px"><input id="kSuche" type="search" autocomplete="off" placeholder="🔍 Client sichen"></div><div id="kListe"></div></section>
   <section id="t-offen" class="versteckt"></section>
   <section id="t-bestand" class="versteckt"><div id="bTabelle"></div><div id="bForm"></div><div id="bBiere"></div></section>
   <section id="t-verlauf" class="versteckt"></section>
@@ -247,7 +257,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px}
 <script>
 /* Adresse des Cloudflare-Workers. Leer = Probe-Modus (alles nur auf diesem Handy). */
 const WORKER_URL = "https://millebeier.rjtp6r9s9h.workers.dev/";
-const FASSUNG = "15.11.2026 d";
+const FASSUNG = "15.11.2026 e";
 
 /* === Logik === (kein DOM; test/logik.mjs schneidet diesen Block aus) */
 const LAGER = "Lager";
@@ -292,7 +302,8 @@ function gueltig(e) {
     case "verkauf":
       return text(e.verkaeufer) && text(e.kaeufer) && geld(e.betrag) && postenOk(e.posten) &&
         (e.aus === undefined || text(e.aus)) && (e.liv === undefined || typeof e.liv === "string") &&
-        optText(e.notiz, 300) && optDatum(e.datum) && (e.alt === undefined || typeof e.alt === "boolean");
+        optText(e.notiz, 300) && optDatum(e.datum) && (e.alt === undefined || typeof e.alt === "boolean") &&
+        (e.kid === undefined || typeof e.kid === "string");
     case "livraison":
       return text(e.kunde) && text(e.kontakt, 30) && text(e.aus, 30) && geld(e.betrag) && postenOk(e.posten) &&
         typeof e.datum === "string" && /^\d{4}-\d{2}-\d{2}$/.test(e.datum) &&
@@ -305,7 +316,8 @@ function gueltig(e) {
         (e.preis20 === undefined || geld(e.preis20)) && (e.preis30 === undefined || geld(e.preis30));
     case "bierstatus": return text(e.name, 30) && ["aktiv", "archiv", "weg"].includes(e.status);
     case "kunde":
-      return typeof e.kid === "string" && /^[A-Za-z0-9_-]{6,64}$/.test(e.kid) && (e.weg === true || text(e.name, 80)) &&
+      return typeof e.kid === "string" && /^[A-Za-z0-9_-]{6,64}$/.test(e.kid) && (e.weg === true || text(e.firma, 80) || text(e.name, 80)) &&
+        optText(e.firma, 80) && optText(e.name, 80) && optText(e.vorname, 60) &&
         optText(e.adresse, 200) && optText(e.ort, 120) && optText(e.tel, 40) && optText(e.mail, 120) && optText(e.notiz, 300) &&
         (e.weg === undefined || typeof e.weg === "boolean");
     case "datei":
@@ -460,8 +472,12 @@ function rechne(eintraege) {
     livraisons: [...liv.values()].sort((a, b) => a.datum.localeCompare(b.datum) || ordnung(a, b)),
     dateien: aktiv.filter(e => e.art === "datei"),
     // Stammclienten (vom Nutzer, 15.11.2026): je kid gilt der neueste Eintrag; weg = aus dem Adressbuch gelöscht
+    // Felder (vom Nutzer, Fassung e): Firma, Name, Vorname, … — ältere Einträge (ohne v, nur „name“) gelten als Firma.
     kunden: (() => { const m = new Map(); for (const e of aktiv) if (e.art === "kunde") m.set(e.kid, e);
-      return [...m.values()].filter(k => !k.weg).sort((a, b) => a.name.localeCompare(b.name, "de")); })(),
+      return [...m.values()].filter(k => !k.weg).map(k => {
+        const K = k.v ? { ...k } : { ...k, firma: k.name || "", name: "", vorname: "" };
+        return { ...K, label: kundeLabel(K) };
+      }).sort((a, b) => a.label.localeCompare(b.label, "de")); })(),
     kaeufer: [...kaeufer.values()].sort((a, b) => b.offen - a.offen || a.name.localeCompare(b.name, "de")),
     kasse, offen,
     umsatz: runde([...vk.values()].reduce((a, v) => a + v.betrag, 0)),
@@ -519,7 +535,7 @@ function beschreibe(e, Z) {
     }
     case "bier": return `🍺 Béier: ${e.name}` + [e.stil, e.alk != null ? String(e.alk).replace(".", ",") + " %" : "", euro(e.preis), e.braudatum ? "gebraut " + datumKurz(e.braudatum) : ""].filter(Boolean).map(x => " · " + x).join("");
     case "bierstatus": return { archiv: "📦 Archivéiert: ", aktiv: "↩️ Aus dem Archiv zréck: ", weg: "✕ Béier geläscht: " }[e.status] + bierText(e.name);
-    case "kunde": return e.weg ? `📇 Client geläscht` : `📇 Client: ${e.name}${e.ort ? " · " + e.ort : ""}`;
+    case "kunde": return e.weg ? `📇 Client geläscht` : `📇 Client: ${e.v ? kundeLabel(e) : e.name}${e.ort ? " · " + e.ort : ""}`;
     case "datei": return `📎 ${FELDER[e.feld]}${e.bier ? " · " + e.bier : ""}: ${e.name}`;
     case "einstellungen": return `⚙️ Zorten/Präisser/Leit geännert: ${e.sorten.filter(s => !s.aus).map(s => `${s.name} ${euro(s.preis)}`).join(", ")}`;
     case "storno": {
@@ -575,18 +591,46 @@ function dateienVon(Z, bier) {
 }
 const groesseText = b => b < 1024 * 1024 ? Math.max(1, Math.round(b / 1024)) + " KB" : (b / 1048576).toFixed(1).replace(".", ",") + " MB";
 
+/* Client: in der Liste steht die Firma, sonst „Name Vorname“ (vom Nutzer). Auf der Rechnung: Firma, darunter
+   „À l'attention de Vorname Name“ (Kontaktperson), sonst nur „Vorname Name“; dann Adresse. */
+const kundeLabel = K => (K.firma || "").trim() || [K.name, K.vorname].map(x => (x || "").trim()).filter(Boolean).join(" ");
+const kundePerson = K => [K.vorname, K.name].map(x => (x || "").trim()).filter(Boolean).join(" ");
+function rechnungsAdresse(K) {
+  const z = [];
+  if (K.firma) { z.push(K.firma); if (kundePerson(K)) z.push("À l'attention de " + kundePerson(K)); }
+  else if (kundePerson(K)) z.push(kundePerson(K));
+  for (const t of String(K.adresse || "").split("\n")) if (t.trim()) z.push(t.trim());
+  if (K.ort) z.push(K.ort);
+  return z;
+}
+// Namen, unter denen ein Client beim Verkaufen auftauchen kann (Label, Firma, „Vorname Name“, „Name Vorname“)
+const kundeNamen = K => [K.label, K.firma, kundePerson(K), [K.name, K.vorname].filter(Boolean).join(" ")].filter(Boolean).map(n => n.trim().toLowerCase());
+/* Alles, was ein Client gekauft hat (ab jetzt, ohne die alten Excel-Verkäufe): Verkäufe (auch gelieferte Bestellungen)
+   und noch geplante Bestellungen, neueste zuerst. Zugeordnet über kid oder den Namen. */
+function kaeufeVon(Z, K) {
+  const namen = new Set(kundeNamen(K));
+  const passt = (kid, name) => kid === K.kid || namen.has(String(name || "").trim().toLowerCase());
+  const z = [];
+  for (const v of Z.verkaeufe) if (passt(v.kid || (v.livraison && v.livraison.kid), v.kaeufer))
+    z.push({ datum: v.livraison ? v.livraison.datum : null, zeit: v.zeit, posten: v.posten, betrag: v.betrag, offen: v.offen, wie: wieListe(v), bezahlt: v.bezahlt, geplant: false, liv: !!v.livraison });
+  for (const L of Z.livraisons) if (!L.verkauf && passt(L.kid, L.kunde))
+    z.push({ datum: L.datum, zeit: L.zeit, posten: L.posten, betrag: L.betrag, geplant: true, liv: true });
+  const t = r => r.datum ? Date.parse(r.datum) : r.zeit;
+  return z.sort((a, b) => t(b) - t(a));
+}
+
 /* Vorschläge beim Tippen eines Namens: Stammclienten zuerst, dann frühere Käufer (ohne Stammclienten).
    Treffer, wenn ein Wort des Namens mit dem Getippten anfängt (Groß/klein egal). */
 function kundenSuche(Z, q, max = 5) {
   const t = String(q || "").trim().toLowerCase();
   if (!t) return { stamm: [], frueher: [] };
   const passt = n => n.toLowerCase().startsWith(t) || n.toLowerCase().split(/[\s\-–]+/).some(w => w.startsWith(t));
-  const stamm = Z.kunden.filter(k => passt(k.name)).slice(0, max);
-  const namen = new Set(Z.kunden.map(k => k.name.toLowerCase()));
+  const stamm = Z.kunden.filter(k => kundeNamen(k).some(passt)).slice(0, max);
+  const namen = new Set(Z.kunden.flatMap(kundeNamen));
   const frueher = Z.kaeufer.map(k => k.name).filter(n => passt(n) && !namen.has(n.toLowerCase())).slice(0, Math.max(0, max - stamm.length));
   return { stamm, frueher };
 }
-const stammVon = (Z, name) => Z.kunden.find(k => k.name.toLowerCase() === String(name || "").trim().toLowerCase()) || null;
+const stammVon = (Z, name) => { const n = String(name || "").trim().toLowerCase(); return n ? Z.kunden.find(k => kundeNamen(k).includes(n)) || null : null; };
 
 /* Anteil eines Postens am Betrag (gewichtet nach Listenpreis; ohne Preise nach Flaschen). */
 function anteil(cfg, posten, betrag, p) {
@@ -875,7 +919,7 @@ function render() {
   const nGeplant = Z.livraisons.filter(L => !L.verkauf).length;
   $('#nav [data-tab="livraisons"]').innerHTML = "Bestellungen" + (nGeplant ? ` <span class="badge" style="background:var(--card2);border:1px solid var(--line)">${nGeplant}</span>` : "");
   ({ start: renderStart, uebersicht: renderUebersicht, verkaufen: renderVerkaufen, offen: renderOffen, livraisons: renderLivraisons,
-     bestand: renderBestand, verlauf: renderVerlauf, einst: renderEinst })[tab]();
+     bestand: renderBestand, verlauf: renderVerlauf, einst: renderEinst, kunden: renderKunden })[tab]();
   $("#fuss").innerHTML = `Versioun ${esc(FASSUNG)}` + (EIN.ich ? ` · Du bass ${esc(de(EIN.ich))}` : "");
 }
 
@@ -1048,32 +1092,42 @@ async function excelExport(meldBox) {
   } catch (f) { meld("fehler", f.message || "Excel-Export huet net geklappt."); }
 }
 
-/* ---------- Stammclienten (vom Nutzer, 15.11.2026) ----------
-   Adressbuch im Reiter Bestellungen; beim Tippen eines Namens (Verkafen, Bestellung) erscheinen darunter passende
-   Stammclienten (📇) und frühere Käufer zum Antippen — bewusst kein Ausklappmenü (vom Nutzer). Antippen füllt den Namen
-   ein und zeigt Adresse/Telefon/E-Mail. Grundlage für die Rechnung später. */
-let KFORM = null, KUNDEN_AUF = false;
+/* ---------- Clienten (vom Nutzer, 15.11.2026, Fassung e) ----------
+   Eigener Reiter „Client“ (statt Verlaf, der ins Zahnrad gewandert ist). Liste alphabetisch, je Client nur der Name
+   (Firma, sonst „Name Vorname“) mit rotem ▶; aufgeklappt: Kontaktdaten und ▶ Akeef (alles ab jetzt). Beim Tippen eines
+   Namens (Verkafen, Bestellung) erscheinen Clienten als Knöpfe darunter — bewusst kein Ausklappmenü. */
+let KFORM = null;
+const K_AUF = new Set(), K_AKEEF = new Set();
 const telLink = t => `tel:${String(t).replace(/[^\d+]/g, "")}`;
+function kontaktHtml(K) {
+  const z = [];
+  if (K.firma && kundePerson(K)) z.push(`👤 ${esc(kundePerson(K))}`);
+  for (const t of String(K.adresse || "").split("\n")) if (t.trim()) z.push(esc(t.trim()));
+  if (K.ort) z.push(esc(K.ort));
+  if (K.tel) z.push(`📞 <a href="${esc(telLink(K.tel))}">${esc(K.tel)}</a>`);
+  if (K.mail) z.push(`✉️ <a href="mailto:${esc(K.mail)}">${esc(K.mail)}</a>`);
+  if (K.notiz) z.push(`<span class="muted">${esc(K.notiz)}</span>`);
+  return z.join("<br>");
+}
 function kundeInfoHtml(K, name) {
-  if (K) return `📇 <b>${esc(K.name)}</b>${K.adresse ? "<br>" + esc(K.adresse).replace(/\n/g, "<br>") : ""}${K.ort ? "<br>" + esc(K.ort) : ""}` +
-    `${K.tel ? `<br>📞 <a href="${esc(telLink(K.tel))}">${esc(K.tel)}</a>` : ""}${K.mail ? `<br>✉️ <a href="mailto:${esc(K.mail)}">${esc(K.mail)}</a>` : ""}` +
-    `${K.notiz ? `<br><span class="muted">${esc(K.notiz)}</span>` : ""}`;
+  if (K) return `📇 <b>${esc(K.label)}</b>${kontaktHtml(K) ? "<br>" + kontaktHtml(K) : ""}`;
   const n = String(name || "").trim();
   if (n && Z.kaeufer.some(k => k.name.toLowerCase() === n.toLowerCase()))
-    return `<span class="muted">${esc(n)} ass nach net am Adressbuch.</span><br><button class="knopf" data-insbuch="${esc(n)}">+ An d'Adressbuch</button>`;
+    return `<span class="muted">${esc(n)} ass nach net bei de Clienten.</span><br><button class="knopf" data-insbuch="${esc(n)}">+ Bei d'Clienten</button>`;
   return "";
 }
+const leererKunde = () => ({ kid: null, firma: "", name: "", vorname: "", adresse: "", ort: "", tel: "", mail: "", notiz: "" });
 function namensFeld(inpSel, boxSel, infoSel, setze) {
   const inp = $(inpSel), box = $(boxSel), info = $(infoSel);
-  const zeigeInfo = () => { info.innerHTML = kundeInfoHtml(stammVon(Z, inp.value), inp.value); knopfInsBuch(info); };
   const knopfInsBuch = el => el.querySelectorAll("[data-insbuch]").forEach(b => b.onclick = () => {
-    KFORM = { kid: null, name: b.dataset.insbuch, adresse: "", ort: "", tel: "", mail: "", notiz: "" }; KUNDEN_AUF = true;
-    TAB = "livraisons"; EIN.tab = TAB; merke(SP, EIN); render(); const k = $("#kBuch"); if (k && k.scrollIntoView) k.scrollIntoView({ block: "start" });
+    KFORM = { ...leererKunde(), firma: b.dataset.insbuch };
+    TAB = "kunden"; EIN.tab = TAB; merke(SP, EIN); render(); window.scrollTo(0, 0);
   });
+  const zeigeInfo = () => { info.innerHTML = kundeInfoHtml(stammVon(Z, inp.value), inp.value); knopfInsBuch(info); };
   const vorschlag = () => {
     const { stamm, frueher } = kundenSuche(Z, inp.value);
-    const genau = stamm.length === 1 && !frueher.length && stamm[0].name.toLowerCase() === inp.value.trim().toLowerCase();
-    box.innerHTML = genau ? "" : stamm.map(k => `<button class="stamm" data-name="${esc(k.name)}">📇 ${esc(k.name)}</button>`).join("") +
+    const genau = stamm.length === 1 && !frueher.length && stamm[0].label.toLowerCase() === inp.value.trim().toLowerCase();
+    box.innerHTML = genau ? "" : stamm.map(k => `<button class="stamm" data-name="${esc(k.label)}">📇 ${esc(k.label)}</button>`).join("") +
       frueher.map(n => `<button data-name="${esc(n)}">${esc(n)}</button>`).join("");
     box.querySelectorAll("[data-name]").forEach(b => b.onclick = () => {
       inp.value = b.dataset.name; setze(b.dataset.name); box.innerHTML = ""; zeigeInfo();
@@ -1082,52 +1136,75 @@ function namensFeld(inpSel, boxSel, infoSel, setze) {
   inp.oninput = () => { setze(inp.value); vorschlag(); info.innerHTML = stammVon(Z, inp.value) ? kundeInfoHtml(stammVon(Z, inp.value), inp.value) : ""; };
   knopfInsBuch(info);
 }
+function kaufZeile(r) {
+  const wann = r.datum ? datumKurz(r.datum) : datumText(r.zeit);
+  const stand = r.geplant ? `<span class="chip">geplangt</span>` : r.offen > 0 ? `<span class="chip warn">${euro(r.offen)} op</span>` : `<span class="chip ok">✓ ${esc(r.wie || "bezuelt")}</span>`;
+  return `<div class="kauf">${r.liv ? "🚚 " : ""}${esc(wann)} · ${esc(postenText(r.posten))} · ${euro(r.betrag)} ${stand}</div>`;
+}
 function renderKunden() {
-  const box = $("#kBuch");
-  if (!box || tipptIn(box)) return;
-  if (KFORM) {
-    const F = KFORM;
-    box.innerHTML = `<div class="card"><h2>${F.kid ? "Client änneren" : "Neie Client"}</h2>
-      <label for="kName">Numm</label><input id="kName" autocapitalize="words" value="${esc(F.name)}" placeholder="Firma oder Virnumm Numm">
-      <label for="kAdr">Strooss an Nummer</label><textarea id="kAdr" class="adr" placeholder="z. B. 12, rue de la Gare">${esc(F.adresse)}</textarea>
-      <label for="kOrt">Postleitzuel an Uertschaft</label><input id="kOrt" value="${esc(F.ort)}" placeholder="z. B. L-5410 Beyren">
-      <label for="kTel">Telefon</label><input id="kTel" type="tel" inputmode="tel" value="${esc(F.tel)}" placeholder="+352 …">
-      <label for="kMail">E-Mail</label><input id="kMail" type="email" inputmode="email" autocapitalize="off" autocorrect="off" value="${esc(F.mail)}">
-      <label for="kNotiz">Remarque (fräiwëlleg)</label><input id="kNotiz" value="${esc(F.notiz)}" placeholder="z. B. Rechnung un d'Firma">
-      <button class="haupt" id="kOk">Späicheren</button>
-      <button class="haupt" id="kZu" style="background:var(--card2);color:var(--text)">Ofbriechen</button><div id="kMeld"></div></div>`;
-    const bind = (id, k) => { const el = $(id); el.oninput = () => { F[k] = el.value; }; };
-    bind("#kName", "name"); bind("#kAdr", "adresse"); bind("#kOrt", "ort"); bind("#kTel", "tel"); bind("#kMail", "mail"); bind("#kNotiz", "notiz");
-    $("#kZu").onclick = () => { KFORM = null; renderKunden(); };
-    $("#kOk").onclick = () => {
-      const meld = t => $("#kMeld").innerHTML = `<div class="meldung fehler">${esc(t)}</div>`;
-      const name = F.name.trim().replace(/\s+/g, " ");
-      if (!name) return meld("Wéi heescht de Client?");
-      if (Z.kunden.some(k => k.kid !== F.kid && k.name.toLowerCase() === name.toLowerCase())) return meld("Dëse Client ass schonn am Adressbuch.");
-      if (F.mail.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(F.mail.trim())) return meld("D'E-Mail-Adress gesäit net richteg aus.");
-      const e = { art: "kunde", kid: F.kid || "k-" + neueId().replace(/[^A-Za-z0-9-]/g, "").slice(0, 40), name,
-        adresse: F.adresse.trim(), ort: F.ort.trim(), tel: F.tel.trim(), mail: F.mail.trim(), notiz: F.notiz.trim() };
-      if (!gueltig({ ...e, id: "x", zeit: 0 })) return meld("Eppes ass ze laang.");
-      if (document.activeElement) document.activeElement.blur();
-      if (!eintragen([e]).length) return;
-      KFORM = null; KUNDEN_AUF = true; renderKunden();
-    };
-    return;
-  }
-  const liste = Z.kunden;
-  box.innerHTML = `<div class="card"><h2>📇 Stammclienten (${liste.length})</h2>
-    ${liste.length ? `<button class="knopf" id="kAuf" style="width:100%">${KUNDEN_AUF ? "Zouklappen ▴" : "Weisen ▾"}</button>` : `<div class="hinweis" style="margin:0">Nach keen Client am Adressbuch.</div>`}
-    ${KUNDEN_AUF ? liste.map(K => `<div class="kunde-zeile"><b>${esc(K.name)}</b>
-      <div class="hinweis" style="margin-top:2px">${[K.adresse ? esc(K.adresse).replace(/\n/g, ", ") : "", K.ort ? esc(K.ort) : ""].filter(Boolean).join(", ")}
-      ${K.tel ? `<br>📞 <a href="${esc(telLink(K.tel))}">${esc(K.tel)}</a>` : ""}${K.mail ? `<br>✉️ <a href="mailto:${esc(K.mail)}">${esc(K.mail)}</a>` : ""}${K.notiz ? `<br>${esc(K.notiz)}` : ""}</div>
-      <div class="knopfe"><button class="knopf" data-ked="${esc(K.kid)}">✎ Änneren</button><button class="knopf rot" data-kweg="${esc(K.kid)}">✕ Läschen</button></div></div>`).join("") : ""}
+  const box = $("#kListe");
+  if (!box) return;
+  const such = $("#kSuche");
+  if (KFORM) { such.parentElement.classList.add("versteckt"); return renderKundenForm(box); }
+  such.parentElement.classList.remove("versteckt");
+  if (tipptIn(box)) return;
+  if (!such.oninput) such.oninput = () => renderKunden();
+  const q = such.value.trim().toLowerCase();
+  const liste = Z.kunden.filter(K => !q || kundeNamen(K).some(n => n.includes(q)) || (K.ort || "").toLowerCase().includes(q));
+  box.innerHTML = `<div class="card"><h2>📇 Client (${Z.kunden.length})</h2>
+    ${liste.length ? liste.map(K => {
+      const auf = K_AUF.has(K.kid), akeef = auf && K_AKEEF.has(K.kid), kaeufe = auf ? kaeufeVon(Z, K) : [];
+      return `<div class="kz"><button class="kz-kopf ${auf ? "auf" : ""}" data-kauf="${esc(K.kid)}"><span class="drei">${auf ? "▼" : "▶"}</span>${esc(K.label)}</button>
+        ${auf ? `<div class="kz-inhalt">
+          ${kontaktHtml(K) ? `<div class="hinweis" style="margin:0 0 8px;line-height:1.6">${kontaktHtml(K)}</div>` : ""}
+          <div class="knopfe" style="margin:0 0 8px"><button class="knopf" data-ked="${esc(K.kid)}">✎ Änneren</button><button class="knopf rot" data-kweg="${esc(K.kid)}">✕ Läschen</button></div>
+          <button class="kz-kopf klein ${akeef ? "auf" : ""}" data-kakeef="${esc(K.kid)}"><span class="drei">${akeef ? "▼" : "▶"}</span>Akeef (${kaeufe.length})</button>
+          ${akeef ? (kaeufe.length ? kaeufe.map(kaufZeile).join("") : `<div class="hinweis" style="margin:4px 0 0 22px">Nach näischt.</div>`) : ""}
+        </div>` : ""}</div>`;
+    }).join("") : `<div class="leer">${q ? "Kee Client fonnt." : "Nach keen Client."}</div>`}
     <button class="haupt" id="kNeu">+ Neie Client</button></div>`;
-  const au = $("#kAuf"); if (au) au.onclick = () => { KUNDEN_AUF = !KUNDEN_AUF; renderKunden(); };
-  $("#kNeu").onclick = () => { KFORM = { kid: null, name: "", adresse: "", ort: "", tel: "", mail: "", notiz: "" }; renderKunden(); };
-  box.querySelectorAll("[data-ked]").forEach(b => b.onclick = () => { const K = liste.find(k => k.kid === b.dataset.ked); if (!K) return;
-    KFORM = { kid: K.kid, name: K.name, adresse: K.adresse || "", ort: K.ort || "", tel: K.tel || "", mail: K.mail || "", notiz: K.notiz || "" }; renderKunden(); });
-  box.querySelectorAll("[data-kweg]").forEach(b => b.onclick = () => { const K = liste.find(k => k.kid === b.dataset.kweg); if (!K) return;
-    if (confirm(`${K.name} aus dem Adressbuch läschen?\n\nVerkéf a Bestellunge bleiwen.`)) eintragen([{ art: "kunde", kid: K.kid, weg: true }]); });
+  $("#kNeu").onclick = () => { KFORM = leererKunde(); renderKunden(); window.scrollTo(0, 0); };
+  box.querySelectorAll("[data-kauf]").forEach(b => b.onclick = () => { const k = b.dataset.kauf; K_AUF.has(k) ? K_AUF.delete(k) : K_AUF.add(k); renderKunden(); });
+  box.querySelectorAll("[data-kakeef]").forEach(b => b.onclick = () => { const k = b.dataset.kakeef; K_AKEEF.has(k) ? K_AKEEF.delete(k) : K_AKEEF.add(k); renderKunden(); });
+  box.querySelectorAll("[data-ked]").forEach(b => b.onclick = () => { const K = Z.kunden.find(k => k.kid === b.dataset.ked); if (!K) return;
+    KFORM = { kid: K.kid, firma: K.firma || "", name: K.name || "", vorname: K.vorname || "", adresse: K.adresse || "", ort: K.ort || "", tel: K.tel || "", mail: K.mail || "", notiz: K.notiz || "" };
+    renderKunden(); window.scrollTo(0, 0); });
+  box.querySelectorAll("[data-kweg]").forEach(b => b.onclick = () => { const K = Z.kunden.find(k => k.kid === b.dataset.kweg); if (!K) return;
+    if (confirm(`${K.label} läschen?\n\nVerkéf a Bestellunge bleiwen.`)) eintragen([{ art: "kunde", kid: K.kid, weg: true }]); });
+}
+function renderKundenForm(box) {
+  if (tipptIn(box)) return;
+  const F = KFORM;
+  box.innerHTML = `<div class="card"><h2>${F.kid ? "Client änneren" : "Neie Client"}</h2>
+    <label for="kFirma">Firma</label><input id="kFirma" autocapitalize="words" value="${esc(F.firma)}" placeholder="z. B. Ferro Forum">
+    <div class="zeile"><div><label for="kName">Numm</label><input id="kName" autocapitalize="words" value="${esc(F.name)}"></div>
+      <div><label for="kVorname">Virnumm</label><input id="kVorname" autocapitalize="words" value="${esc(F.vorname)}"></div></div>
+    <div class="hinweis">Mat Firma: Numm a Virnumm = Kontaktpersoun (op der Rechnung „À l'attention de …“).</div>
+    <label for="kTel">Telefon</label><input id="kTel" type="tel" inputmode="tel" value="${esc(F.tel)}" placeholder="+352 …">
+    <label for="kMail">E-Mail</label><input id="kMail" type="email" inputmode="email" autocapitalize="off" autocorrect="off" value="${esc(F.mail)}">
+    <label for="kAdr">Strooss an Nummer</label><textarea id="kAdr" class="adr" placeholder="z. B. 12, rue de la Gare">${esc(F.adresse)}</textarea>
+    <label for="kOrt">Postleitzuel an Uertschaft</label><input id="kOrt" value="${esc(F.ort)}" placeholder="z. B. L-5410 Beyren">
+    <label for="kNotiz">Remarque (fräiwëlleg)</label><input id="kNotiz" value="${esc(F.notiz)}">
+    <button class="haupt" id="kOk">Späicheren</button>
+    <button class="haupt" id="kZu" style="background:var(--card2);color:var(--text)">Ofbriechen</button><div id="kMeld"></div></div>`;
+  const bind = (id, k) => { const el = $(id); el.oninput = () => { F[k] = el.value; }; };
+  bind("#kFirma", "firma"); bind("#kName", "name"); bind("#kVorname", "vorname"); bind("#kAdr", "adresse"); bind("#kOrt", "ort");
+  bind("#kTel", "tel"); bind("#kMail", "mail"); bind("#kNotiz", "notiz");
+  $("#kZu").onclick = () => { KFORM = null; renderKunden(); };
+  $("#kOk").onclick = () => {
+    const meld = t => $("#kMeld").innerHTML = `<div class="meldung fehler">${esc(t)}</div>`;
+    const sauber = t => String(t || "").trim().replace(/[ \t]+/g, " ");
+    const e = { art: "kunde", v: 2, kid: F.kid || "k-" + neueId().replace(/[^A-Za-z0-9-]/g, "").slice(0, 40),
+      firma: sauber(F.firma), name: sauber(F.name), vorname: sauber(F.vorname), adresse: String(F.adresse || "").trim(), ort: sauber(F.ort),
+      tel: sauber(F.tel), mail: sauber(F.mail), notiz: sauber(F.notiz) };
+    if (!e.firma && !e.name) return meld("Firma oder Numm aginn.");
+    if (Z.kunden.some(k => k.kid !== e.kid && k.label.toLowerCase() === kundeLabel(e).toLowerCase())) return meld(`„${kundeLabel(e)}“ gëtt et schonn.`);
+    if (e.mail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e.mail)) return meld("D'E-Mail-Adress gesäit net richteg aus.");
+    if (!gueltig({ ...e, id: "x", zeit: 0 })) return meld("Eppes ass ze laang.");
+    if (document.activeElement) document.activeElement.blur();
+    if (!eintragen([e]).length) return;
+    KFORM = null; K_AUF.add(e.kid); renderKunden();
+  };
 }
 
 /* ---------- Livraisons ---------- */
@@ -1143,7 +1220,6 @@ const freiText = (wer, key) => { const r = reserviertBei(Z, wer, key), h = hat(Z
 function renderLivraisons() {
   renderLListe();
   renderLForm();
-  renderKunden();
 }
 function renderLListe() {
   const box = $("#lListe");
@@ -1254,7 +1330,7 @@ function renderLForm(egal) {
     if (!posten.length) return meld("Wat gëtt geliwwert? Mindestens eng Fläsch.");
     const bekannt = Z.kaeufer.find(k => k.name.toLowerCase() === kunde.toLowerCase());
     const st = stammVon(Z, kunde);
-    const e = { art: "livraison", kunde: st ? st.name : bekannt ? bekannt.name : kunde, ...(st ? { kid: st.kid } : {}), kontakt: F.kontakt, aus: F.aus, datum: F.datum, posten,
+    const e = { art: "livraison", kunde: st ? st.label : bekannt ? bekannt.name : kunde, ...(st ? { kid: st.kid } : {}), kontakt: F.kontakt, aus: F.aus, datum: F.datum, posten,
       betrag: F.betrag != null ? F.betrag : lAuto(), rechnung: !!F.rechnung, anlass: F.anlass.trim(), notiz: F.notiz.trim() };
     if (!gueltig({ ...e, id: "x", zeit: 0 })) return meld("Eppes ass ze laang oder net richteg.");
     // Geplante Livraisons zählen schon (reserviert): reicht der freie Rest nicht, warnen (vom Nutzer, 14.11.2026).
@@ -1376,7 +1452,8 @@ async function vSpeichern() {
   // Gleicher Name in anderer Schreibweise? Dann den bekannten nehmen.
   const bekannt = Z.kaeufer.find(k => k.name.toLowerCase() === kaeufer.toLowerCase());
   const name = bekannt ? bekannt.name : kaeufer;
-  const neu = eintragen([...umbuchen, { art: "verkauf", verkaeufer: FORM.verkaeufer, kaeufer: name, posten, betrag }]);
+  const st = stammVon(Z, name);
+  const neu = eintragen([...umbuchen, { art: "verkauf", verkaeufer: FORM.verkaeufer, kaeufer: st ? st.label : name, ...(st ? { kid: st.kid } : {}), posten, betrag }]);
   const v = neu.find(e => e.art === "verkauf");
   if (!v) return; // gerade eben schon gespeichert (Doppeltipp)
   const wie = FORM.wie;
@@ -1934,7 +2011,7 @@ function renderVerlauf() {
   const offenIds = new Set(AUSGANG.map(e => e.id));
   const alle = [...Z.liste].reverse();
   const zeige = alle.slice(0, VERLAUF_MAX);
-  box.innerHTML = `<div class="card"><h2>Verlaf</h2>
+  box.innerHTML = `<button class="knopf" id="vlZurueck" style="margin-top:12px">← Zréck an d'Astellungen</button><div class="card"><h2>📜 Verlaf</h2>
     ${zeige.length ? zeige.map(e => {
       const weg = Z.storniert.get(e.id);
       const kann = e.art !== "storno" && !weg;
@@ -1953,6 +2030,7 @@ function renderVerlauf() {
     eintragen([{ art: "storno", ref: e.id }]);
   });
   const m = $("#mehr"); if (m) m.onclick = () => { VERLAUF_MAX += 200; renderVerlauf(); };
+  $("#vlZurueck").onclick = () => { TAB = "einst"; EFORM = null; render(); window.scrollTo(0, 0); };
 }
 
 /* ---------- Alte Verkäufe einspielen (einmalig) ---------- */
@@ -1976,7 +2054,9 @@ function renderEinst() {
   if (tipptIn(box)) return;
   if (!EFORM) EFORM = { leute: [...Z.cfg.leute] };
   const E = EFORM;
-  box.innerHTML = `<div class="card"><h2>Dësen Handy</h2>
+  box.innerHTML = `<div class="card"><h2>📜 Verlaf</h2><div class="hinweis" style="margin:0 0 8px">Wien wéini wat agedroen huet — hei kann een och Agaben läschen (rout ✕).</div>
+    <button class="knopf" id="eVerlauf" style="width:100%">Verlaf opmaachen</button></div>
+  <div class="card"><h2>Dësen Handy</h2>
     <label for="eIch">Ech sinn</label>
     <select id="eIch">${Z.cfg.leute.map(p => `<option ${p === EIN.ich ? "selected" : ""}>${esc(p)}</option>`).join("")}</select>
   </div>
@@ -2016,6 +2096,7 @@ function renderEinst() {
   };
   $("#eCsv").onclick = () => excelExport($("#eMeld"));
   $("#eNeu").onclick = () => abgleichen();
+  $("#eVerlauf").onclick = () => { TAB = "verlauf"; render(); window.scrollTo(0, 0); };
   const ea = $("#eAlt"); if (ea) ea.onclick = altEinspielen;
   const ab = $("#eAbmelden"); if (ab) ab.onclick = () => { if (confirm("Code op dësem Handy läschen?")) { EIN.code = ""; merke(SP, EIN); render(); } };
   const pw = $("#eProbeWeg"); if (pw) pw.onclick = () => {

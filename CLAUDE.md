@@ -1,7 +1,8 @@
 # millebeier
 
 Bestands- und Kassen-App für **Millebéier** (so geschrieben wie im Logo; Repo, Dateien und Speicherschlüssel ohne é), die kleine Brauerei von Laurent, Jeff, Marc und Claude
-(Luxemburg). **App-Texte auf Luxemburgisch** (vom Nutzer, 13.11.2026). **Reiter nach dem Ablauf** (vom Nutzer gewählt): Stock · Verkafen · Bestellungen · Ausstoend · Iwwersiicht · Verlaf
+(Luxemburg). **App-Texte auf Luxemburgisch** (vom Nutzer, 13.11.2026). **Reiter nach dem Ablauf** (vom Nutzer gewählt): Stock · Verkafen · Bestellungen · Ausstoend · Iwwersiicht · Client
+(seit Fassung 15.11. e; der **Verlauf** liegt seitdem im Zahnrad ⚙️ → „📜 Verlaf“, mit „← Zréck an d'Astellungen“)
 („Bestellungen“ hieß bis Fassung w „Livraisons“ — vom Nutzer umbenannt, auch alle Texte und das Excel-Blatt; im Code
 heißen Reiter, Funktionen und die Eintragsart weiter `livraison(s)`) (Handy 3 je Reihe, ab 600 px 6); mit dem Nutzer und in Code/Doku Deutsch, Du-Form. Angelegt 13.11.2026.
 
@@ -99,12 +100,20 @@ beim Verkaufen/Livraison und „Fläsche beweegen“ an, solange jemand welche h
   **Bestellung ändern** (vom Nutzer, Fassung z): nur geplante, Knopf „✎ Änneren“ → Formular vorbelegt (`LFORM.ersetzt`),
   Späicheren = storno der alten + neue `livraison` in einem `eintragen`; Reservierungsprüfung ohne die alte Fassung
   (`rechne` mit Prüf-storno). Gelieferte: kein Ändern (Verkauf/Zahlung/Rechnung hängen dran) — im Verlauf löschen.
-  **Stammclienten / Adressbuch** (vom Nutzer, 15.11.2026, Fassung c): Eintrag `kunde` (kid, name, adresse, ort, tel, mail,
-  notiz; neuester je kid gilt, `weg: true` = gelöscht) → `Z.kunden`. Im Reiter Bestellungen unten „📇 Stammclienten“
-  (anlegen/ändern/löschen, tel:/mailto:-Links). Beim Tippen eines Namens (Verkafen `#vKaeufer`, Bestellung `#lKunde`)
-  Vorschläge als Knöpfe darunter (`namensFeld`, `kundenSuche`: Wortanfang, Stammclienten 📇 zuerst, dann frühere Käufer)
-  — **kein Ausklappmenü** (vom Nutzer; die alte datalist ist weg). Antippen füllt ein und zeigt Kontaktkarte; früherer
-  Käufer → „+ An d'Adressbuch“. Bestellung speichert `kid` (Grundlage für die geplante Rechnungs-Vorlage).
+  **Clienten** (vom Nutzer, 15.11.2026; Fassung c als „Stammclienten“ bei Bestellungen, seit **Fassung e eigener Reiter
+  „Client“** am Ende, wo vorher Verlaf war): Eintrag `kunde` (`v: 2`, kid, firma, name, vorname, adresse, ort, tel, mail,
+  notiz; neuester je kid gilt, `weg: true` = gelöscht) → `Z.kunden` mit `label`. Firma **oder** Name Pflicht.
+  **Liste zeigt nur den Namen**: Firma, wenn gesetzt (auch wenn Name/Vorname da sind), sonst „Name Vorname“; **alphabetisch**
+  (`kundeLabel`). Rotes ▶ klappt Kontaktdaten auf (Kontaktperson 👤, Adresse, Ort, tel:/mailto:-Links, Remarque,
+  ✎ Änneren / ✕ Läschen), darin „▶ Akeef (n)“ (`kaeufeVon`: Verkäufe und geplante/gelieferte Bestellungen **ab jetzt**, nie die
+  alten Excel-Verkäufe; zugeordnet über `kid` oder den Namen; Datum, Biere, Betrag, bezahlt per / op / geplangt). Suchfeld
+  oben (Name, Firma, Kontaktperson, Ort). Doppelt = gleiches Label. **Kein c/o-Feld** (vom Nutzer gefragt, abgesprochen):
+  bei einer Firma sind Name/Vorname die Kontaktperson; Rechnungsadresse (`rechnungsAdresse`) = Firma / „À l'attention de
+  Vorname Name“ / Adresse / Ort — Grundlage für die **Rechnungs-Vorlage, die der Nutzer noch schickt**. Clienten aus Fassung c
+  (nur `name`, ohne `v`) gelten als Firma. Beim Tippen eines Namens (Verkafen `#vKaeufer`, Bestellung `#lKunde`) Vorschläge als
+  Knöpfe darunter (`namensFeld`, `kundenSuche`: Wortanfang, Clienten 📇 zuerst, dann frühere Käufer) — **kein Ausklappmenü**
+  (vom Nutzer). Antippen füllt ein und zeigt die Kontaktkarte; früherer Käufer → „+ Bei d'Clienten“ = Reiter Client mit
+  Formular, Firma vorbelegt. Bestellung **und Verkauf** speichern `kid` (`stammVon`) und das Label als Namen.
   **Livraison** (vom Nutzer, 14.11.2026): geplant, bis ein Verkauf mit `liv` = ihre id existiert („Geliwwert ✓“ legt ihn an,
   Flaschen aus `aus`, meist Lager — Verkauf hat dafür optional `aus`). Verkauf rückgängig → wieder geplant. Rechnung
   „gemaach“ = Eintrag `rechnung`. Geplantes zählt nirgends als verkauft.
@@ -181,7 +190,8 @@ Nutzer. Rückweg: D1 Time Travel (Restore auf einen Zeitpunkt davor).
   `npm install pdfjs-dist@3.11.174` in den Scratchpad. `test/fake-d1.mjs` = gemeinsame nachgebaute D1. Achtung beim
   Testen: derselbe Knopf zweimal < 800 ms zählt einmal (Doppeltipp-Schutz) — Tests müssen warten wie ein Mensch.
 - `node test/faesser.mjs` — Bier mit Fässern, Fass-Zeilen, Reservierung + Warnung (Gegenprobe gemacht), Zahlungsarten.
-- `node test/kunden.mjs` — Adressbuch, Vorschläge beim Tippen, Kontaktkarte, kid in Bestellung (Gegenprobe gemacht).
+- `node test/kunden.mjs` — Reiter Client (Anlegen, alphabetisch, Firma vor Name, Aufklappen, Akeef, Suche, Ändern, Löschen,
+  alte Clienten = Firma), Verlauf im Zahnrad, Vorschläge beim Tippen, „+ Bei d'Clienten“, kid in Bestellung (Gegenprobe gemacht).
 - `node test/biere.mjs` — Bier anlegen/ändern/archivieren/zurückholen/löschen (zwei Rückfragen, Gegenprobe gemacht),
   rotes ✕ im Verlauf, rotes Dreieck.
 

@@ -55,7 +55,7 @@ antworten = [true, true];
 await p.click('[data-bweg="Rusty (06.02.2026)"]'); await warte(200);
 ist("Löschen: beide bejaht → weg", await p.evaluate(() => Z.sortenNamen.includes("Rusty (06.02.2026)")), false);
 
-await p.click('[data-tab="verlauf"]');
+await p.click('#zahnrad'); await p.click('#eVerlauf');
 ist("Verlauf: rotes ✕", await p.evaluate(() => { const k = document.querySelector("[data-storno]"); return [k.textContent, getComputedStyle(k).color]; }), ["✕", "rgb(227, 20, 27)"]);
 antworten = [true];
 await p.locator("[data-storno]").first().click(); await warte(200);
