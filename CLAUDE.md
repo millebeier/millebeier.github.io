@@ -120,7 +120,7 @@ beim Verkaufen/Livraison und „Fläsche beweegen“ an, solange jemand welche h
   in einem der drei Felder Vorschläge als Knöpfe (`kundenSuche`, Clienten 📇 zuerst, dann frühere Käufer **und Kunden
   geplanter Bestellungen** — Fassung g, vom Nutzer gemeldet; alte Excel-Namen bewusst nicht, vom Nutzer) — **kein Ausklappmenü**.
   Client antippen füllt alle drei und zeigt die Kontaktkarte. **Nichts wird geraten** (vom Nutzer): ein früherer Käufer kommt
-  unverändert in das Feld, in dem getippt wurde; aufteilen tut man selbst. Ist es kein Client: Haken „☐ + Neie Client“; mit
+  unverändert in das Feld, in dem getippt wurde; aufteilen tut man selbst. Ist es kein Client: Haken „☐ Als neie Client späicheren“ (Text vom Nutzer, Fassung m); mit
   Haken klappen Telefon/E-Mail/Adresse/Ort auf (freiwillig, später im Reiter Client änderbar), beim Speichern kommt der
   `kunde`-Eintrag im selben `eintragen` wie Verkauf/Bestellung. Ohne Haken nur der Name (bekannte Schreibweise übernommen).
   Ohne Client speichern Verkauf/Bestellung zusätzlich `kf` = {firma,name,vorname} (Fassung h, vom Nutzer gemeldet: beim Ändern
