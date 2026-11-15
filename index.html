@@ -259,7 +259,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px}
 <script>
 /* Adresse des Cloudflare-Workers. Leer = Probe-Modus (alles nur auf diesem Handy). */
 const WORKER_URL = "https://millebeier.rjtp6r9s9h.workers.dev/";
-const FASSUNG = "15.11.2026 f";
+const FASSUNG = "15.11.2026 g";
 
 /* === Logik === (kein DOM; test/logik.mjs schneidet diesen Block aus) */
 const LAGER = "Lager";
@@ -640,7 +640,13 @@ function kundenSuche(Z, q, max = 5) {
   const passt = n => n.toLowerCase().startsWith(t) || n.toLowerCase().split(/[\s\-–]+/).some(w => w.startsWith(t));
   const stamm = Z.kunden.filter(k => kundeNamen(k).some(passt)).slice(0, max);
   const namen = new Set(Z.kunden.flatMap(kundeNamen));
-  const frueher = Z.kaeufer.map(k => k.name).filter(n => passt(n) && !namen.has(n.toLowerCase())).slice(0, Math.max(0, max - stamm.length));
+  // Frühere Käufer UND Kunden geplanter Bestellungen (vom Nutzer gemeldet, Fassung g: „Reimen David“ aus einer
+  // noch nicht gelieferten Bestellung kam beim Tippen nicht). Gleiche Schreibweise ohne Groß/klein nur einmal.
+  const alle = new Map();
+  for (const n of [...Z.kaeufer.map(k => k.name), ...Z.livraisons.map(L => L.kunde)]) {
+    const k = String(n || "").trim(); if (k && !alle.has(k.toLowerCase())) alle.set(k.toLowerCase(), k);
+  }
+  const frueher = [...alle.values()].filter(n => passt(n) && !namen.has(n.toLowerCase())).slice(0, Math.max(0, max - stamm.length));
   return { stamm, frueher };
 }
 const stammVon = (Z, name) => { const n = String(name || "").trim().toLowerCase(); return n ? Z.kunden.find(k => kundeNamen(k).includes(n)) || null : null; };
@@ -1189,8 +1195,9 @@ function kaeuferErgebnis(Z, k) {
   const K = kaeuferVon(Z, k);
   if (K) return { name: K.label, kid: K.kid, eintraege: [] };
   if (!k.neu) {
-    const bekannt = Z.kaeufer.find(x => x.name.toLowerCase() === label.toLowerCase()); // gleiche Schreibweise → bekannten nehmen
-    return { name: bekannt ? bekannt.name : label, kid: null, eintraege: [] };
+    // gleiche Schreibweise → bekannten nehmen (auch aus geplanten Bestellungen)
+    const bekannt = [...Z.kaeufer.map(x => x.name), ...Z.livraisons.map(L => L.kunde)].find(n => String(n).toLowerCase() === label.toLowerCase());
+    return { name: bekannt || label, kid: null, eintraege: [] };
   }
   const mail = sauber(k.mail);
   if (mail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(mail)) return { fehler: "D'E-Mail-Adress gesäit net richteg aus." };

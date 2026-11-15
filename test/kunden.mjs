@@ -69,6 +69,12 @@ ist("kee datalist", await p.evaluate(() => document.querySelectorAll("datalist, 
 await p.fill("#lN0", "6"); await p.click("#lOk"); await warte(200);
 ist("Bestellung mat kid", await p.evaluate(() => { const L = Z.livraisons[0]; return [L.kunde, L.kid === Z.kunden.find(k => k.firma === "Ferro Forum").kid]; }), ["Ferro Forum", true]);
 
+// Client vun enger geplangter Bestellung (nach keen Verkaf) gëtt och virgeschloen (gemellt: „rei…“ → Reimen David)
+await warte(900); await p.click("#lAuf"); await p.fill("#lName", "Reimen David"); await p.fill("#lN0", "2"); await p.click("#lOk"); await warte(200);
+await warte(900); await p.click("#lAuf"); await p.click("#lFirma"); await p.keyboard.type("rei");
+ist("Virschlag aus geplangter Bestellung", await p.evaluate(() => [...document.querySelectorAll("#lVorschlag button")].map(b => b.textContent)), ["Reimen David"]);
+await p.click("#lZu");
+
 // Verkafen ouni Haken: keen Client
 await p.click('[data-tab="verkaufen"]');
 await p.fill("#vVorname", "Tom"); await warte(100);
@@ -126,7 +132,7 @@ ist("Virnumm geännert: ale Numm bleift als alias", await p.evaluate(() => Z.kun
 ist("Akeef bleift 2", await p.evaluate(() => kaeufeVon(Z, Z.kunden.find(k => k.label === "BEST Sàrl")).length), 2);
 await warte(900); await p.click(`[data-ked="${await kid("Ferro Forum")}"]`);
 await p.fill("#kFirma", "Ferro Forum Foetz"); await p.click("#kOk"); await warte(200);
-ist("Bestellung weist neie Numm", await p.evaluate(() => Z.livraisons.map(L => L.kunde)), ["Ferro Forum Foetz"]);
+ist("Bestellung weist neie Numm", await p.evaluate(() => Z.livraisons.map(L => L.kunde)), a => a.includes("Ferro Forum Foetz") && !a.includes("Ferro Forum"));
 await p.click('[data-tab="livraisons"]');
 ist("an der Lëscht vun de Bestellungen", await p.locator("#lListe").innerText(), t => t.includes("Ferro Forum Foetz"));
 await warte(900); await p.click("[data-led]");
