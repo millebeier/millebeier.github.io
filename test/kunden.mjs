@@ -83,6 +83,15 @@ const rid2 = await p.evaluate(() => Z.livraisons.find(L => L.kunde === "Reimen D
 await warte(900); await p.click(`[data-led="${rid2}"]`);
 ist("no dem Späicheren bleift et opgedeelt", [await p.inputValue("#lName"), await p.inputValue("#lVorname")], ["Reimen", "David"]);
 await p.click("#lZu");
+await warte(900); await p.click("#lAuf"); await p.click("#lVorname"); await p.keyboard.type("rei");
+await p.click("#lVorschlag button");
+ist("Virschlag fëllt déi gespäichert Opdeelung", [await p.inputValue("#lFirma"), await p.inputValue("#lName"), await p.inputValue("#lVorname")], ["", "Reimen", "David"]);
+await p.check("#lNeuK"); await p.fill("#lN0", "1"); await p.click("#lOk"); await warte(200);
+ist("Client mat Haken ugeluecht", await p.evaluate(() => Z.kunden.filter(k => k.label === "Reimen David").length), 1);
+// Zweemol dee selwechte Client? Haken nach eng Kéier mat demselwechten Numm → keen zweeten
+await warte(900); await p.click("#lAuf"); await p.fill("#lName", "reimen"); await p.fill("#lVorname", "david"); await warte(100);
+ist("bekannt: kee Haken méi", await p.locator("#lNeuK").count(), 0);
+await p.click("#lZu");
 
 // Verkafen ouni Haken: keen Client
 await p.click('[data-tab="verkaufen"]');
@@ -153,7 +162,7 @@ await warte(900); await p.click(`[data-kauf="${await kid("Arendt Paul")}"]`); aw
 await p.fill("#kOrt", "L-1234 Luxembourg"); await p.click("#kOk"); await warte(200);
 ist("geännert, net duebel", await p.evaluate(() => Z.kunden.filter(k => k.name === "Arendt").map(k => k.ort)), ["L-1234 Luxembourg"]);
 await warte(900); await p.click(`[data-kauf="${await kid("Weber Lisa")}"]`); await p.click(`[data-kweg="${await kid("Weber Lisa")}"]`); await warte(200);
-ist("geläscht", await p.evaluate(() => Z.kunden.map(k => k.label)), ["Arendt Paul", "BEST Sàrl", "Ferro Forum Foetz", "Weber Anne"]);
+ist("geläscht", await p.evaluate(() => Z.kunden.map(k => k.label)), ["Arendt Paul", "BEST Sàrl", "Ferro Forum Foetz", "Reimen David", "Weber Anne"]);
 ist("Verkaf bleift (mam gespäicherten Numm)", await p.evaluate(() => Z.kaeufer.some(k => k.name === "Weber Lisa")), true);
 
 // Nëmmen Virnumm am Client-Reiter

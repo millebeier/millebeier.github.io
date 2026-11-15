@@ -123,6 +123,9 @@ beim Verkaufen/Livraison und „Fläsche beweegen“ an, solange jemand welche h
   `kunde`-Eintrag im selben `eintragen` wie Verkauf/Bestellung. Ohne Haken nur der Name (bekannte Schreibweise übernommen).
   Ohne Client speichern Verkauf/Bestellung zusätzlich `kf` = {firma,name,vorname} (Fassung h, vom Nutzer gemeldet: beim Ändern
   einer Bestellung kam „Reimen“/„David“ wieder ganz in Numm zurück); ältere Einträge ohne `kf` kommen ganz in Numm.
+  Vorschlag eines früheren Käufers mit gespeichertem `kf` füllt alle drei Felder so aus (`kfVon`, neuester Eintrag; Fassung j).
+  Ohne `kf` wie gehabt der ganze Text in ein Feld. **Kein Client doppelt:** gleiches Label → Haken verschwindet, der bestehende
+  Client wird genommen; im Reiter Client „gëtt et schonn“. Nur zwei Handys gleichzeitig offline könnten doppelt anlegen.
   **Namen bleiben beim Umbenennen gebunden** (vom Nutzer gefragt): Verkauf/Bestellung speichern `kid`; `rechne` löst jeden
   Käufer über `kid`, sonst über einen Namen des Clients (`kundeNamen` inkl. `alias`) auf und zeigt **überall den aktuellen
   Namen** (Ausstoend, Bestellungen, Excel, Verlauf; gespeicherter Text in `kaeuferText`/`kundeText`). Früherer Käufer per

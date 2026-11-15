@@ -259,7 +259,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px}
 <script>
 /* Adresse des Cloudflare-Workers. Leer = Probe-Modus (alles nur auf diesem Handy). */
 const WORKER_URL = "https://millebeier.rjtp6r9s9h.workers.dev/";
-const FASSUNG = "15.11.2026 i";
+const FASSUNG = "15.11.2026 j";
 
 /* === Logik === (kein DOM; test/logik.mjs schneidet diesen Block aus) */
 const LAGER = "Lager";
@@ -650,6 +650,17 @@ function kundenSuche(Z, q, max = 5) {
   }
   const frueher = [...alle.values()].filter(n => passt(n) && !namen.has(n.toLowerCase())).slice(0, Math.max(0, max - stamm.length));
   return { stamm, frueher };
+}
+/* Gespeicherte Aufteilung (kf) eines früheren Käufers: aus dem neuesten Verkauf / der neuesten Bestellung mit diesem Namen
+   (Fassung j, vom Nutzer). Ohne kf → null, dann kommt der Text unverändert in ein Feld (nichts raten). */
+function kfVon(Z, name) {
+  const n = String(name || "").trim().toLowerCase();
+  let best = null;
+  for (const e of [...Z.verkaeufe, ...Z.livraisons]) {
+    const t = String(e.kaeuferText || e.kundeText || e.kaeufer || e.kunde || "").trim().toLowerCase();
+    if (e.kf && t === n && (!best || e.zeit > best.zeit)) best = e;
+  }
+  return best ? best.kf : null;
 }
 const stammVon = (Z, name) => { const n = String(name || "").trim().toLowerCase(); return n ? Z.kunden.find(k => kundeNamen(k).includes(n)) || null : null; };
 
@@ -1183,7 +1194,10 @@ function kaeuferBinden(p, k) {
       Object.assign(k, { firma: K.firma || "", name: K.name || "", vorname: K.vorname || "", kid: K.kid, neu: false, vorher: "" });
       felder.forEach(el => { el.value = k[el.dataset.kf]; });
     } else {
-      k[zuletzt.dataset.kf] = b.dataset.name; zuletzt.value = b.dataset.name; k.kid = null; k.vorher = b.dataset.name;
+      const kf = kfVon(Z, b.dataset.name);
+      if (kf) { Object.assign(k, { firma: kf.firma || "", name: kf.name || "", vorname: kf.vorname || "" }); felder.forEach(el => { el.value = k[el.dataset.kf]; }); }
+      else { k[zuletzt.dataset.kf] = b.dataset.name; zuletzt.value = b.dataset.name; }
+      k.kid = null; k.vorher = b.dataset.name;
     }
     box.innerHTML = ""; zustand();
   };
