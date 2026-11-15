@@ -98,6 +98,7 @@ beim Verkaufen/Livraison und „Fläsche beweegen“ an, solange jemand welche h
   erst dann die Auswahl Lager/Leute.
   **Bestellungen: All / Just meng** (vom Nutzer, Fassung y, wie bei Ausstoend): „meng“ = Kontakt oder `aus` ist man selbst.
   **Bestellung ändern** (vom Nutzer, Fassung z): nur geplante, Knopf „✎ Änneren“ → Formular vorbelegt (`LFORM.ersetzt`),
+  scrollt den Formular-Anfang unter den festen Kopf (Fassung i; `scrollIntoView` legte ihn darunter, am iPhone gemeldet),
   Späicheren = storno der alten + neue `livraison` in einem `eintragen`; Reservierungsprüfung ohne die alte Fassung
   (`rechne` mit Prüf-storno). Gelieferte: kein Ändern (Verkauf/Zahlung/Rechnung hängen dran) — im Verlauf löschen.
   **Clienten** (vom Nutzer, 15.11.2026; Fassung c als „Stammclienten“ bei Bestellungen, seit **Fassung e eigener Reiter

@@ -259,7 +259,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px}
 <script>
 /* Adresse des Cloudflare-Workers. Leer = Probe-Modus (alles nur auf diesem Handy). */
 const WORKER_URL = "https://millebeier.rjtp6r9s9h.workers.dev/";
-const FASSUNG = "15.11.2026 h";
+const FASSUNG = "15.11.2026 i";
 
 /* === Logik === (kein DOM; test/logik.mjs schneidet diesen Block aus) */
 const LAGER = "Lager";
@@ -1342,7 +1342,9 @@ function renderLListe() {
       kontakt: L.kontakt, aus: L.aus, ausAendern: true, anlass: L.anlass || "", datum: L.datum, n,
       betrag: L.betrag === auto ? null : L.betrag, rechnung: !!L.rechnung, notiz: L.notiz || "", ersetzt: L.id };
     L_NEU = true; renderLForm(true);
-    const k = $("#lForm"); if (k && k.scrollIntoView) k.scrollIntoView({ behavior: "smooth", block: "start" });
+    // Formular-Anfang direkt unter den festen Kopf (vom Nutzer, Fassung i: sonst verdeckte der Kopf „Bestellung änneren“ und Firma)
+    const k = $("#lForm"), kopf = $("header");
+    if (k) window.scrollTo({ top: Math.max(0, k.getBoundingClientRect().top + window.scrollY - (kopf ? kopf.getBoundingClientRect().height : 0) - 12), behavior: "smooth" });
   });
   box.querySelectorAll("[data-lmeine]").forEach(b => b.onclick = () => { L_NUR_MEINE = b.dataset.lmeine === "1"; renderLListe(); });
   box.querySelectorAll("[data-geliwwert]").forEach(b => b.onclick = () => {
