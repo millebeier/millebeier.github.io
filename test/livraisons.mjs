@@ -52,6 +52,13 @@ await p.click("#lAuf"); await p.fill("#lFirma", "BEST"); await p.fill("#lDatum",
 await warte(900);
 const bestId = await p.evaluate(() => Z.livraisons.find(L => L.kunde === "BEST").id);
 await p.click(`[data-led="${bestId}"]`); await warte(200);
+await p.evaluate(() => { L_NEU = false; LFORM = null; renderLForm(); });
+await p.evaluate(() => { document.body.style.minHeight = "4000px"; window.scrollTo(0, 0); });
+await warte(900); await p.click("#lAuf"); await warte(1000);
+ist("Nei Bestellung: rutscht erop, Iwwerschrëft net ënnert dem Kapp", await p.evaluate(() => { const t = document.querySelector("#lForm h2").getBoundingClientRect().top, k = document.querySelector("header").getBoundingClientRect().bottom; return t >= k && t < k + 60; }), true);
+await p.evaluate(() => { document.body.style.minHeight = ""; });
+await p.evaluate(() => { L_NEU = false; LFORM = null; renderLForm(); window.scrollTo(0, 0); });
+await warte(900); await p.click(`[data-led="${bestId}"]`); await warte(200);
 await warte(1000);
 ist("Bestellung änneren: Iwwerschrëft net ënnert dem Kapp", await p.evaluate(() => document.querySelector("#lForm h2").getBoundingClientRect().top >= document.querySelector("header").getBoundingClientRect().bottom), true);
 ist("Formular vorbelegt", [await p.locator("#lForm h2").innerText(), await p.inputValue("#lFirma"), await p.inputValue("#lDatum"), await p.locator("#lOk").innerText()], ["Bestellung änneren", "BEST", "2026-12-20", "Späicheren"]);

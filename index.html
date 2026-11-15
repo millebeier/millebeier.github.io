@@ -259,7 +259,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px}
 <script>
 /* Adresse des Cloudflare-Workers. Leer = Probe-Modus (alles nur auf diesem Handy). */
 const WORKER_URL = "https://millebeier.rjtp6r9s9h.workers.dev/";
-const FASSUNG = "15.11.2026 j";
+const FASSUNG = "15.11.2026 k";
 
 /* === Logik === (kein DOM; test/logik.mjs schneidet diesen Block aus) */
 const LAGER = "Lager";
@@ -1356,9 +1356,7 @@ function renderLListe() {
       kontakt: L.kontakt, aus: L.aus, ausAendern: true, anlass: L.anlass || "", datum: L.datum, n,
       betrag: L.betrag === auto ? null : L.betrag, rechnung: !!L.rechnung, notiz: L.notiz || "", ersetzt: L.id };
     L_NEU = true; renderLForm(true);
-    // Formular-Anfang direkt unter den festen Kopf (vom Nutzer, Fassung i: sonst verdeckte der Kopf „Bestellung änneren“ und Firma)
-    const k = $("#lForm"), kopf = $("header");
-    if (k) window.scrollTo({ top: Math.max(0, k.getBoundingClientRect().top + window.scrollY - (kopf ? kopf.getBoundingClientRect().height : 0) - 12), behavior: "smooth" });
+    lFormOben();
   });
   box.querySelectorAll("[data-lmeine]").forEach(b => b.onclick = () => { L_NUR_MEINE = b.dataset.lmeine === "1"; renderLListe(); });
   box.querySelectorAll("[data-geliwwert]").forEach(b => b.onclick = () => {
@@ -1379,10 +1377,15 @@ function renderLListe() {
     zahlartWaehlen(`${v.kaeufer}: ${euro(v.offen)} bezuelt — wéi?`).then(wie => { if (wie) eintragen([{ art: "zahlung", ref: v.id, betrag: v.offen, wie }]); });
   });
 }
+// Formular-Anfang direkt unter den festen Kopf (vom Nutzer: Fassung i beim Ändern, Fassung k auch bei „Nei Bestellung“)
+function lFormOben() {
+  const k = $("#lForm"), kopf = $("header");
+  if (k) window.scrollTo({ top: Math.max(0, k.getBoundingClientRect().top + window.scrollY - (kopf ? kopf.getBoundingClientRect().height : 0) - 12), behavior: "smooth" });
+}
 function renderLForm(egal) {
   const box = $("#lForm");
   if (!egal && tipptIn(box)) return;
-  if (!L_NEU) { box.innerHTML = `<button class="haupt" id="lAuf">+ Nei Bestellung plangen</button><div id="lMeld">${LFORM && LFORM.meldung ? `<div class="meldung ok">${esc(LFORM.meldung)}</div>` : ""}</div>`; $("#lAuf").onclick = () => { L_NEU = true; LFORM = leereLivraison(); renderLForm(); }; return; }
+  if (!L_NEU) { box.innerHTML = `<button class="haupt" id="lAuf">+ Nei Bestellung plangen</button><div id="lMeld">${LFORM && LFORM.meldung ? `<div class="meldung ok">${esc(LFORM.meldung)}</div>` : ""}</div>`; $("#lAuf").onclick = () => { L_NEU = true; LFORM = leereLivraison(); renderLForm(); lFormOben(); }; return; }
   const F = LFORM;
   const opt = (liste, wert, txt = x => x) => liste.map(x => `<option value="${esc(x)}" ${x === wert ? "selected" : ""}>${esc(txt(x))}</option>`).join("");
   box.innerHTML = `<div class="card"><h2>${F.ersetzt ? "Bestellung änneren" : "Nei Bestellung"}</h2>
