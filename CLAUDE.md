@@ -99,6 +99,7 @@ beim Verkaufen/Livraison und „Fläsche beweegen“ an, solange jemand welche h
   **Bestellungen: All / Just meng** (vom Nutzer, Fassung y, wie bei Ausstoend): „meng“ = Kontakt oder `aus` ist man selbst.
   **Bestellung ändern** (vom Nutzer, Fassung z): nur geplante, Knopf „✎ Änneren“ → Formular vorbelegt (`LFORM.ersetzt`),
   scrollt den Formular-Anfang unter den festen Kopf (`lFormOben`; Fassung i beim Ändern, Fassung k auch bei „Nei Bestellung“),
+  nach Späicheren/Ofbriechen ganz nach oben (Fassung l),
   Späicheren = storno der alten + neue `livraison` in einem `eintragen`; Reservierungsprüfung ohne die alte Fassung
   (`rechne` mit Prüf-storno). Gelieferte: kein Ändern (Verkauf/Zahlung/Rechnung hängen dran) — im Verlauf löschen.
   **Clienten** (vom Nutzer, 15.11.2026; Fassung c als „Stammclienten“ bei Bestellungen, seit **Fassung e eigener Reiter
@@ -107,7 +108,8 @@ beim Verkaufen/Livraison und „Fläsche beweegen“ an, solange jemand welche h
   (seit Fassung f; Label dann Firma, sonst „Name Vorname“, sonst nur der Vorname).
   **Liste zeigt nur den Namen**: Firma, wenn gesetzt (auch wenn Name/Vorname da sind), sonst „Name Vorname“; **alphabetisch**
   (`kundeLabel`). Rotes ▶ klappt Kontaktdaten auf (Kontaktperson 👤, Adresse, Ort, tel:/mailto:-Links, Remarque,
-  ✎ Änneren / ✕ Läschen), darin „▶ Akeef (n)“ (`kaeufeVon`: Verkäufe und geplante/gelieferte Bestellungen **ab jetzt**, nie die
+  ✎ Änneren / ✕ Läschen; **klappt von selbst zu**, wenn man > 5 min nicht im Reiter war — anderer Reiter oder App im
+  Hintergrund, `K_WEG`/`K_ZU_MS`, Fassung l, vom Nutzer), darin „▶ Akeef (n)“ (`kaeufeVon`: Verkäufe und geplante/gelieferte Bestellungen **ab jetzt**, nie die
   alten Excel-Verkäufe; zugeordnet über `kid` oder den Namen; Datum, Biere, Betrag, bezahlt per / op / geplangt). Suchfeld
   oben (Name, Firma, Kontaktperson, Ort). Doppelt = gleiches Label. **Kein c/o-Feld** (vom Nutzer gefragt, abgesprochen):
   bei einer Firma sind Name/Vorname die Kontaktperson; Rechnungsadresse (`rechnungsAdresse`) = Firma / „À l'attention de

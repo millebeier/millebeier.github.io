@@ -49,6 +49,13 @@ ist("duebel ofgeleent", await p.locator("#kMeld").innerText(), t => t.includes("
 await p.click("#kZu");
 ist("zou: keng Kontaktdaten", await p.locator("#kListe").innerText(), t => !t.includes("rue de l'Usine"));
 
+// Automatesch zouklappen: kuerz an aner Reiter bleift op, no méi wéi 5 min net am Reiter Client geet alles zou
+await p.evaluate(() => { K_AUF.add(Z.kunden[0].kid); K_AKEEF.add(Z.kunden[0].kid); renderKunden(); });
+await p.click('[data-tab="bestand"]'); await p.click('[data-tab="kunden"]');
+ist("kuerz ewech: bleift op", await p.evaluate(() => K_AUF.size), 1);
+await p.click('[data-tab="bestand"]'); await p.evaluate(() => { K_WEG = Date.now() - 6 * 60 * 1000; }); await p.click('[data-tab="kunden"]');
+ist("no 6 min: alles zou", await p.evaluate(() => [K_AUF.size, K_AKEEF.size, document.querySelectorAll("#kListe .kz-inhalt").length]), [0, 0, 0]);
+
 // Sich
 await p.fill("#kSuche", "fer"); await warte(100);
 ist("Sich", await liste(), ["▶Ferro Forum"]);

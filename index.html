@@ -259,7 +259,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px}
 <script>
 /* Adresse des Cloudflare-Workers. Leer = Probe-Modus (alles nur auf diesem Handy). */
 const WORKER_URL = "https://millebeier.rjtp6r9s9h.workers.dev/";
-const FASSUNG = "15.11.2026 k";
+const FASSUNG = "15.11.2026 l";
 
 /* === Logik === (kein DOM; test/logik.mjs schneidet diesen Block aus) */
 const LAGER = "Lager";
@@ -939,8 +939,18 @@ function tipptIn(el) {
   return !!(a && el && el.contains(a) && /^(INPUT|SELECT|TEXTAREA)$/.test(a.tagName));
 }
 
+const K_AUF = new Set(), K_AKEEF = new Set();
+/* Aufgeklappte Clienten (Kontakt und Akeef) klappen von selbst wieder zu, wenn man länger als K_ZU_MS nicht im Reiter
+   Client war — anderer Reiter oder App im Hintergrund (vom Nutzer, Fassung l). Kurz hin und her bleibt offen. */
+const K_ZU_MS = 5 * 60 * 1000;
+let K_WEG = null;
+function kundenZuklappenPruefen() {
+  if (K_WEG && Date.now() - K_WEG > K_ZU_MS) { K_AUF.clear(); K_AKEEF.clear(); }
+  K_WEG = null;
+}
 function render() {
   const tab = bereit() ? TAB : "start";
+  if (tab === "kunden") kundenZuklappenPruefen(); else if (!K_WEG) K_WEG = Date.now();
   document.querySelectorAll("main > section").forEach(s => s.classList.toggle("versteckt", s.id !== "t-" + tab));
   $("#nav").classList.toggle("versteckt", !bereit());
   $("#zahnrad").classList.toggle("versteckt", !bereit());
@@ -1129,7 +1139,6 @@ async function excelExport(meldBox) {
    (Firma, sonst „Name Vorname“) mit rotem ▶; aufgeklappt: Kontaktdaten und ▶ Akeef (alles ab jetzt). Beim Tippen eines
    Namens (Verkafen, Bestellung) erscheinen Clienten als Knöpfe darunter — bewusst kein Ausklappmenü. */
 let KFORM = null;
-const K_AUF = new Set(), K_AKEEF = new Set();
 const telLink = t => `tel:${String(t).replace(/[^\d+]/g, "")}`;
 function kontaktHtml(K) {
   const z = [];
@@ -1424,7 +1433,8 @@ function renderLForm(egal) {
   box.querySelectorAll("[data-lminus]").forEach(b => b.onclick = () => setzeN(+b.dataset.lminus, (F.n[la[+b.dataset.lminus].key] || 0) - 1));
   box.querySelectorAll("[data-li]").forEach(inp => inp.oninput = () => setzeN(+inp.dataset.li, parseInt(inp.value, 10) || 0));
   $("#lBetrag").oninput = e => { const v = e.target.value.trim().replace(",", "."); F.betrag = v === "" ? null : (isFinite(+v) ? runde(+v) : F.betrag); };
-  $("#lZu").onclick = () => { L_NEU = false; LFORM = null; renderLForm(); };
+  // Nach Ofbriechen/Späicheren ganz nach oben (vom Nutzer, Fassung l)
+  $("#lZu").onclick = () => { L_NEU = false; LFORM = null; renderLForm(); window.scrollTo(0, 0); };
   $("#lOk").onclick = () => {
     const meld = t => $("#lMeld").innerHTML = `<div class="meldung fehler">${esc(t)}</div>`;
     const KE = kaeuferErgebnis(Z, F.k);
@@ -1446,7 +1456,7 @@ function renderLForm(egal) {
     const neu = eintragen([...KE.eintraege, ...(F.ersetzt ? [{ art: "storno", ref: F.ersetzt }] : []), e]);
     if (!neu.length) return;
     L_NEU = false; LFORM = { meldung: `✓ ${F.ersetzt ? "Geännert" : "Geplangt"}: ${e.kunde}, ${datumKurz(e.datum)}, ${postenText(posten)}` };
-    renderLForm();
+    renderLForm(); window.scrollTo(0, 0);
   };
 }
 
@@ -2284,7 +2294,10 @@ async function updatePruefen() {
   } catch {}
 }
 $("#neu").onclick = neuLaden;
-document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") { abgleichen(); updatePruefen(); } });
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "hidden") { if (!K_WEG) K_WEG = Date.now(); return; }
+  if (document.visibilityState === "visible") { if (TAB === "kunden") render(); abgleichen(); updatePruefen(); }
+});
 window.addEventListener("online", abgleichen);
 setInterval(() => { if (document.visibilityState === "visible") abgleichen(); }, 20000);
 
