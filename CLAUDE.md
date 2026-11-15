@@ -102,7 +102,8 @@ beim Verkaufen/Livraison und „Fläsche beweegen“ an, solange jemand welche h
   (`rechne` mit Prüf-storno). Gelieferte: kein Ändern (Verkauf/Zahlung/Rechnung hängen dran) — im Verlauf löschen.
   **Clienten** (vom Nutzer, 15.11.2026; Fassung c als „Stammclienten“ bei Bestellungen, seit **Fassung e eigener Reiter
   „Client“** am Ende, wo vorher Verlaf war): Eintrag `kunde` (`v: 2`, kid, firma, name, vorname, adresse, ort, tel, mail,
-  notiz; neuester je kid gilt, `weg: true` = gelöscht) → `Z.kunden` mit `label`. Firma **oder** Name Pflicht.
+  notiz, alias?; neuester je kid gilt, `weg: true` = gelöscht) → `Z.kunden` mit `label`. Firma, Name **oder** Vorname Pflicht
+  (seit Fassung f; Label dann Firma, sonst „Name Vorname“, sonst nur der Vorname).
   **Liste zeigt nur den Namen**: Firma, wenn gesetzt (auch wenn Name/Vorname da sind), sonst „Name Vorname“; **alphabetisch**
   (`kundeLabel`). Rotes ▶ klappt Kontaktdaten auf (Kontaktperson 👤, Adresse, Ort, tel:/mailto:-Links, Remarque,
   ✎ Änneren / ✕ Läschen), darin „▶ Akeef (n)“ (`kaeufeVon`: Verkäufe und geplante/gelieferte Bestellungen **ab jetzt**, nie die
@@ -110,10 +111,19 @@ beim Verkaufen/Livraison und „Fläsche beweegen“ an, solange jemand welche h
   oben (Name, Firma, Kontaktperson, Ort). Doppelt = gleiches Label. **Kein c/o-Feld** (vom Nutzer gefragt, abgesprochen):
   bei einer Firma sind Name/Vorname die Kontaktperson; Rechnungsadresse (`rechnungsAdresse`) = Firma / „À l'attention de
   Vorname Name“ / Adresse / Ort — Grundlage für die **Rechnungs-Vorlage, die der Nutzer noch schickt**. Clienten aus Fassung c
-  (nur `name`, ohne `v`) gelten als Firma. Beim Tippen eines Namens (Verkafen `#vKaeufer`, Bestellung `#lKunde`) Vorschläge als
-  Knöpfe darunter (`namensFeld`, `kundenSuche`: Wortanfang, Clienten 📇 zuerst, dann frühere Käufer) — **kein Ausklappmenü**
-  (vom Nutzer). Antippen füllt ein und zeigt die Kontaktkarte; früherer Käufer → „+ Bei d'Clienten“ = Reiter Client mit
-  Formular, Firma vorbelegt. Bestellung **und Verkauf** speichern `kid` (`stammVon`) und das Label als Namen.
+  (nur `name`, ohne `v`) gelten als Firma.
+  **Käufer-Felder in Verkafen und Bestellungen** (vom Nutzer, Fassung f — statt eines Namensfelds und statt „+ Bei d'Clienten“):
+  Firma · Numm · Virnumm (eins reicht; `kaeuferHtml`/`kaeuferBinden`/`kaeuferErgebnis`, Zustand `FORM.k`/`LFORM.k`). Beim Tippen
+  in einem der drei Felder Vorschläge als Knöpfe (`kundenSuche`, Clienten 📇 zuerst, dann frühere Käufer) — **kein Ausklappmenü**.
+  Client antippen füllt alle drei und zeigt die Kontaktkarte. **Nichts wird geraten** (vom Nutzer): ein früherer Käufer kommt
+  unverändert in das Feld, in dem getippt wurde; aufteilen tut man selbst. Ist es kein Client: Haken „☐ + Neie Client“; mit
+  Haken klappen Telefon/E-Mail/Adresse/Ort auf (freiwillig, später im Reiter Client änderbar), beim Speichern kommt der
+  `kunde`-Eintrag im selben `eintragen` wie Verkauf/Bestellung. Ohne Haken nur der Name (bekannte Schreibweise übernommen).
+  **Namen bleiben beim Umbenennen gebunden** (vom Nutzer gefragt): Verkauf/Bestellung speichern `kid`; `rechne` löst jeden
+  Käufer über `kid`, sonst über einen Namen des Clients (`kundeNamen` inkl. `alias`) auf und zeigt **überall den aktuellen
+  Namen** (Ausstoend, Bestellungen, Excel, Verlauf; gespeicherter Text in `kaeuferText`/`kundeText`). Früherer Käufer per
+  Vorschlag + Haken → sein alter Text als `alias`; Umbenennen im Reiter Client legt alte Namen in `alias` (max. 20).
+  Gelöschter Client → wieder der gespeicherte Text. `kaeufer`/`kunde` dürfen bis 120 Zeichen lang sein.
   **Livraison** (vom Nutzer, 14.11.2026): geplant, bis ein Verkauf mit `liv` = ihre id existiert („Geliwwert ✓“ legt ihn an,
   Flaschen aus `aus`, meist Lager — Verkauf hat dafür optional `aus`). Verkauf rückgängig → wieder geplant. Rechnung
   „gemaach“ = Eintrag `rechnung`. Geplantes zählt nirgends als verkauft.
@@ -191,7 +201,8 @@ Nutzer. Rückweg: D1 Time Travel (Restore auf einen Zeitpunkt davor).
   Testen: derselbe Knopf zweimal < 800 ms zählt einmal (Doppeltipp-Schutz) — Tests müssen warten wie ein Mensch.
 - `node test/faesser.mjs` — Bier mit Fässern, Fass-Zeilen, Reservierung + Warnung (Gegenprobe gemacht), Zahlungsarten.
 - `node test/kunden.mjs` — Reiter Client (Anlegen, alphabetisch, Firma vor Name, Aufklappen, Akeef, Suche, Ändern, Löschen,
-  alte Clienten = Firma), Verlauf im Zahnrad, Vorschläge beim Tippen, „+ Bei d'Clienten“, kid in Bestellung (Gegenprobe gemacht).
+  alte Clienten = Firma, nur Vorname), Verlauf im Zahnrad, Käufer-Felder mit/ohne Haken „Neie Client“, früherer Käufer → alias,
+  Umbenennen: aktueller Name überall, nichts fällt aus „Akeef“ (Gegenprobe gemacht).
 - `node test/biere.mjs` — Bier anlegen/ändern/archivieren/zurückholen/löschen (zwei Rückfragen, Gegenprobe gemacht),
   rotes ✕ im Verlauf, rotes Dreieck.
 

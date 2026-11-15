@@ -26,7 +26,7 @@ ist("Abfüllen: Fass wählbar", await p.evaluate(() => [...document.querySelecto
 
 // Livraison mit Fass planen → reserviert
 await p.click('[data-tab="livraisons"]');
-await p.click("#lAuf"); await p.click("#lAusAendern"); await p.selectOption("#lAus", "Lager"); await p.fill("#lKunde", "Ferro Forum"); await p.fill("#lDatum", "2026-12-05");
+await p.click("#lAuf"); await p.click("#lAusAendern"); await p.selectOption("#lAus", "Lager"); await p.fill("#lFirma", "Ferro Forum"); await p.fill("#lDatum", "2026-12-05");
 const zeilen = await p.evaluate(() => lArtikel().map(x => x.label));
 ist("Livraison: Fässer zur Auswahl", zeilen.filter(l => l.startsWith("Hopfenkönig (01.10.2026)")), ["Hopfenkönig (01.10.2026)", "Hopfenkönig (01.10.2026) · Fass 20 l", "Hopfenkönig (01.10.2026) · Fass 30 l"]);
 const idx = l => zeilen.indexOf(l);
@@ -39,7 +39,7 @@ ist("Stock zeigt Reservierung", (await p.evaluate(() => { TAB = "bestand"; rende
 // Zweite Livraison, die nicht mehr reicht → Warnung, abgelehnt → nichts geplant
 await p.evaluate(() => { TAB = "livraisons"; render(); });
 await warte(900);
-await p.click("#lAuf"); await p.click("#lAusAendern"); await p.selectOption("#lAus", "Lager"); await p.fill("#lKunde", "BEST"); await p.fill("#lDatum", "2026-12-10");
+await p.click("#lAuf"); await p.click("#lAusAendern"); await p.selectOption("#lAus", "Lager"); await p.fill("#lFirma", "BEST"); await p.fill("#lDatum", "2026-12-10");
 const z2 = await p.evaluate(() => lArtikel().map(x => x.label));
 await p.fill(`#lN${z2.indexOf("Hopfenkönig (01.10.2026)")}`, "30");
 antworten = [false];
@@ -64,7 +64,7 @@ ist("bezahlt per SumUp", await p.evaluate(() => Z.kasseNach), { sumup: 580 });
 
 // Verkaufen: Bar; Iwwersiicht zeigt Kasse nach Art und Fass-Zeilen
 await p.evaluate(() => { eintragen([{ art: "bewegung", sorte: "Hopfenkönig (01.10.2026)", n: 10, von: "Lager", an: "Marc" }]); TAB = "verkaufen"; FORM = null; render(); });
-await p.fill("#vKaeufer", "Paul"); await p.click('[data-plus="' + (await p.evaluate(() => vArtikel().findIndex(x => x.key === "Hopfenkönig (01.10.2026)"))) + '"]');
+await p.fill("#vVorname", "Paul"); await p.click('[data-plus="' + (await p.evaluate(() => vArtikel().findIndex(x => x.key === "Hopfenkönig (01.10.2026)"))) + '"]');
 await p.click('[data-bez="bar"]'); await p.click("#vSpeichern"); await warte(200);
 ist("Verkauf bar", await p.locator("#vMeldung").innerText(), s => s.includes("bezuelt per Bar"));
 await p.evaluate(() => { TAB = "uebersicht"; render(); });
@@ -78,7 +78,7 @@ ist("Liste pro Bier: Zahlungsart sichtbar", await p.locator("#t-uebersicht").inn
 // Lager: 10 da, 30 für BEST reserviert → frei −20, darf nicht angeboten werden. Erst nachfüllen.
 await p.evaluate(() => { eintragen([{ art: "abfuellung", sorte: "Hopfenkönig (01.10.2026)", n: 50 }]); EIN.ich = "Jeff"; TAB = "verkaufen"; FORM = null; render(); });
 const lagerVor = await p.evaluate(() => [hat(Z, "Lager", "Hopfenkönig (01.10.2026)"), frei(Z, "Lager", "Hopfenkönig (01.10.2026)")]);
-await p.fill("#vKaeufer", "Anne");
+await p.fill("#vVorname", "Anne");
 const iH = await p.evaluate(() => vArtikel().findIndex(x => x.key === "Hopfenkönig (01.10.2026)"));
 await p.fill(`#vN${iH}`, "4"); await p.click('[data-bez="wero"]'); await warte(900);
 await p.click("#vSpeichern");
@@ -89,7 +89,7 @@ await p.click('#frageWahl [data-wahl="q:Lager"]'); await warte(300);
 ist("aus dem Lager umgebucht und verkauft", await p.evaluate(() => [hat(Z, "Lager", "Hopfenkönig (01.10.2026)"), hat(Z, "Jeff", "Hopfenkönig (01.10.2026)"), Z.kaeufer.some(k => k.name === "Anne")]), [lagerVor[0] - 4, 0, true]);
 ist("Meldung nennt Umbuchung", await p.locator("#vMeldung").innerText(), s => s.includes("vum Lager ëmgebucht"));
 await warte(900);
-await p.fill("#vKaeufer", "Tom"); await p.fill(`#vN${iH}`, "2"); await p.click('[data-bez="bar"]'); await warte(900);
+await p.fill("#vVorname", "Tom"); await p.fill(`#vN${iH}`, "2"); await p.click('[data-bez="bar"]'); await warte(900);
 await p.click("#vSpeichern"); await p.waitForSelector("#frageWahl:not(.versteckt)"); await p.click("#frageZu"); await warte(200);
 ist("Ofbriechen: nichts verkauft", await p.evaluate(() => Z.kaeufer.some(k => k.name === "Tom")), false);
 ist("keine Seitenfehler", seitenfehler, []);

@@ -27,7 +27,7 @@ await p.click('[data-tab="kunden"]');
 ist("leer", await p.locator("#kListe").innerText(), t => t.includes("Client (0)") && t.includes("Nach keen Client"));
 await p.click("#kNeu");
 await p.click("#kOk"); await warte(100);
-ist("Firma oder Numm néideg", await p.locator("#kMeld").innerText(), t => t.includes("Firma oder Numm"));
+ist("Firma, Numm oder Virnumm néideg", await p.locator("#kMeld").innerText(), t => t.includes("Firma, Numm oder Virnumm"));
 await p.fill("#kFirma", "Ferro Forum"); await p.fill("#kName", "Muller"); await p.fill("#kVorname", "Jeff");
 await p.fill("#kAdr", "1, rue de l'Usine"); await p.fill("#kOrt", "L-3895 Foetz");
 await p.fill("#kTel", "+352 621 123 456"); await p.fill("#kMail", "info@ferroforum"); await warte(900); await p.click("#kOk"); await warte(100);
@@ -56,53 +56,94 @@ await p.fill("#kSuche", "jeff"); await warte(100);
 ist("Sich no Kontaktpersoun", await liste(), ["▶Ferro Forum"]);
 await p.fill("#kSuche", ""); await warte(100);
 
-// Bestellung: tippen → Virschlag → Info, kid gëtt gespäichert
-await p.evaluate(() => eintragen([{ art: "abfuellung", sorte: "NEIPA", n: 50 }]));
+// Bestellung: Firma/Numm/Virnumm, tippen → Virschlag → Info, kid gëtt gespäichert
+await p.evaluate(() => eintragen([{ art: "abfuellung", sorte: "NEIPA", n: 80 }, { art: "bewegung", sorte: "NEIPA", n: 30, von: "Lager", an: "Laurent" }]));
 await p.click('[data-tab="livraisons"]'); await p.click("#lAuf");
-await p.click("#lKunde"); await p.keyboard.type("fer");
-ist("Virschlag beim Tippen", await p.evaluate(() => [...document.querySelectorAll("#lVorschlag button")].map(b => b.textContent)), ["📇 Ferro Forum"]);
+ist("dräi Felder", await p.evaluate(() => ["lFirma", "lName", "lVorname"].map(id => !!document.getElementById(id))), [true, true, true]);
+await p.click("#lName"); await p.keyboard.type("mul");
+ist("Virschlag och iwwer d'Kontaktpersoun", await p.evaluate(() => [...document.querySelectorAll("#lVorschlag button")].map(b => b.textContent)), ["📇 Ferro Forum"]);
 await p.click("#lVorschlag button");
-ist("Info mat Adress", await p.locator("#lKundeInfo").innerText(), t => t.includes("Jeff Muller") && t.includes("L-3895 Foetz"));
+ist("Felder ausgefëllt", [await p.inputValue("#lFirma"), await p.inputValue("#lName"), await p.inputValue("#lVorname")], ["Ferro Forum", "Muller", "Jeff"]);
+ist("Info mat Adress, keen Haken", [await p.locator("#lKundeInfo").innerText(), await p.locator("#lNeuK").count()], v => v[0].includes("Jeff Muller") && v[0].includes("L-3895 Foetz") && v[1] === 0);
 ist("kee datalist", await p.evaluate(() => document.querySelectorAll("datalist, [list]").length), 0);
 await p.fill("#lN0", "6"); await p.click("#lOk"); await warte(200);
 ist("Bestellung mat kid", await p.evaluate(() => { const L = Z.livraisons[0]; return [L.kunde, L.kid === Z.kunden.find(k => k.firma === "Ferro Forum").kid]; }), ["Ferro Forum", true]);
 
-// Verkafen un d'Anne (per Virschlag) → kid um Verkaf
+// Verkafen ouni Haken: keen Client
 await p.click('[data-tab="verkaufen"]');
-await p.click("#vKaeufer"); await p.keyboard.type("ann");
-ist("Virschlag Persoun", await p.evaluate(() => [...document.querySelectorAll("#vVorschlag button")].map(b => b.textContent)), ["📇 Weber Anne"]);
-await p.evaluate(() => { const K = Z.kunden.find(k => k.name === "Weber"); eintragen([{ art: "verkauf", verkaeufer: "Laurent", kaeufer: K.label, kid: K.kid, posten: [{ sorte: "NEIPA", n: 2 }], betrag: 6 }]); });
+await p.fill("#vVorname", "Tom"); await warte(100);
+ist("Haken ugebueden", await p.locator("#vNeuK").count(), 1);
+ist("Kontaktfelder zou", await p.locator("#vTel").count(), 0);
+await p.click('[data-plus="0"]'); await p.click('[data-bez="bar"]'); await p.click("#vSpeichern"); await warte(200);
+ist("Verkaf un Tom, keen Client", await p.evaluate(() => [Z.verkaeufe.some(v => v.kaeufer === "Tom"), Z.kunden.some(k => k.label === "Tom")]), [true, false]);
+
+// Verkafen mat Haken: neie Client mat Telefon, kid um Verkaf
+await warte(900);
+await p.fill("#vName", "Weber"); await p.fill("#vVorname", "Lisa"); await p.check("#vNeuK"); await warte(100);
+ist("Haken → Kontaktfelder op", await p.locator("#vTel").count(), 1);
+await p.fill("#vTel", "691 555 666"); await p.fill("#vOrt", "L-5410 Beyren");
+await p.click('[data-plus="0"]'); await p.click('[data-plus="0"]'); await p.click('[data-bez="spaeter"]'); await p.click("#vSpeichern"); await warte(200);
+const lisa = await p.evaluate(() => { const K = Z.kunden.find(k => k.label === "Weber Lisa"); const v = Z.verkaeufe.find(v => v.kaeufer === "Weber Lisa"); return K && v && [K.tel, K.ort, v.kid === K.kid]; });
+ist("Client ugeluecht, Verkaf verbonnen", lisa, ["691 555 666", "L-5410 Beyren", true]);
+ist("Meldung", await p.locator("#vMeldung").innerText(), t => t.includes("neie Client"));
+await warte(900);
+await p.fill("#vVorname", "Lisa"); await p.fill("#vName", "Weber"); await warte(100);
+ist("elo bekannt: Kontaktkaart, keen Haken", [await p.locator("#vKundeInfo").innerText(), await p.locator("#vNeuK").count()], v => v[0].includes("691 555 666") && v[1] === 0);
+await p.fill("#vVorname", ""); await p.fill("#vName", "");
+
+// Fréiere Keefer: Text kënnt onverännert an d'Feld, selwer opdeelen, ale Numm bleift als alias
+await p.evaluate(() => eintragen([{ art: "verkauf", verkaeufer: "Laurent", kaeufer: "Marc Gloden", posten: [{ sorte: "NEIPA", n: 1 }], betrag: 3 }]));
+await warte(900);
+await p.click("#vName"); await p.keyboard.type("glo");
+ist("fréiere Keefer (Wuertufank)", await p.evaluate(() => [...document.querySelectorAll("#vVorschlag button")].map(b => b.textContent)), ["Marc Gloden"]);
+await p.click("#vVorschlag button");
+ist("onverännert an d'Feld, an deem getippt gouf", [await p.inputValue("#vFirma"), await p.inputValue("#vName"), await p.inputValue("#vVorname")], ["", "Marc Gloden", ""]);
+await p.fill("#vName", "Gloden"); await p.fill("#vVorname", "Marc"); await p.fill("#vFirma", "BEST");
+await p.check("#vNeuK"); await p.click('[data-plus="0"]'); await p.click('[data-bez="bar"]'); await p.click("#vSpeichern"); await warte(200);
+ist("Client BEST mat alias", await p.evaluate(() => { const K = Z.kunden.find(k => k.label === "BEST"); return K && [K.name, K.vorname, K.alias]; }), ["Gloden", "Marc", ["Marc Gloden"]]);
+ist("alen Akaf weist elo den aktuellen Numm", await p.evaluate(() => Z.verkaeufe.filter(v => v.kaeuferText === "Marc Gloden").map(v => v.kaeufer)), ["BEST"]);
+ist("Ausstoend/Keefer: kee „Marc Gloden“ méi", await p.evaluate(() => Z.kaeufer.map(k => k.name).includes("Marc Gloden")), false);
 
 // Akeef
 await p.click('[data-tab="kunden"]');
 const kid = n => p.evaluate(n => Z.kunden.find(k => k.label === n).kid, n);
+await p.evaluate(() => { K_AUF.clear(); K_AKEEF.clear(); renderKunden(); });
 await p.click(`[data-kauf="${await kid("Ferro Forum")}"]`);
 ist("Akeef zou", await p.locator("#kListe").innerText(), t => t.includes("Akeef (1)") && !t.includes("geplangt"));
 await p.click(`[data-kakeef="${await kid("Ferro Forum")}"]`);
-ist("Akeef: geplangt Bestellung", await p.locator("#kListe").innerText(), t => t.includes("6") && t.includes("geplangt"));
-await warte(900); await p.click(`[data-kauf="${await kid("Weber Anne")}"]`); await p.click(`[data-kakeef="${await kid("Weber Anne")}"]`);
-ist("Akeef: Verkaf op", await p.evaluate(() => [...document.querySelectorAll(".kauf")].map(d => d.textContent)), a => a.some(t => t.includes("6,00") && t.includes("op") || t.includes("6 €") && t.includes("op")));
+ist("Akeef: geplangt Bestellung", await p.locator("#kListe").innerText(), t => t.includes("geplangt"));
+await warte(900); await p.click(`[data-kauf="${await kid("BEST")}"]`); await p.click(`[data-kakeef="${await kid("BEST")}"]`);
+ist("Akeef BEST: alen an neien Akaf", await p.locator("#kListe").innerText(), t => t.includes("Akeef (2)"));
 
-// Fréiere Keefer → „+ Bei d'Clienten“
-await p.evaluate(() => { eintragen([{ art: "verkauf", verkaeufer: "Laurent", kaeufer: "Marc Gloden", posten: [{ sorte: "NEIPA", n: 1 }], betrag: 3 }]); TAB = "verkaufen"; FORM = null; render(); });
-await p.click("#vKaeufer"); await p.keyboard.type("glo");
-ist("fréiere Keefer (Wuertufank)", await p.evaluate(() => [...document.querySelectorAll("#vVorschlag button")].map(b => b.textContent)), ["Marc Gloden"]);
-await p.click("#vVorschlag button");
-ist("Knäppchen Bei d'Clienten", await p.locator("#vKundeInfo").innerText(), t => t.includes("nach net bei de Clienten") && t.includes("+ Bei d'Clienten"));
-await p.click("#vKundeInfo [data-insbuch]"); await warte(200);
-ist("Formular am Reiter Client", [await p.evaluate(() => TAB), await p.inputValue("#kFirma")], ["kunden", "Marc Gloden"]);
-await p.click("#kOk"); await warte(200);
-ist("Marc elo Client", await liste(), a => a.some(t => t.includes("Marc Gloden")));
-await p.click(`[data-kakeef="${await kid("Marc Gloden")}"]`);
-ist("Akeef vum fréiere Keefer iwwer den Numm", await p.locator("#kListe").innerText(), t => t.includes("Akeef (1)"));
+// Ëmbenennen: Bestellung a Verkaf weisen den neien Numm, näischt fält eraus
+await warte(900); await p.click(`[data-ked="${await kid("BEST")}"]`);
+await p.fill("#kFirma", "BEST Sàrl"); await p.click("#kOk"); await warte(200);
+ist("ëmbenannt, alias huet den ale Firmennumm", await p.evaluate(() => Z.kunden.find(k => k.label === "BEST Sàrl").alias), a => a.includes("BEST"));
+ist("Akeef nach ëmmer 2", await p.locator("#kListe").innerText(), t => t.includes("Akeef (2)"));
+await warte(900); await p.click(`[data-ked="${await kid("BEST Sàrl")}"]`);
+await p.fill("#kVorname", "Marcel"); await p.click("#kOk"); await warte(200);
+ist("Virnumm geännert: ale Numm bleift als alias", await p.evaluate(() => Z.kunden.find(k => k.label === "BEST Sàrl").alias), a => a.includes("Marc Gloden") && a.includes("BEST"));
+ist("Akeef bleift 2", await p.evaluate(() => kaeufeVon(Z, Z.kunden.find(k => k.label === "BEST Sàrl")).length), 2);
+await warte(900); await p.click(`[data-ked="${await kid("Ferro Forum")}"]`);
+await p.fill("#kFirma", "Ferro Forum Foetz"); await p.click("#kOk"); await warte(200);
+ist("Bestellung weist neie Numm", await p.evaluate(() => Z.livraisons.map(L => L.kunde)), ["Ferro Forum Foetz"]);
+await p.click('[data-tab="livraisons"]');
+ist("an der Lëscht vun de Bestellungen", await p.locator("#lListe").innerText(), t => t.includes("Ferro Forum Foetz"));
+await warte(900); await p.click("[data-led]");
+ist("Bestellung änneren: Felder vum Client", [await p.inputValue("#lFirma"), await p.inputValue("#lName"), await p.locator("#lKundeInfo").innerText()], v => v[0] === "Ferro Forum Foetz" && v[1] === "Muller" && v[2].includes("📇"));
+await p.evaluate(() => { L_NEU = false; LFORM = null; TAB = "kunden"; render(); });
 
 // Änneren a läschen
 await warte(900); await p.click(`[data-kauf="${await kid("Arendt Paul")}"]`); await p.click(`[data-ked="${await kid("Arendt Paul")}"]`);
 await p.fill("#kOrt", "L-1234 Luxembourg"); await p.click("#kOk"); await warte(200);
 ist("geännert, net duebel", await p.evaluate(() => Z.kunden.filter(k => k.name === "Arendt").map(k => k.ort)), ["L-1234 Luxembourg"]);
-await warte(900); await p.click(`[data-kweg="${await kid("Weber Anne")}"]`); await warte(200);
-ist("geläscht", await p.evaluate(() => Z.kunden.map(k => k.label)), ["Arendt Paul", "Ferro Forum", "Marc Gloden"]);
-ist("Verkaf bleift", await p.evaluate(() => Z.kaeufer.some(k => k.name === "Weber Anne")), true);
+await warte(900); await p.click(`[data-kauf="${await kid("Weber Lisa")}"]`); await p.click(`[data-kweg="${await kid("Weber Lisa")}"]`); await warte(200);
+ist("geläscht", await p.evaluate(() => Z.kunden.map(k => k.label)), ["Arendt Paul", "BEST Sàrl", "Ferro Forum Foetz", "Weber Anne"]);
+ist("Verkaf bleift (mam gespäicherten Numm)", await p.evaluate(() => Z.kaeufer.some(k => k.name === "Weber Lisa")), true);
+
+// Nëmmen Virnumm am Client-Reiter
+await warte(900); await p.click("#kNeu"); await p.fill("#kVorname", "Jos"); await warte(900); await p.click("#kOk"); await warte(200);
+ist("nëmmen Virnumm geet", await p.evaluate(() => Z.kunden.some(k => k.label === "Jos")), true);
 
 // Al Clienten (Fassung c, nëmmen „name“) ginn zu Firma
 await p.evaluate(() => eintragen([{ art: "kunde", kid: "alt-kunde-1", name: "Café Millebières", ort: "Beyren" }]));

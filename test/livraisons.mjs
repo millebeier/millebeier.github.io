@@ -25,7 +25,7 @@ ist("Huelen aus: Vorgabe eigener Name, Auswahl erst nach Änneren", [await p.loc
 await p.click("#lAusAendern");
 ist("Änneren zeigt Auswahl", await p.evaluate(() => [...document.querySelectorAll("#lAus option")].map(o => o.value)), ["Lager", "Jeff", "Marc", "Claude", "Laurent"]);
 await p.selectOption("#lAus", "Lager");
-await p.fill("#lKunde", "Ferro Forum");
+await p.fill("#lFirma", "Ferro Forum");
 await p.fill("#lDatum", "2026-12-05");
 await p.fill("#lAnlass", "Oarbechterkiermes");
 await p.fill("#lN0", "24"); await p.fill("#lN2", "12");
@@ -46,13 +46,13 @@ ist("Rechnung gemaach und bezuelt", await p.locator("#lListe").innerText(), s =>
 ist("Kasse", await p.evaluate(() => Z.kasse), 90);
 
 // zweite Livraison nur planen
-await p.click("#lAuf"); await p.fill("#lKunde", "BEST"); await p.fill("#lDatum", "2026-12-20"); await p.click('[data-lplus="0"]'); await p.click("#lOk"); await warte(200);
+await p.click("#lAuf"); await p.fill("#lFirma", "BEST"); await p.fill("#lDatum", "2026-12-20"); await p.click('[data-lplus="0"]'); await p.click("#lOk"); await warte(200);
 
 // Geplante Bestellung ändern: Datum und Menge korrigieren
 await warte(900);
 const bestId = await p.evaluate(() => Z.livraisons.find(L => L.kunde === "BEST").id);
 await p.click(`[data-led="${bestId}"]`); await warte(200);
-ist("Formular vorbelegt", [await p.locator("#lForm h2").innerText(), await p.inputValue("#lKunde"), await p.inputValue("#lDatum"), await p.locator("#lOk").innerText()], ["Bestellung änneren", "BEST", "2026-12-20", "Späicheren"]);
+ist("Formular vorbelegt", [await p.locator("#lForm h2").innerText(), await p.inputValue("#lName"), await p.inputValue("#lDatum"), await p.locator("#lOk").innerText()], ["Bestellung änneren", "BEST", "2026-12-20", "Späicheren"]);
 await p.fill("#lDatum", "2026-12-21");
 const iN = await p.evaluate(() => lArtikel().findIndex(x => x.key === "NEIPA"));
 await p.fill(`#lN${iN}`, "4");

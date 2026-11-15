@@ -62,21 +62,21 @@ ist("Tabelle zeigt Lager 24", await txt(A, "#bTabelle"), s => /Lager\s+24/.test(
 
 // Verkaufen, Tippen zeichenweise während Abgleich
 await A.click('[data-tab="verkaufen"]');
-await A.click("#vKaeufer");
+await A.click("#vVorname");
 for (const c of "Paul") { await A.keyboard.type(c); await A.evaluate(() => abgleichen()); await warte(50); }
-ist("Tippen übersteht Abgleich", [await A.inputValue("#vKaeufer"), await A.evaluate(() => document.activeElement.id)], ["Paul", "vKaeufer"]);
+ist("Tippen übersteht Abgleich", [await A.inputValue("#vVorname"), await A.evaluate(() => document.activeElement.id)], ["Paul", "vVorname"]);
 for (let i = 0; i < 3; i++) await A.click('[data-plus="0"]');
 ist("Betrag automatisch", await A.inputValue("#vBetrag"), "9");
 await A.click("#vSpeichern");
 ist("ohne Bezahlt-Wahl: Hinweis", await txt(A, "#vMeldung"), s => s.includes("Wéi bezuelt?"));
 await A.click('[data-bez="spaeter"]'); await A.click("#vSpeichern");
 ist("Verkauf eingetragen", await txt(A, "#vMeldung"), s => s.includes("Paul") && s.includes("9 €"));
-ist("Formular leer", await A.inputValue("#vKaeufer"), "");
+ist("Formular leer", await A.inputValue("#vVorname"), "");
 // zweiter Verkauf mit Rabatt, bezahlt
-await A.fill("#vKaeufer", "Anne"); await A.click('[data-plus="0"]'); await A.click('[data-plus="0"]');
+await A.fill("#vVorname", "Anne"); await A.click('[data-plus="0"]'); await A.click('[data-plus="0"]');
 await A.fill("#vBetrag", "5"); await A.click('[data-bez="bar"]'); await A.click("#vSpeichern");
 // mehr verkaufen als da → Nachfrage (wird bestätigt)
-await A.fill("#vKaeufer", "paul"); await A.fill("#vN0", "20"); await A.click('[data-bez="spaeter"]'); await A.click("#vSpeichern");
+await A.fill("#vVorname", "paul"); await A.fill("#vN0", "20"); await A.click('[data-bez="spaeter"]'); await A.click("#vSpeichern");
 await A.waitForSelector("#frageWahl:not(.versteckt)"); await A.click('#frageWahl [data-wahl="trotzdem"]');
 await warte(400);
 ist("Name in bekannter Schreibweise", await A.evaluate(() => Z.kaeufer.map(k => k.name)), ["Paul", "Anne"]);
@@ -98,7 +98,7 @@ ist("Bei Jeff alles bezahlt", await txt(B, "#t-offen"), s => s.includes("Alles b
 // Offline: Eintrag wartet und geht später raus
 SERVER_AN = false;
 await B.click('[data-tab="verkaufen"]');
-await B.fill("#vKaeufer", "Tom"); await B.click('[data-plus="0"]'); await B.click('[data-bez="bar"]'); await B.click("#vSpeichern");
+await B.fill("#vVorname", "Tom"); await B.click('[data-plus="0"]'); await B.click('[data-bez="bar"]'); await B.click("#vSpeichern");
 await warte(300);
 ist("offline: wartet", await txt(B, "#sync"), s => s.includes("nach net geschéckt"));
 await B.reload(); await warte(300);
@@ -126,7 +126,7 @@ ist("neuer Preis bei Jeff", await B.evaluate(() => Z.cfg.sorten[2].preis), 3.5);
 // Doppeltipp: Speichern zweimal schnell → ein Verkauf; Abfüllen doppelt → einmal; −/+ zählt jeden Tipp.
 await A.click('[data-tab="verkaufen"]');
 const vorher = await A.evaluate(() => Z.verkaeufe.length);
-await A.fill("#vKaeufer", "Doppelt"); await A.click('[data-plus="0"]'); await A.click('[data-plus="0"]');
+await A.fill("#vVorname", "Doppelt"); await A.click('[data-plus="0"]'); await A.click('[data-plus="0"]');
 ist("−/+ zählt beide Tipps", await A.inputValue("#vN0"), "2");
 await A.click('[data-bez="bar"]');
 await A.dblclick("#vSpeichern");
@@ -151,10 +151,10 @@ await A.click('#zahnrad'); await A.click('#eVerlauf');
 await Promise.all([A.waitForEvent("load"), A.evaluate(() => updatePruefen())]);
 ist("neue Fassung von selbst geladen", await txt(A, "#fuss"), s => s.includes("TEST-NEU"));
 await B.click('[data-tab="verkaufen"]');
-await B.fill("#vKaeufer", "Lisa");
+await B.fill("#vVorname", "Lisa");
 await B.evaluate(() => document.activeElement.blur());
 await B.evaluate(() => updatePruefen());
-ist("mitten im Eintrag: Knopf statt Neuladen", [await B.locator("#neu").isVisible(), await B.inputValue("#vKaeufer")], [true, "Lisa"]);
+ist("mitten im Eintrag: Knopf statt Neuladen", [await B.locator("#neu").isVisible(), await B.inputValue("#vVorname")], [true, "Lisa"]);
 await Promise.all([B.waitForEvent("load"), B.click("#neu")]);
 ist("Knopf lädt neu", await txt(B, "#fuss"), s => s.includes("TEST-NEU"));
 await B.evaluate(() => updatePruefen()); await warte(300);
