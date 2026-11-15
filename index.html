@@ -259,7 +259,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px}
 <script>
 /* Adresse des Cloudflare-Workers. Leer = Probe-Modus (alles nur auf diesem Handy). */
 const WORKER_URL = "https://millebeier.rjtp6r9s9h.workers.dev/";
-const FASSUNG = "15.11.2026 g";
+const FASSUNG = "15.11.2026 h";
 
 /* === Logik === (kein DOM; test/logik.mjs schneidet diesen Block aus) */
 const LAGER = "Lager";
@@ -292,6 +292,8 @@ function euro(x) {
 
 const optDatum = d => d === undefined || d === "" || (typeof d === "string" && /^\d{4}-\d{2}-\d{2}$/.test(d));
 const optZahl = (x, a, b) => x === undefined || x === null || (typeof x === "number" && isFinite(x) && x >= a && x <= b);
+const kfOk = kf => kf === undefined || (kf && typeof kf === "object" && !Array.isArray(kf) &&
+  Object.keys(kf).every(x => ["firma", "name", "vorname"].includes(x) && typeof kf[x] === "string" && kf[x].length <= 80));
 const optText = (t, m) => t === undefined || (typeof t === "string" && t.length <= m);
 const postenOk = p => Array.isArray(p) && p.length > 0 && p.length <= 30 && p.every(x => x && text(x.sorte) && ganz(x.n));
 
@@ -305,11 +307,11 @@ function gueltig(e) {
       return text(e.verkaeufer) && text(e.kaeufer, 120) && geld(e.betrag) && postenOk(e.posten) &&
         (e.aus === undefined || text(e.aus)) && (e.liv === undefined || typeof e.liv === "string") &&
         optText(e.notiz, 300) && optDatum(e.datum) && (e.alt === undefined || typeof e.alt === "boolean") &&
-        (e.kid === undefined || typeof e.kid === "string");
+        (e.kid === undefined || typeof e.kid === "string") && kfOk(e.kf);
     case "livraison":
       return text(e.kunde, 120) && text(e.kontakt, 30) && text(e.aus, 30) && geld(e.betrag) && postenOk(e.posten) &&
         typeof e.datum === "string" && /^\d{4}-\d{2}-\d{2}$/.test(e.datum) &&
-        (e.anlass === undefined || e.anlass === "" || text(e.anlass, 80)) && (e.kid === undefined || typeof e.kid === "string") &&
+        (e.anlass === undefined || e.anlass === "" || text(e.anlass, 80)) && (e.kid === undefined || typeof e.kid === "string") && kfOk(e.kf) &&
         (e.notiz === undefined || (typeof e.notiz === "string" && e.notiz.length <= 300));
     case "rechnung": return typeof e.ref === "string";
     case "bier":
@@ -1197,7 +1199,10 @@ function kaeuferErgebnis(Z, k) {
   if (!k.neu) {
     // gleiche Schreibweise → bekannten nehmen (auch aus geplanten Bestellungen)
     const bekannt = [...Z.kaeufer.map(x => x.name), ...Z.livraisons.map(L => L.kunde)].find(n => String(n).toLowerCase() === label.toLowerCase());
-    return { name: bekannt || label, kid: null, eintraege: [] };
+    // Wer kein Client ist, behält trotzdem, was in welchem Feld stand (`kf`), sonst stünde beim Ändern einer Bestellung
+    // wieder alles in „Numm“ (vom Nutzer gemeldet, Fassung h: „Reimen“ / „David“ kam als „Reimen David“ in Numm zurück).
+    const kf = {}; for (const x of ["firma", "name", "vorname"]) if (sauber(k[x])) kf[x] = sauber(k[x]);
+    return { name: bekannt || label, kid: null, kf, eintraege: [] };
   }
   const mail = sauber(k.mail);
   if (mail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(mail)) return { fehler: "D'E-Mail-Adress gesäit net richteg aus." };
@@ -1333,7 +1338,7 @@ function renderLListe() {
     const n = {}; for (const p of L.posten) n[p.sorte] = (n[p.sorte] || 0) + p.n;
     const auto = runde(L.posten.reduce((a, p) => a + p.n * preisVon(Z.cfg, p.sorte), 0));
     const LK = L.kid && Z.kunden.find(x => x.kid === L.kid);
-    LFORM = { k: LK ? { ...leererKaeufer(), firma: LK.firma || "", name: LK.name || "", vorname: LK.vorname || "", kid: LK.kid } : { ...leererKaeufer(), name: L.kunde },
+    LFORM = { k: LK ? { ...leererKaeufer(), firma: LK.firma || "", name: LK.name || "", vorname: LK.vorname || "", kid: LK.kid } : L.kf ? { ...leererKaeufer(), ...L.kf } : { ...leererKaeufer(), name: L.kunde },
       kontakt: L.kontakt, aus: L.aus, ausAendern: true, anlass: L.anlass || "", datum: L.datum, n,
       betrag: L.betrag === auto ? null : L.betrag, rechnung: !!L.rechnung, notiz: L.notiz || "", ersetzt: L.id };
     L_NEU = true; renderLForm(true);
@@ -1408,7 +1413,7 @@ function renderLForm(egal) {
     if (KE.fehler) return meld(KE.fehler);
     if (!/^\d{4}-\d{2}-\d{2}$/.test(F.datum)) return meld("Wéini? Datum feelt.");
     if (!posten.length) return meld("Wat gëtt geliwwert? Mindestens eng Fläsch.");
-    const e = { art: "livraison", kunde: KE.name, ...(KE.kid ? { kid: KE.kid } : {}), kontakt: F.kontakt, aus: F.aus, datum: F.datum, posten,
+    const e = { art: "livraison", kunde: KE.name, ...(KE.kid ? { kid: KE.kid } : KE.kf ? { kf: KE.kf } : {}), kontakt: F.kontakt, aus: F.aus, datum: F.datum, posten,
       betrag: F.betrag != null ? F.betrag : lAuto(), rechnung: !!F.rechnung, anlass: F.anlass.trim(), notiz: F.notiz.trim() };
     if (!gueltig({ ...e, id: "x", zeit: 0 })) return meld("Eppes ass ze laang oder net richteg.");
     // Geplante Livraisons zählen schon (reserviert): reicht der freie Rest nicht, warnen (vom Nutzer, 14.11.2026).
@@ -1525,7 +1530,7 @@ async function vSpeichern() {
   const betrag = FORM.betrag != null ? FORM.betrag : vAutoBetrag();
   const umbuchen = await fehlendesHolen(FORM.verkaeufer, posten);
   if (umbuchen == null) return;
-  const neu = eintragen([...KE.eintraege, ...umbuchen, { art: "verkauf", verkaeufer: FORM.verkaeufer, kaeufer: KE.name, ...(KE.kid ? { kid: KE.kid } : {}), posten, betrag }]);
+  const neu = eintragen([...KE.eintraege, ...umbuchen, { art: "verkauf", verkaeufer: FORM.verkaeufer, kaeufer: KE.name, ...(KE.kid ? { kid: KE.kid } : KE.kf ? { kf: KE.kf } : {}), posten, betrag }]);
   const v = neu.find(e => e.art === "verkauf");
   if (!v) return; // gerade eben schon gespeichert (Doppeltipp)
   const wie = FORM.wie;

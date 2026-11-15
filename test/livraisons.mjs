@@ -52,7 +52,7 @@ await p.click("#lAuf"); await p.fill("#lFirma", "BEST"); await p.fill("#lDatum",
 await warte(900);
 const bestId = await p.evaluate(() => Z.livraisons.find(L => L.kunde === "BEST").id);
 await p.click(`[data-led="${bestId}"]`); await warte(200);
-ist("Formular vorbelegt", [await p.locator("#lForm h2").innerText(), await p.inputValue("#lName"), await p.inputValue("#lDatum"), await p.locator("#lOk").innerText()], ["Bestellung änneren", "BEST", "2026-12-20", "Späicheren"]);
+ist("Formular vorbelegt", [await p.locator("#lForm h2").innerText(), await p.inputValue("#lFirma"), await p.inputValue("#lDatum"), await p.locator("#lOk").innerText()], ["Bestellung änneren", "BEST", "2026-12-20", "Späicheren"]);
 await p.fill("#lDatum", "2026-12-21");
 const iN = await p.evaluate(() => lArtikel().findIndex(x => x.key === "NEIPA"));
 await p.fill(`#lN${iN}`, "4");

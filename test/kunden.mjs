@@ -74,6 +74,15 @@ await warte(900); await p.click("#lAuf"); await p.fill("#lName", "Reimen David")
 await warte(900); await p.click("#lAuf"); await p.click("#lFirma"); await p.keyboard.type("rei");
 ist("Virschlag aus geplangter Bestellung", await p.evaluate(() => [...document.querySelectorAll("#lVorschlag button")].map(b => b.textContent)), ["Reimen David"]);
 await p.click("#lZu");
+// Opgedeelt an änneren: bleift opgedeelt (gemellt: kënnt als „Reimen David“ ganz an Numm zréck)
+const rid = await p.evaluate(() => Z.livraisons.find(L => L.kunde === "Reimen David").id);
+await warte(900); await p.click(`[data-led="${rid}"]`);
+ist("ale Bestellung: ganzen Text an Numm", [await p.inputValue("#lName"), await p.inputValue("#lVorname")], ["Reimen David", ""]);
+await p.fill("#lName", "Reimen"); await p.fill("#lVorname", "David"); await p.click("#lOk"); await warte(200);
+const rid2 = await p.evaluate(() => Z.livraisons.find(L => L.kunde === "Reimen David").id);
+await warte(900); await p.click(`[data-led="${rid2}"]`);
+ist("no dem Späicheren bleift et opgedeelt", [await p.inputValue("#lName"), await p.inputValue("#lVorname")], ["Reimen", "David"]);
+await p.click("#lZu");
 
 // Verkafen ouni Haken: keen Client
 await p.click('[data-tab="verkaufen"]');

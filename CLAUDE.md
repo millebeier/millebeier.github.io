@@ -120,6 +120,8 @@ beim Verkaufen/Livraison und „Fläsche beweegen“ an, solange jemand welche h
   unverändert in das Feld, in dem getippt wurde; aufteilen tut man selbst. Ist es kein Client: Haken „☐ + Neie Client“; mit
   Haken klappen Telefon/E-Mail/Adresse/Ort auf (freiwillig, später im Reiter Client änderbar), beim Speichern kommt der
   `kunde`-Eintrag im selben `eintragen` wie Verkauf/Bestellung. Ohne Haken nur der Name (bekannte Schreibweise übernommen).
+  Ohne Client speichern Verkauf/Bestellung zusätzlich `kf` = {firma,name,vorname} (Fassung h, vom Nutzer gemeldet: beim Ändern
+  einer Bestellung kam „Reimen“/„David“ wieder ganz in Numm zurück); ältere Einträge ohne `kf` kommen ganz in Numm.
   **Namen bleiben beim Umbenennen gebunden** (vom Nutzer gefragt): Verkauf/Bestellung speichern `kid`; `rechne` löst jeden
   Käufer über `kid`, sonst über einen Namen des Clients (`kundeNamen` inkl. `alias`) auf und zeigt **überall den aktuellen
   Namen** (Ausstoend, Bestellungen, Excel, Verlauf; gespeicherter Text in `kaeuferText`/`kundeText`). Früherer Käufer per
