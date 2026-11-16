@@ -36,6 +36,10 @@ header{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:3px so
 #sync.fehler{color:var(--gelb)}
 .zahnrad{background:none;border:0;color:var(--text);font-size:22px;padding:4px 2px;cursor:pointer;position:relative;flex:none}
 .zahnrad.an{background:var(--akzent);border-radius:10px;padding:4px 6px}
+.kalic{display:inline-flex;flex-direction:column;width:26px;height:27px;border-radius:6px;overflow:hidden;background:#fff;vertical-align:middle;box-shadow:0 0 0 1px #000}
+.kalic i{display:block;height:9px;background:var(--akzent);color:#fff;font-style:normal;font-size:7px;line-height:9px;font-weight:800;text-align:center;letter-spacing:.2px}
+.kalic b{display:block;flex:1;color:#111;font-size:15px;line-height:18px;font-weight:800;text-align:center}
+.zahnrad.an .kalic{box-shadow:0 0 0 1px #fff}
 .zahnrad .badge{position:absolute;top:-4px;right:-6px;background:var(--akzent);color:#fff;border-radius:9px;font-size:11px;padding:1px 5px;font-weight:700;border:1px solid #000;line-height:1.3}
 /* Kalender */
 .tmonat{color:var(--akzent2);font-weight:700;font-size:15px;margin:14px 0 2px}
@@ -292,7 +296,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px}
 <script>
 /* Adresse des Cloudflare-Workers. Leer = Probe-Modus (alles nur auf diesem Handy). */
 const WORKER_URL = "https://millebeier.rjtp6r9s9h.workers.dev/";
-const FASSUNG = "16.11.2026 f";
+const FASSUNG = "16.11.2026 g";
 
 /* === Logik === (kein DOM; test/logik.mjs schneidet diesen Block aus) */
 const LAGER = "Lager";
@@ -1031,7 +1035,9 @@ function render() {
   $("#kalBtn").classList.toggle("versteckt", !bereit());
   $("#kalBtn").classList.toggle("an", tab === "kalender");
   const nKal = kalAnzahlBald(Z);
-  $("#kalBtn").innerHTML = "📅" + (nKal ? `<span class="badge">${nKal}</span>` : "");
+  // Kalenderblatt mit dem heutigen Tag statt 📅 (Apples Emoji zeigt immer „17“; vom Nutzer, Fassung g)
+  const [, kM, kT] = heuteLux().split("-").map(Number);
+  $("#kalBtn").innerHTML = `<span class="kalic"><i>${KAL_MON[kM - 1]}</i><b>${kT}</b></span>` + (nKal ? `<span class="badge">${nKal}</span>` : "");
   document.querySelectorAll("#nav button").forEach(b => b.classList.toggle("an", b.dataset.tab === tab));
   const nOffen = Z.kaeufer.filter(k => k.offen > 0).length;
   $('#nav [data-tab="offen"]').innerHTML = "Ausstoend" + (nOffen ? ` <span class="badge">${nOffen}</span>` : "");
@@ -1403,6 +1409,7 @@ const FLASCHE_SVG = `<svg class="tflasche" viewBox="0 0 24 48" aria-hidden="true
 const terminIc = typ => typ === "abfuellen" ? FLASCHE_SVG : typ === "bestellung" ? "🚚" : esc((TERMIN_ARTEN[typ] || TERMIN_ARTEN.aanescht).ic);
 const heuteLux = () => new Date().toLocaleDateString("sv-SE", { timeZone: TZ });
 const plusTage = (d, n) => { const x = new Date(d + "T12:00:00Z"); x.setUTCDate(x.getUTCDate() + n); return x.toISOString().slice(0, 10); };
+const KAL_MON = ["JAN", "FEB", "MÄE", "ABR", "MEE", "JUN", "JUL", "AUG", "SEP", "OKT", "NOV", "DEZ"];
 const WOCHENTAG = ["So", "Mé", "Dë", "Më", "Do", "Fr", "Sa"];
 const MONATE = ["Januar", "Februar", "Mäerz", "Abrëll", "Mee", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"];
 async function kalenderSchluessel(code) {

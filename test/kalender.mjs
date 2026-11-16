@@ -21,6 +21,8 @@ await p.evaluate(d => eintragen([{ art: "abfuellung", sorte: "NEIPA", n: 50 },
   { art: "livraison", kunde: "Reimen David", kontakt: "Laurent", aus: "Lager", datum: d, posten: [{ sorte: "NEIPA", n: 4 }], betrag: 12, rechnung: false },
   { art: "termin", tid: "t-alt-001", typ: "reunioun", titel: "Al Reunioun", datum: "2026-01-10", wer: ["Jeff"] }]), plus(1));
 ist("Zahl am 📅: Bestellung morgen", await p.locator("#kalBtn .badge").innerText(), "1");
+ist("Kalenderblatt zeigt den heutigen Tag", await p.evaluate(() => [document.querySelector("#kalBtn .kalic b").textContent, document.querySelector("#kalBtn .kalic i").textContent]),
+  [String(+H.slice(8, 10)), ["JAN", "FEB", "MÄE", "ABR", "MEE", "JUN", "JUL", "AUG", "SEP", "OKT", "NOV", "DEZ"][+H.slice(5, 7) - 1]]);
 await p.click("#kalBtn");
 ist("Kalender offen, Knopf markiert", await p.evaluate(() => [TAB, document.querySelector("#kalBtn").classList.contains("an")]), ["kalender", true]);
 ist("Bestellung steht drin (nur App)", await p.locator("#t-kalender").innerText(), t => t.includes("Bestellung Reimen David") && t.includes("aus de Bestellungen"));
