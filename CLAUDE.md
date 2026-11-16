@@ -133,6 +133,18 @@ beim Verkaufen/Livraison und „Fläsche beweegen“ an, solange jemand welche h
   Namen** (Ausstoend, Bestellungen, Excel, Verlauf; gespeicherter Text in `kaeuferText`/`kundeText`). Früherer Käufer per
   Vorschlag + Haken → sein alter Text als `alias`; Umbenennen im Reiter Client legt alte Namen in `alias` (max. 20).
   Gelöschter Client → wieder der gespeicherte Text. `kaeufer`/`kunde` dürfen bis 120 Zeichen lang sein.
+  **Kalender** (vom Nutzer, 16.11.2026, Fassung b; Entwurf gezeigt und abgesprochen): 📅 oben neben dem Zahnrad (`#kalBtn`,
+  Zahl = Termine/Bestellungen heute und morgen), Ansicht `TAB = "kalender"` (kein Reiter). **Ein gemeinsamer Kalender.** Eintrag
+  `termin` (tid, typ, titel, datum, uhr?, bis?, bier?, wer[], wou?, notiz?; neuester je tid gilt, `weg: true` = gelöscht) →
+  `Z.termine`. Arten (`TERMIN_ARTEN`): Braudag, Ëmschlauchen, Hopfestopfen, Afëllen, Etikettéieren, Stand/Fest, Reunioun,
+  Aanescht — **Akafen bewusst nicht** (vom Nutzer). Ohne Zeit = ganzer Tag. Liste nach Monaten, Kommend/Alles/Just meng,
+  antippen klappt auf (✎/✕; klappt nach 5 min wie die anderen zu). **Geplante Bestellungen stehen nur in der App** (gestrichelt
+  „aus de Bestellungen“), **nicht im Abo** (vom Nutzer). **Vorschlag nach dem Braudag** (`NO_BRAUDAG`): Ëmschlauchen +7,
+  Afëllen +14 Tage, je mit Haken und eigenem Datumsfeld (vom Nutzer: Datum änderbar); ziehen mit dem Braudag-Datum mit, bis man
+  sie selbst ändert; nur beim Anlegen. **Abo:** Worker `GET /kalender/<schlüssel>.ics`, Schlüssel = SHA-256("millebeier-kalender:"
+  + CODE) Hex, 32 Zeichen (`kalenderSchluessel`, App und Worker gleich) — kein eigenes Secret; Code ändern = neuer Link.
+  Knopf `webcal://…`, darunter „Klappt net?“ mit https-Adresse zum Kopieren. VTIMEZONE Europe/Luxembourg, Zeilen gefaltet
+  (≤ 75 Bytes), UID = tid. **Worker muss dafür neu eingefügt werden** (Stand 16.11.: vom Nutzer noch nicht gemeldet).
   **Livraison** (vom Nutzer, 14.11.2026): geplant, bis ein Verkauf mit `liv` = ihre id existiert („Geliwwert ✓“ legt ihn an,
   Flaschen aus `aus`, meist Lager — Verkauf hat dafür optional `aus`). Verkauf rückgängig → wieder geplant. Rechnung
   „gemaach“ = Eintrag `rechnung`. Geplantes zählt nirgends als verkauft.
@@ -198,9 +210,9 @@ einstellungen/`alt26-…`; Löschungen (storno) bleiben nur, wenn ihr Ziel bleib
 geprüft (Gegenprobe gemacht). Die Datenbank ist von der Cloud-Umgebung aus nicht erreichbar — ausführen kann nur der
 Nutzer. Rückweg: D1 Time Travel (Restore auf einen Zeitpunkt davor).
 
-## Testen — vor jedem Push alle neun, jeder mit eigenem Rückgabewert
+## Testen — vor jedem Push alle zehn, jeder mit eigenem Rückgabewert
 - `node test/logik.mjs` — schneidet `Logik`…`Oberfläche` aus der HTML (Gegenprobe gemacht).
-- `node test/worker.mjs` — Worker mit nachgebauter D1.
+- `node test/worker.mjs` — Worker mit nachgebauter D1, auch Kalender-.ics (Gegenprobe gemacht).
 - `node test/oberflaeche.mjs` — Playwright, zwei Handys gegen den echten Worker-Code, offline.
 - `node test/tippen.mjs` — nachgebautes iPhone: Doppeltipp-Zoom-Sperre, −/+, schnelle Knopffolgen.
 - `XLSX_JS=…/xlsx.full.min.js node test/livraisons.mjs` — Livraison planen/liefern/Rechnung/bezahlen, Liste pro Bier,
@@ -214,6 +226,8 @@ Nutzer. Rückweg: D1 Time Travel (Restore auf einen Zeitpunkt davor).
 - `node test/kunden.mjs` — Reiter Client (Anlegen, alphabetisch, Firma vor Name, Aufklappen, Akeef, Suche, Ändern, Löschen,
   alte Clienten = Firma, nur Vorname), Verlauf im Zahnrad, Käufer-Felder mit/ohne Haken „Neie Client“, früherer Käufer → alias,
   Umbenennen: aktueller Name überall, nichts fällt aus „Akeef“ (Gegenprobe gemacht).
+- `node test/kalender.mjs` — Kalender: Termin, Vorschlag +7/+14 mit änderbarem Datum, Bestellungen nur in der App, Filter,
+  Ändern/Löschen, Abo-Link aus dem Code, Zuklappen (Gegenprobe gemacht).
 - `node test/biere.mjs` — Bier anlegen/ändern/archivieren/zurückholen/löschen (zwei Rückfragen, Gegenprobe gemacht),
   rotes ✕ im Verlauf, rotes Dreieck.
 

@@ -34,7 +34,29 @@ header{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:3px so
 #sync{font-size:12px;color:var(--muted);text-align:right;min-width:0;flex-shrink:1}
 .kopf h1 > span{white-space:nowrap} /* Name nie umbrechen, auch bei langem Status daneben */
 #sync.fehler{color:var(--gelb)}
-.zahnrad{background:none;border:0;color:var(--text);font-size:22px;padding:4px 2px;cursor:pointer}
+.zahnrad{background:none;border:0;color:var(--text);font-size:22px;padding:4px 2px;cursor:pointer;position:relative;flex:none}
+.zahnrad.an{background:var(--akzent);border-radius:10px;padding:4px 6px}
+.zahnrad .badge{position:absolute;top:-4px;right:-6px;background:var(--akzent);color:#fff;border-radius:9px;font-size:11px;padding:1px 5px;font-weight:700;border:1px solid #000;line-height:1.3}
+/* Kalender */
+.tmonat{color:var(--akzent2);font-weight:700;font-size:15px;margin:14px 0 2px}
+.tmonat:first-of-type{margin-top:4px}
+.ter{display:flex;gap:12px;padding:10px 0;border-top:1px solid var(--line);cursor:pointer}
+.tmonat + .ter{border-top:0}
+.ter.vorbei{opacity:.55}
+.tdat{width:46px;flex:none;text-align:center;background:var(--card2);border-radius:10px;padding:4px 0;align-self:flex-start}
+.tdat b{display:block;font-size:20px;line-height:1.1}.tdat small{font-size:11px;color:var(--muted);text-transform:uppercase}
+.tdat.haut{background:var(--akzent)}.tdat.haut small{color:#fff}
+.tinh{flex:1;min-width:0}.tinh > b{font-size:16px}.tinh .z{font-size:13px;color:var(--muted)}
+.chip.auto{border:1px dashed #666;color:var(--muted);background:none}
+.tarten{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.tarten button{background:var(--card2);border:1px solid var(--line);color:var(--text);border-radius:10px;padding:8px 2px;font-size:12px;font-weight:600;cursor:pointer}
+.tarten button i{display:block;font-style:normal;font-size:20px}
+.tarten button.an{border:2px solid var(--gruen)}
+.leit{display:flex;gap:6px;flex-wrap:wrap}
+.leit button{background:var(--card2);border:1px solid var(--line);color:var(--text);border-radius:18px;padding:7px 14px;font-size:15px;cursor:pointer}
+.leit button.an{background:#1f3a20;color:#bfe8c0;border-color:var(--gruen)}
+.tfolge{background:#1a261a;border:1px solid #3a5a3a;border-radius:10px;padding:10px;margin-top:14px}
+.tfz{margin-top:10px}.tfz .check{margin:0}.tfz input[type=date]{display:block;width:100%;box-sizing:border-box;margin-top:6px}
 nav{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-top:8px}
 @media (min-width:600px){nav{grid-template-columns:repeat(6,1fr)}}
 nav button{background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:10px;
@@ -220,6 +242,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px}
   <div class="kopf">
     <h1><img src="bilder/logo-96.png" alt=""><span aria-label="Millebéier">Milleb<span class="akz">e</span>ier</span></h1>
     <div id="sync"></div>
+    <button class="zahnrad" id="kalBtn" aria-label="Kalenner">📅</button>
     <button class="zahnrad" id="zahnrad" aria-label="Astellungen">⚙️</button>
   </div>
   <nav id="nav">
@@ -243,6 +266,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px}
   <section id="t-bestand" class="versteckt"><div id="bTabelle"></div><div id="bForm"></div><div id="bBiere"></div></section>
   <section id="t-verlauf" class="versteckt"></section>
   <section id="t-einst" class="versteckt"></section>
+  <section id="t-kalender" class="versteckt"></section>
   <footer id="fuss"></footer>
 </main>
 <input type="file" id="dateiWahl" class="versteckt">
@@ -259,7 +283,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px}
 <script>
 /* Adresse des Cloudflare-Workers. Leer = Probe-Modus (alles nur auf diesem Handy). */
 const WORKER_URL = "https://millebeier.rjtp6r9s9h.workers.dev/";
-const FASSUNG = "16.11.2026 a";
+const FASSUNG = "16.11.2026 b";
 
 /* === Logik === (kein DOM; test/logik.mjs schneidet diesen Block aus) */
 const LAGER = "Lager";
@@ -268,7 +292,15 @@ const STANDARD = {
   leute: ["Jeff", "Marc", "Claude", "Laurent"],
 };
 const GRUENDE = { getrunken: "selwer gedronk", verschenkt: "verschenkt / Prouf", kaputt: "futti", sonst: "soss eppes" };
-const ARTEN = ["abfuellung", "bewegung", "abgang", "verkauf", "zahlung", "einstellungen", "storno", "livraison", "rechnung", "bier", "bierstatus", "datei", "kunde"];
+const ARTEN = ["abfuellung", "bewegung", "abgang", "verkauf", "zahlung", "einstellungen", "storno", "livraison", "rechnung", "bier", "bierstatus", "datei", "kunde", "termin"];
+/* Kalender (vom Nutzer, 16.11.2026): feste Arten; Akafen bewusst nicht (vom Nutzer). Reihenfolge = Knöpfe im Formular. */
+const TERMIN_ARTEN = {
+  braudag: { ic: "🍺", txt: "Braudag" }, umschlauchen: { ic: "🔄", txt: "Ëmschlauchen" }, hopfen: { ic: "🌿", txt: "Hopfestopfen" },
+  abfuellen: { ic: "🍾", txt: "Afëllen" }, etikett: { ic: "🏷️", txt: "Etikettéieren" }, stand: { ic: "🎪", txt: "Stand / Fest" },
+  reunioun: { ic: "🗣️", txt: "Reunioun" }, aanescht: { ic: "📝", txt: "Aanescht" },
+};
+// Vorschlag nach dem Braudag (vom Nutzer): Ëmschlauchen +7, Afëllen +14 Tage, im Formular änderbar.
+const NO_BRAUDAG = [{ typ: "umschlauchen", tage: 7 }, { typ: "abfuellen", tage: 14 }];
 /* Gebinde: Fässer sind kein eigenes Bier, sondern „<Bier> Keg 20l“ / „<Bier> Keg 30l“ als Schlüssel im Bestand
    (so hießen die Fass-Biere vorher schon — Altbestand ordnet sich damit von selbst seinem Bier zu). */
 const FAESSER = [{ l: 20, std: 150 }, { l: 30, std: 180 }];
@@ -319,6 +351,13 @@ function gueltig(e) {
         optZahl(e.alk, 0, 30) && optZahl(e.liter, 0, 100000) && optText(e.stil, 40) && optText(e.notiz, 300) &&
         (e.preis20 === undefined || geld(e.preis20)) && (e.preis30 === undefined || geld(e.preis30));
     case "bierstatus": return text(e.name, 30) && ["aktiv", "archiv", "weg"].includes(e.status);
+    case "termin": {
+      const uhrOk = x => x === undefined || x === "" || (typeof x === "string" && /^\d{2}:\d{2}$/.test(x));
+      return typeof e.tid === "string" && /^[A-Za-z0-9_-]{6,64}$/.test(e.tid) && (e.weg === true || (
+        e.typ in TERMIN_ARTEN && text(e.titel, 80) && typeof e.datum === "string" && /^\d{4}-\d{2}-\d{2}$/.test(e.datum) &&
+        uhrOk(e.uhr) && uhrOk(e.bis) && optText(e.bier, 120) && optText(e.wou, 120) && optText(e.notiz, 300) &&
+        (e.wer === undefined || (Array.isArray(e.wer) && e.wer.length <= 12 && e.wer.every(w => text(w, 30))))));
+    }
     case "kunde":
       return typeof e.kid === "string" && /^[A-Za-z0-9_-]{6,64}$/.test(e.kid) && (e.weg === true || text(e.firma, 80) || text(e.name, 80) || text(e.vorname, 60)) &&
         (e.alias === undefined || (Array.isArray(e.alias) && e.alias.length <= 20 && e.alias.every(a => text(a, 120)))) &&
@@ -492,6 +531,9 @@ function rechne(eintraege) {
     livraisons: [...liv.values()].sort((a, b) => a.datum.localeCompare(b.datum) || ordnung(a, b)),
     dateien: aktiv.filter(e => e.art === "datei"),
     kunden,
+    // Termine (Kalender): je tid gilt der neueste Eintrag, weg = gelöscht; nach Datum und Uhrzeit sortiert
+    termine: (() => { const m = new Map(); for (const e of aktiv) if (e.art === "termin") m.set(e.tid, e);
+      return [...m.values()].filter(t => !t.weg).sort((a, b) => a.datum.localeCompare(b.datum) || (a.uhr || "").localeCompare(b.uhr || "")); })(),
     kaeufer: [...kaeufer.values()].sort((a, b) => b.offen - a.offen || a.name.localeCompare(b.name, "de")),
     kasse, offen,
     umsatz: runde([...vk.values()].reduce((a, v) => a + v.betrag, 0)),
@@ -549,6 +591,7 @@ function beschreibe(e, Z) {
     }
     case "bier": return `🍺 Béier: ${e.name}` + [e.stil, e.alk != null ? String(e.alk).replace(".", ",") + " %" : "", euro(e.preis), e.braudatum ? "gebraut " + datumKurz(e.braudatum) : ""].filter(Boolean).map(x => " · " + x).join("");
     case "bierstatus": return { archiv: "📦 Archivéiert: ", aktiv: "↩️ Aus dem Archiv zréck: ", weg: "✕ Béier geläscht: " }[e.status] + bierText(e.name);
+    case "termin": return e.weg ? `📅 Termin geläscht` : `📅 ${(TERMIN_ARTEN[e.typ] || {}).ic || ""} ${e.titel}${e.bier ? " · " + bierText(e.bier) : ""}, ${datumKurz(e.datum)}${e.uhr ? " " + e.uhr : ""}`;
     case "kunde": return e.weg ? `📇 Client geläscht` : `📇 Client: ${e.v ? kundeLabel(e) : e.name}${e.ort ? " · " + e.ort : ""}`;
     case "datei": return `📎 ${FELDER[e.feld]}${e.bier ? " · " + e.bier : ""}: ${e.name}`;
     case "einstellungen": return `⚙️ Zorten/Präisser/Leit geännert: ${e.sorten.filter(s => !s.aus).map(s => `${s.name} ${euro(s.preis)}`).join(", ")}`;
@@ -948,6 +991,7 @@ const ZUKLAPPEN = {
   kunden: () => { K_AUF.clear(); K_AKEEF.clear(); },
   bestand: () => { ARCHIV_AUF = false; },
   uebersicht: () => { ARCHIV_UEB = false; OFFEN_SORTE = ""; },
+  kalender: () => { KAL_AUF.clear(); KAL_MELD = ""; },
 };
 const ZU_WEG = {}; // Reiter → seit wann nicht mehr dort
 function zuklappenPruefen(tab) {
@@ -963,6 +1007,10 @@ function render() {
   document.querySelectorAll("main > section").forEach(s => s.classList.toggle("versteckt", s.id !== "t-" + tab));
   $("#nav").classList.toggle("versteckt", !bereit());
   $("#zahnrad").classList.toggle("versteckt", !bereit());
+  $("#kalBtn").classList.toggle("versteckt", !bereit());
+  $("#kalBtn").classList.toggle("an", tab === "kalender");
+  const nKal = kalAnzahlBald(Z);
+  $("#kalBtn").innerHTML = "📅" + (nKal ? `<span class="badge">${nKal}</span>` : "");
   document.querySelectorAll("#nav button").forEach(b => b.classList.toggle("an", b.dataset.tab === tab));
   const nOffen = Z.kaeufer.filter(k => k.offen > 0).length;
   $('#nav [data-tab="offen"]').innerHTML = "Ausstoend" + (nOffen ? ` <span class="badge">${nOffen}</span>` : "");
@@ -970,7 +1018,7 @@ function render() {
   const nGeplant = Z.livraisons.filter(L => !L.verkauf).length;
   $('#nav [data-tab="livraisons"]').innerHTML = "Bestellungen" + (nGeplant ? ` <span class="badge" style="background:var(--card2);border:1px solid var(--line)">${nGeplant}</span>` : "");
   ({ start: renderStart, uebersicht: renderUebersicht, verkaufen: renderVerkaufen, offen: renderOffen, livraisons: renderLivraisons,
-     bestand: renderBestand, verlauf: renderVerlauf, einst: renderEinst, kunden: renderKunden })[tab]();
+     bestand: renderBestand, verlauf: renderVerlauf, einst: renderEinst, kunden: renderKunden, kalender: renderKalender })[tab]();
   $("#fuss").innerHTML = `Versioun ${esc(FASSUNG)}` + (EIN.ich ? ` · Du bass ${esc(de(EIN.ich))}` : "");
 }
 
@@ -1320,6 +1368,175 @@ function renderKundenForm(box) {
     if (document.activeElement) document.activeElement.blur();
     if (!eintragen([e]).length) return;
     KFORM = null; K_AUF.add(e.kid); renderKunden();
+  };
+}
+
+/* ---------- Kalender (vom Nutzer, 16.11.2026) ----------
+   📅 oben neben dem Zahnrad. Gemeinsame Termine (Eintrag `termin`, je tid gilt der neueste, weg = gelöscht) und – nur in der
+   App, nicht im Abo – die geplanten Bestellungen. Abonnieren über den Worker (/kalender/<schlüssel>.ics), Schlüssel aus dem Code. */
+let KALFORM = null, KAL_SICHT = "kommend", KAL_SCHLUESSEL = "", KAL_MELD = "";
+const KAL_AUF = new Set();
+const heuteLux = () => new Date().toLocaleDateString("sv-SE", { timeZone: TZ });
+const plusTage = (d, n) => { const x = new Date(d + "T12:00:00Z"); x.setUTCDate(x.getUTCDate() + n); return x.toISOString().slice(0, 10); };
+const WOCHENTAG = ["So", "Mé", "Dë", "Më", "Do", "Fr", "Sa"];
+const MONATE = ["Januar", "Februar", "Mäerz", "Abrëll", "Mee", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"];
+async function kalenderSchluessel(code) {
+  const h = await crypto.subtle.digest("SHA-256", new TextEncoder().encode("millebeier-kalender:" + String(code).trim()));
+  return [...new Uint8Array(h)].map(b => b.toString(16).padStart(2, "0")).join("").slice(0, 32);
+}
+// Termine + geplante Bestellungen (die nur hier, nicht im abonnierten Kalender — vom Nutzer)
+function kalenderPunkte(Z) {
+  const p = Z.termine.map(t => ({ ...t, quelle: "termin" }));
+  for (const L of Z.livraisons) if (!L.verkauf) p.push({ quelle: "bestellung", tid: "liv-" + L.id, datum: L.datum, titel: "Bestellung " + L.kunde, liv: L });
+  return p.sort((a, b) => a.datum.localeCompare(b.datum) || (a.uhr || "").localeCompare(b.uhr || ""));
+}
+function kalAnzahlBald(Z) {
+  const h = heuteLux(), m = plusTage(h, 1);
+  return kalenderPunkte(Z).filter(p => p.datum === h || p.datum === m).length;
+}
+function kalZeile(p, heute) {
+  const morgen = plusTage(heute, 1), [j, mo, t] = p.datum.split("-").map(Number);
+  const wt = WOCHENTAG[new Date(Date.UTC(j, mo - 1, t)).getUTCDay()];
+  const auf = KAL_AUF.has(p.tid), vorbei = p.datum < heute;
+  const art = p.quelle === "bestellung" ? { ic: "🚚" } : (TERMIN_ARTEN[p.typ] || TERMIN_ARTEN.aanescht);
+  const zeit = p.quelle === "bestellung" ? `${postenText(p.liv.posten)} · ${p.liv.kontakt}` :
+    [p.uhr ? p.uhr + (p.bis ? "–" + p.bis : "") : "ganzen Dag", p.wou].filter(Boolean).join(" · ");
+  const wer = p.quelle === "termin" && (p.wer || []).length ? (p.wer || []).map(w => `<span class="chip">${esc(w)}</span>`).join("") : "";
+  return `<div class="ter ${vorbei ? "vorbei" : ""}" data-ter="${esc(p.tid)}">
+    <div class="tdat ${p.datum === heute ? "haut" : ""}"><small>${p.datum === heute ? "Haut" : p.datum === morgen ? "Muer" : wt}</small><b>${t}</b></div>
+    <div class="tinh"><b>${art.ic} ${esc(p.titel)}${p.bier ? " · " + esc(bierText(p.bier)) : ""}</b><div class="z">${esc(zeit)}</div>
+      ${wer}${p.quelle === "bestellung" ? `<span class="chip auto">aus de Bestellungen</span>` : ""}
+      ${auf ? `${p.notiz ? `<div class="hinweis" style="margin:6px 0 0">${esc(p.notiz)}</div>` : ""}
+        <div class="knopfe" style="margin-top:8px">${p.quelle === "termin"
+          ? `<button class="knopf" data-ted="${esc(p.tid)}">✎ Änneren</button><button class="knopf rot" data-tweg="${esc(p.tid)}">✕ Läschen</button>`
+          : `<button class="knopf" data-tliv>→ Bei d'Bestellungen</button>`}</div>` : ""}
+    </div></div>`;
+}
+function renderKalender() {
+  const box = $("#t-kalender");
+  if (KALFORM) return renderKalForm(box);
+  if (tipptIn(box)) return;
+  const heute = heuteLux();
+  let liste = kalenderPunkte(Z);
+  if (KAL_SICHT !== "alles") liste = liste.filter(p => p.datum >= heute);
+  if (KAL_SICHT === "meng") liste = liste.filter(p => p.quelle === "bestellung" ? (p.liv.kontakt === EIN.ich || p.liv.aus === EIN.ich) : (p.wer || []).includes(EIN.ich));
+  let monat = "", html = "";
+  for (const p of liste) {
+    const m = p.datum.slice(0, 7);
+    if (m !== monat) { monat = m; html += `<div class="tmonat">${MONATE[+m.slice(5, 7) - 1]} ${m.slice(0, 4)}</div>`; }
+    html += kalZeile(p, heute);
+  }
+  const url = KAL_SCHLUESSEL && WORKER_URL ? WORKER_URL.replace(/\/+$/, "") + "/kalender/" + KAL_SCHLUESSEL + ".ics" : "";
+  box.innerHTML = `<div class="card" style="padding:10px 14px"><div class="seg drei" style="margin:0">
+      <button data-ksicht="kommend" class="${KAL_SICHT === "kommend" ? "an" : ""}">Kommend</button>
+      <button data-ksicht="alles" class="${KAL_SICHT === "alles" ? "an" : ""}">Alles</button>
+      <button data-ksicht="meng" class="${KAL_SICHT === "meng" ? "an" : ""}">Just meng</button></div></div>
+    <div class="card"><h2>📅 Kalenner</h2>
+      ${KAL_MELD ? `<div class="meldung ok">${esc(KAL_MELD)}</div>` : ""}
+      ${html || `<div class="leer">${KAL_SICHT === "alles" ? "Nach keen Termin." : "Näischt geplangt."}</div>`}
+      <button class="haupt" id="tNeu">+ Neien Termin</button></div>
+    <div class="card"><h2>🔗 Kalenner abonnéieren</h2>
+      ${!WORKER_URL ? `<div class="hinweis">Am Probe-Modus gëtt et keen Abo.</div>` : !url ? `<div class="hinweis">Link gëtt gerechent …</div>` : `
+      <div class="hinweis" style="margin:0 0 8px">D'Terminer kommen dann vum selwen an de Kalenner vum Handy (iOS kuckt ongeféier all Stonn no). Bestellunge bleiwen just hei an der App.</div>
+      <a class="haupt" id="tAbo" href="${esc(url.replace(/^https?:/, "webcal:"))}" style="display:block;box-sizing:border-box;width:100%;text-decoration:none;text-align:center">📅 Kalenner abonnéieren</a>
+      <details style="margin-top:10px"><summary class="muted">Klappt net? Oder Google-Kalenner?</summary>
+        <div class="hinweis">Adress kopéieren an als Kalenner-Abonnement abannen. iPhone: Astellungen → Kalenner → Konten → Kont dobäisetzen → Aner → Kalenner-Abonnement. Google: „Aner Kalenner“ → „Per URL“.</div>
+        <input id="tUrl" readonly value="${esc(url)}"><button class="knopf" id="tKop" style="margin-top:6px">Adress kopéieren</button></details>
+      <div class="hinweis">Wien dëse Link huet, gesäit d'Terminer — just ënner iech deelen.</div>`}</div>`;
+  if (WORKER_URL && !KAL_SCHLUESSEL && EIN.code) kalenderSchluessel(EIN.code).then(k => { KAL_SCHLUESSEL = k; if (TAB === "kalender") renderKalender(); }).catch(() => {});
+  box.querySelectorAll("[data-ksicht]").forEach(b => b.onclick = () => { KAL_SICHT = b.dataset.ksicht; KAL_MELD = ""; renderKalender(); });
+  box.querySelectorAll("[data-ter]").forEach(d => d.onclick = ev => {
+    if (ev.target.closest("button")) return;
+    const k = d.dataset.ter; KAL_AUF.has(k) ? KAL_AUF.delete(k) : KAL_AUF.add(k); renderKalender();
+  });
+  box.querySelectorAll("[data-ted]").forEach(b => b.onclick = () => {
+    const t = Z.termine.find(x => x.tid === b.dataset.ted); if (!t) return;
+    KALFORM = { tid: t.tid, typ: t.typ, titel: t.titel, titelEigen: true, datum: t.datum, uhr: t.uhr || "", bis: t.bis || "", bier: t.bier || "",
+      wer: [...(t.wer || [])], wou: t.wou || "", notiz: t.notiz || "", folge: [] };
+    KAL_MELD = ""; renderKalender(); window.scrollTo(0, 0);
+  });
+  box.querySelectorAll("[data-tweg]").forEach(b => b.onclick = () => {
+    const t = Z.termine.find(x => x.tid === b.dataset.tweg); if (!t) return;
+    if (confirm(`${t.titel} (${datumKurz(t.datum)}) läschen?`)) { eintragen([{ art: "termin", tid: t.tid, weg: true }]); KAL_MELD = ""; }
+  });
+  box.querySelectorAll("[data-tliv]").forEach(b => b.onclick = () => { TAB = "livraisons"; EIN.tab = TAB; merke(SP, EIN); render(); window.scrollTo(0, 0); });
+  $("#tNeu").onclick = () => { KALFORM = leererTermin(); KAL_MELD = ""; renderKalender(); window.scrollTo(0, 0); };
+  const kop = $("#tKop"); if (kop) kop.onclick = () => {
+    const inp = $("#tUrl");
+    (navigator.clipboard ? navigator.clipboard.writeText(inp.value) : Promise.reject()).then(() => { kop.textContent = "✓ Kopéiert"; })
+      .catch(() => { inp.select(); document.execCommand && document.execCommand("copy"); kop.textContent = "✓ Kopéiert"; });
+  };
+}
+function leererTermin() {
+  const h = heuteLux();
+  return { tid: null, typ: "braudag", titel: TERMIN_ARTEN.braudag.txt, titelEigen: false, datum: h, uhr: "", bis: "", bier: "",
+    wer: EIN.ich ? [EIN.ich] : [], wou: "", notiz: "",
+    folge: NO_BRAUDAG.map(x => ({ typ: x.typ, tage: x.tage, an: true, datum: plusTage(h, x.tage), eigen: false })) };
+}
+function renderKalForm(box, egal) {
+  if (!egal && tipptIn(box)) return;
+  const F = KALFORM;
+  const biere = Z.cfg.sorten.filter(x => !x.aus).map(x => x.name);
+  if (F.bier && !biere.includes(F.bier)) biere.push(F.bier);
+  const zeigeFolge = !F.tid && F.typ === "braudag";
+  box.innerHTML = `<div class="card"><h2>${F.tid ? "Termin änneren" : "Neien Termin"}</h2>
+    <label>Wat?</label>
+    <div class="tarten">${Object.entries(TERMIN_ARTEN).map(([k, a]) => `<button data-ttyp="${k}" class="${F.typ === k ? "an" : ""}"><i>${a.ic}</i>${esc(a.txt)}</button>`).join("")}</div>
+    <label for="tTitel">Titel</label><input id="tTitel" value="${esc(F.titel)}" autocapitalize="sentences">
+    <label for="tBier">Béier (fräiwëlleg)</label><select id="tBier"><option value="">–</option>${biere.map(b => `<option value="${esc(b)}" ${b === F.bier ? "selected" : ""}>${esc(bierText(b))}</option>`).join("")}</select>
+    <label for="tDatum">Datum</label><input id="tDatum" type="date" value="${esc(F.datum)}">
+    <div class="zeile"><div><label for="tUhr">Zäit (fräiwëlleg)</label><input id="tUhr" type="time" value="${esc(F.uhr)}"></div>
+      <div><label for="tBis">Bis (fräiwëlleg)</label><input id="tBis" type="time" value="${esc(F.bis)}"></div></div>
+    <div class="hinweis">Ouni Zäit = ganzen Dag.</div>
+    <label>Wien ass dobäi?</label>
+    <div class="leit">${Z.cfg.leute.map(p => `<button data-twer="${esc(p)}" class="${F.wer.includes(p) ? "an" : ""}">${esc(p)}</button>`).join("")}</div>
+    <label for="tWou">Wou (fräiwëlleg)</label><input id="tWou" value="${esc(F.wou)}" placeholder="z. B. bei Laurent">
+    <label for="tNotiz">Remarque (fräiwëlleg)</label><input id="tNotiz" value="${esc(F.notiz)}">
+    ${zeigeFolge ? `<div class="tfolge"><b>💡 No dem Braudag direkt mat plangen?</b>
+      ${F.folge.map((f, i) => `<div class="tfz"><label class="check" style="margin:0;flex:1"><input type="checkbox" data-tfan="${i}" ${f.an ? "checked" : ""}> ${TERMIN_ARTEN[f.typ].ic} ${esc(TERMIN_ARTEN[f.typ].txt)}</label>
+        <input type="date" data-tfd="${i}" value="${esc(f.datum)}" ${f.an ? "" : "disabled"}></div>`).join("")}
+      <div class="hinweis" style="margin:4px 0 0">Datum kanns de änneren (Virgab +7 / +14 Deeg).</div></div>` : ""}
+    <button class="haupt" id="tOk">Späicheren</button>
+    <button class="haupt" id="tZu" style="background:var(--card2);color:var(--text)">Ofbriechen</button>
+    <div id="tMeld"></div></div>`;
+  const bind = (id, k, nach) => { const el = $(id); el.oninput = el.onchange = () => { F[k] = el.value; if (nach) nach(); }; };
+  bind("#tTitel", "titel", () => { F.titelEigen = true; });
+  bind("#tBier", "bier"); bind("#tUhr", "uhr"); bind("#tBis", "bis"); bind("#tWou", "wou"); bind("#tNotiz", "notiz");
+  bind("#tDatum", "datum", () => {
+    // Folgetermine ziehen mit, solange man ihr Datum nicht selbst geändert hat
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(F.datum)) return;
+    F.folge.forEach((f, i) => { if (!f.eigen) { f.datum = plusTage(F.datum, f.tage); const el = box.querySelector(`[data-tfd="${i}"]`); if (el) el.value = f.datum; } });
+  });
+  box.querySelectorAll("[data-ttyp]").forEach(b => b.onclick = () => {
+    F.typ = b.dataset.ttyp; if (!F.titelEigen) F.titel = TERMIN_ARTEN[F.typ].txt; renderKalForm(box, true);
+  });
+  box.querySelectorAll("[data-twer]").forEach(b => b.onclick = () => {
+    const p = b.dataset.twer; F.wer = F.wer.includes(p) ? F.wer.filter(x => x !== p) : [...F.wer, p]; b.classList.toggle("an", F.wer.includes(p));
+  });
+  box.querySelectorAll("[data-tfan]").forEach(c => c.onchange = () => {
+    const f = F.folge[+c.dataset.tfan]; f.an = c.checked; const d = box.querySelector(`[data-tfd="${c.dataset.tfan}"]`); if (d) d.disabled = !c.checked;
+  });
+  box.querySelectorAll("[data-tfd]").forEach(d => d.oninput = d.onchange = () => { const f = F.folge[+d.dataset.tfd]; f.datum = d.value; f.eigen = true; });
+  $("#tZu").onclick = () => { KALFORM = null; renderKalender(); window.scrollTo(0, 0); };
+  $("#tOk").onclick = () => {
+    const meld = t => $("#tMeld").innerHTML = `<div class="meldung fehler">${esc(t)}</div>`;
+    const titel = String(F.titel || "").trim().replace(/\s+/g, " ");
+    if (!titel) return meld("Titel feelt.");
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(F.datum)) return meld("Wéini? Datum feelt.");
+    if (F.bis && !F.uhr) return meld("„Bis“ geet just mat enger Zäit.");
+    if (F.bis && F.uhr && F.bis <= F.uhr) return meld("„Bis“ muss no der Zäit sinn.");
+    const neuTid = () => "t-" + neueId().replace(/[^A-Za-z0-9-]/g, "").slice(0, 40);
+    const basis = { ...(F.bier ? { bier: F.bier } : {}), wer: [...F.wer] };
+    const e = { art: "termin", tid: F.tid || neuTid(), typ: F.typ, titel, datum: F.datum, ...(F.uhr ? { uhr: F.uhr } : {}), ...(F.uhr && F.bis ? { bis: F.bis } : {}),
+      ...basis, ...(F.wou.trim() ? { wou: F.wou.trim() } : {}), ...(F.notiz.trim() ? { notiz: F.notiz.trim() } : {}) };
+    const folge = !F.tid && F.typ === "braudag" ? F.folge.filter(f => f.an) : [];
+    for (const f of folge) if (!/^\d{4}-\d{2}-\d{2}$/.test(f.datum)) return meld(`Datum fir ${TERMIN_ARTEN[f.typ].txt} feelt.`);
+    const alle = [e, ...folge.map(f => ({ art: "termin", tid: neuTid(), typ: f.typ, titel: TERMIN_ARTEN[f.typ].txt, datum: f.datum, ...basis }))];
+    if (!alle.every(x => gueltig({ ...x, id: "x", zeit: 0 }))) return meld("Eppes ass ze laang oder net richteg.");
+    if (document.activeElement) document.activeElement.blur();
+    if (!eintragen(alle).length) return;
+    KAL_MELD = `✓ ${F.tid ? "Geännert" : "Agedroen"}: ${titel}, ${datumKurz(F.datum)}${folge.length ? ` (+ ${folge.map(f => TERMIN_ARTEN[f.typ].txt + " " + datumKurz(f.datum)).join(", ")})` : ""}`;
+    KALFORM = null; KAL_SICHT = "kommend"; renderKalender(); window.scrollTo(0, 0);
   };
 }
 
@@ -2264,6 +2481,7 @@ document.querySelectorAll("#nav button").forEach(b => b.onclick = () => {
   if (TAB === "verkaufen" && FORM) FORM.meldung = null;
   EFORM = null; render(); window.scrollTo(0, 0);
 });
+$("#kalBtn").onclick = () => { TAB = "kalender"; KALFORM = null; KAL_MELD = ""; render(); window.scrollTo(0, 0); };
 $("#zahnrad").onclick = () => { TAB = "einst"; EFORM = null; render(); window.scrollTo(0, 0); };
 /* ---------- Neue Fassung ----------
    Beim Öffnen und bei jeder Rückkehr zur App: liegt bei GitHub eine andere FASSUNG, lädt die App
@@ -2278,6 +2496,7 @@ function mittenImEintrag() {
   if (FORM && (kundeLabel(FORM.k) || Object.values(FORM.n).some(n => n > 0) || FORM.betrag != null)) return true;
   if (BFORM && String(BFORM.n).trim()) return true;
   if (KFORM) return true;
+  if (KALFORM) return true;
   if (L_NEU || BIERFORM || UPLOAD || ANSICHT || !$("#zahlWahl").classList.contains("versteckt") || !$("#frageWahl").classList.contains("versteckt")) return true;
   if (FORM && FORM.wie) return true;
   return false;
