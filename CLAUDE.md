@@ -133,8 +133,9 @@ beim Verkaufen/Livraison und „Fläsche beweegen“ an, solange jemand welche h
   Namen** (Ausstoend, Bestellungen, Excel, Verlauf; gespeicherter Text in `kaeuferText`/`kundeText`). Früherer Käufer per
   Vorschlag + Haken → sein alter Text als `alias`; Umbenennen im Reiter Client legt alte Namen in `alias` (max. 20).
   Gelöschter Client → wieder der gespeicherte Text. `kaeufer`/`kunde` dürfen bis 120 Zeichen lang sein.
-  **Kalender** (vom Nutzer, 16.11.2026, Fassung b; Entwurf gezeigt und abgesprochen): 📅 oben neben dem Zahnrad (`#kalBtn`,
-  Zahl = Termine/Bestellungen heute und morgen), Ansicht `TAB = "kalender"` (kein Reiter). **Ein gemeinsamer Kalender.** Eintrag
+  **Kalender** (vom Nutzer, 16.11.2026, Fassung b; Entwurf gezeigt und abgesprochen): Knopf oben neben dem Zahnrad (`#kalBtn`;
+  seit Fassung g eigenes Kalenderblatt `.kalic` mit Monat `KAL_MON` und **heutigem Tag** statt 📅 — Apples Emoji zeigt immer „17“;
+  rote Zahl = Termine/Bestellungen heute und morgen, **unten rechts**, damit der Monat frei bleibt; beides vom Nutzer gewählt), Ansicht `TAB = "kalender"` (kein Reiter). **Ein gemeinsamer Kalender.** Eintrag
   `termin` (tid, typ, titel, datum, uhr?, bis?, bier?, wer[], wou?, notiz?; neuester je tid gilt, `weg: true` = gelöscht) →
   `Z.termine`. Arten (`TERMIN_ARTEN`): Braudag, Ëmschlauchen, Hopfestopfen, Afëllen, Etikettéieren, Stand/Fest, Reunioun,
   Aanescht — **Akafen bewusst nicht** (vom Nutzer). Ohne Zeit = ganzer Tag. Liste nach Monaten, Kommend/Alles/Just meng,
