@@ -21,7 +21,7 @@ ist("Meldung nennt Fässer", await p.locator("#biMeld").innerText(), s => s.incl
 await p.click("#biZu"); await warte(100);
 ist("kein eigenes Fass-Bier", await p.evaluate(() => Z.cfg.sorten.map(c => c.name).filter(n => n.includes("Hopfen"))), ["Hopfenkönig (01.10.2026)"]);
 ist("Bier-Karte zeigt Fässer", await p.locator("#bBiere").innerText(), s => s.includes("120 Fl. · 3 × 20 l · 2 × 30 l do") && s.includes("140 €/Fass 20 l") && s.includes("180 €/Fass 30 l"));
-ist("Stock: Fass-Tabelle", await p.locator("#bTabelle").innerText(), s => s.includes("🛢️ Fässer") && s.includes("Hopfenkönig (01.10.2026)"));
+ist("Stock: Fass-Tabelle", await p.locator("#bTabelle").innerText(), s => s.includes("🛢️ Fässer") && s.includes("Hopfenkönig\n01.10.26\n20 l"));
 ist("Abfüllen: Fass wählbar", await p.evaluate(() => [...document.querySelectorAll("#bSorte option")].map(o => o.textContent).filter(t => t.startsWith("Hopfenkönig (01.10.2026)"))), ["Hopfenkönig (01.10.2026)", "Hopfenkönig (01.10.2026) · Fass 20 l", "Hopfenkönig (01.10.2026) · Fass 30 l"]);
 
 // Livraison mit Fass planen → reserviert
@@ -39,7 +39,9 @@ ist("Stock zeigt Reservierung", (await p.evaluate(() => { TAB = "bestand"; rende
 const lagerZeile = await p.evaluate(() => { const tr = [...document.querySelectorAll("#bTabelle tr")].find(r => r.cells[0] && r.cells[0].textContent.includes("Lager"));
   const i = [...document.querySelectorAll("#bTabelle tr th")].findIndex(th => th.textContent.includes("Hopfenkönig")); return tr.cells[i].innerText.replace(/\s+/g, " "); });
 ist("Stock: Lager zeigt frei + 🚚 reserviert", lagerZeile, "20 🚚 100");
-ist("Stock: Fräi / + reservéiert / = Total", await p.evaluate(() => [...document.querySelectorAll("#bTabelle tr")].map(r => r.cells[0] && r.cells[0].textContent.trim()).filter(t => /Fräi|reservéiert|Total/.test(t || ""))), ["Fräi", "+ reservéiert", "= Total"]);
+ist("Stock: Tabelle passt ohne seitlich zu scrollen", await p.evaluate(() => [...document.querySelectorAll("#bTabelle .tabwrap")].every(w => w.scrollWidth <= w.clientWidth)), true);
+ist("Stock: Kopf zweizeilig (Name / Datum)", await p.evaluate(() => [...document.querySelectorAll("#bTabelle th")].some(th => th.innerHTML.includes("Hopfenkönig<br><small>01.10.26</small>"))), true);
+ist("Stock: Fräi / + 🚚 res. / = Total", await p.evaluate(() => [...document.querySelectorAll("#bTabelle tr")].map(r => r.cells[0] && r.cells[0].textContent.trim()).filter(t => /Fräi|res\.|Total/.test(t || ""))), ["Fräi", "+ 🚚 res.", "= Total"]);
 const uebA = await p.evaluate(() => { TAB = "uebersicht"; render(); const tr = document.querySelector('#t-uebersicht tr[data-sorte="Hopfenkönig (01.10.2026)"]'); return tr.cells[4].innerText.replace(/\s+/g, " "); });
 ist("Pro Zort: Nach do frei + 🚚", uebA, "20 🚚 100");
 ist("Pro Persoun: Lager frei + 🚚", await p.evaluate(() => { const tr = [...document.querySelectorAll("#t-uebersicht tr")].find(r => r.cells[0] && r.cells[0].textContent.trim() === "Lager"); return tr.cells[1].innerText.replace(/\s+/g, " "); }), s => s.startsWith("20") && s.includes("🚚 100"));

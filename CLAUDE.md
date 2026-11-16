@@ -173,6 +173,9 @@ beim Verkaufen/Livraison und „Fläsche beweegen“ an, solange jemand welche h
   („Wien huet wat?“, Flaschen und Fässer), Iwwersiicht/Pro Zort („Nach do fräi“) und Pro Persoun („Huet nach fräi“) steht groß, was
   **frei** ist, darunter klein gelb „🚚 n“ = reserviert (`resZeile`, `resAlle`, `mengeText`); Stock unten Fräi / + reservéiert / = Total.
   Negativ frei = rot. Der gelbe Hinweistext unter Stock bleibt (vom Nutzer).
+  **Stock-Tabelle passt aufs Handy** (vom Nutzer gemeldet, Fassung i: Σ-Spalte abgeschnitten): Spaltenköpfe zweizeilig
+  (`kopfZweizeilig`: „NEIPA“ / klein „28.07.26“, „Brown Porter“ / „01/26“), Zeile „+ 🚚 res.“, Schrift 13 px (`.stocktab`);
+  bei 3 Bieren bis 360 px Breite ohne seitliches Scrollen geprüft (Test prüft 390 px).
   **Verkaufen ohne eigenen Bestand** (vom Nutzer, Fassung m): statt Warnung Fenster „feelt: … — woher?“
   (`fehlendesHolen`, `frageWaehlen`): „📦 Aus dem Lager huelen“ / „Vum Jeff huelen“ (nur wer für alles Fehlende genug
   **frei** hat) → Umbuchung(en) `bewegung` + Verkauf in einem `eintragen`; „Trotzdeem androen“ = wie früher (Minus);
