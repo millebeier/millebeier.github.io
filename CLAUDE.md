@@ -169,6 +169,10 @@ beim Verkaufen/Livraison und „Fläsche beweegen“ an, solange jemand welche h
   **Reserviert** (vom Nutzer): geplante Livraisons belegen den Bestand bei `aus` (`Z.reserviert`, `frei()`); beim
   Planen, Verkaufen, Weitergeben und Fort Warnung mit „huet X, dovun Y reservéiert → fräi Z“ (`zuWenig`, `fehltText`),
   bestätigen geht trotzdem. Stock zeigt „🚚 Reservéiert fir geplangt Livraisons“.
+  **Tabellen zeigen frei, reserviert darunter** (vom Nutzer, Fassung 16.11. h, Variante A aus drei gezeigten Entwürfen): in Stock
+  („Wien huet wat?“, Flaschen und Fässer), Iwwersiicht/Pro Zort („Nach do fräi“) und Pro Persoun („Huet nach fräi“) steht groß, was
+  **frei** ist, darunter klein gelb „🚚 n“ = reserviert (`resZeile`, `resAlle`, `mengeText`); Stock unten Fräi / + reservéiert / = Total.
+  Negativ frei = rot. Der gelbe Hinweistext unter Stock bleibt (vom Nutzer).
   **Verkaufen ohne eigenen Bestand** (vom Nutzer, Fassung m): statt Warnung Fenster „feelt: … — woher?“
   (`fehlendesHolen`, `frageWaehlen`): „📦 Aus dem Lager huelen“ / „Vum Jeff huelen“ (nur wer für alles Fehlende genug
   **frei** hat) → Umbuchung(en) `bewegung` + Verkauf in einem `eintragen`; „Trotzdeem androen“ = wie früher (Minus);

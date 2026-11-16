@@ -35,6 +35,15 @@ ist("Betrag mit Fasspreis", await p.inputValue("#lBetrag"), "580");
 await p.click("#lOk"); await warte(200);
 ist("reserviert", await p.evaluate(() => [frei(Z, "Lager", "Hopfenkönig (01.10.2026)"), frei(Z, "Lager", "Hopfenkönig (01.10.2026) Keg 20l"), hat(Z, "Lager", "Hopfenkönig (01.10.2026)")]), [20, 1, 120]);
 ist("Stock zeigt Reservierung", (await p.evaluate(() => { TAB = "bestand"; render(); return document.querySelector("#bTabelle").innerText; })), s => s.includes("Reservéiert fir geplangt Bestellungen") && s.includes("100 × Hopfenkönig (01.10.2026)"));
+// Variante A (vom Nutzer, Fassung h): groß frei, gelb darunter reserviert — Stock, Pro Zort, Pro Persoun
+const lagerZeile = await p.evaluate(() => { const tr = [...document.querySelectorAll("#bTabelle tr")].find(r => r.cells[0] && r.cells[0].textContent.includes("Lager"));
+  const i = [...document.querySelectorAll("#bTabelle tr th")].findIndex(th => th.textContent.includes("Hopfenkönig")); return tr.cells[i].innerText.replace(/\s+/g, " "); });
+ist("Stock: Lager zeigt frei + 🚚 reserviert", lagerZeile, "20 🚚 100");
+ist("Stock: Fräi / + reservéiert / = Total", await p.evaluate(() => [...document.querySelectorAll("#bTabelle tr")].map(r => r.cells[0] && r.cells[0].textContent.trim()).filter(t => /Fräi|reservéiert|Total/.test(t || ""))), ["Fräi", "+ reservéiert", "= Total"]);
+const uebA = await p.evaluate(() => { TAB = "uebersicht"; render(); const tr = document.querySelector('#t-uebersicht tr[data-sorte="Hopfenkönig (01.10.2026)"]'); return tr.cells[4].innerText.replace(/\s+/g, " "); });
+ist("Pro Zort: Nach do frei + 🚚", uebA, "20 🚚 100");
+ist("Pro Persoun: Lager frei + 🚚", await p.evaluate(() => { const tr = [...document.querySelectorAll("#t-uebersicht tr")].find(r => r.cells[0] && r.cells[0].textContent.trim() === "Lager"); return tr.cells[1].innerText.replace(/\s+/g, " "); }), s => s.startsWith("20") && s.includes("🚚 100"));
+await p.evaluate(() => { TAB = "bestand"; render(); });
 
 // Zweite Livraison, die nicht mehr reicht → Warnung, abgelehnt → nichts geplant
 await p.evaluate(() => { TAB = "livraisons"; render(); });
@@ -71,7 +80,7 @@ await p.evaluate(() => { TAB = "uebersicht"; render(); });
 const ueb = await p.locator("#t-uebersicht").innerText();
 ist("Kasse nach Art", ueb, s => s.includes("SumUp 580 €") && s.includes("Bar 3 €"));
 ist("Fass-Zeilen unter dem Bier", ueb, s => s.includes("🛢️ Fass 20 l") && s.includes("🛢️ Fass 30 l"));
-ist("Pro Persoun: Flaschen und Fässer getrennt", await p.evaluate(() => [...document.querySelectorAll("#t-uebersicht table")].pop().innerText), t => /Marc\t9\t101 \+ 2 F\./.test(t) && /Lager\t10 \+ 3 F\./.test(t));
+ist("Pro Persoun: Flaschen und Fässer getrennt", await p.evaluate(() => [...document.querySelectorAll("#t-uebersicht table")].pop().innerText), t => /Marc\t9\t101 \+ 2 F\./.test(t) && /Lager\t-20 \+ 3 F\./.test(t) && t.includes("🚚 30")); // frei = 10 da − 30 reserviert (Variante A)
 await p.evaluate(() => { OFFEN_SORTE = "Hopfenkönig (01.10.2026)"; render(); });
 ist("Liste pro Bier: Zahlungsart sichtbar", await p.locator("#t-uebersicht").innerText(), t => t.includes("SumUp") && /Paul[\s\S]*Bar/.test(t));
 // Verkaufen ohne eigenen Bestand: Fenster „woher nehmen?“ → aus dem Lager umbuchen

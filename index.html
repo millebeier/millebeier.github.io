@@ -92,6 +92,9 @@ th,td{padding:6px 4px;text-align:right;border-bottom:1px solid var(--line)}
 th:first-child,td:first-child{text-align:left}
 th{color:var(--muted);font-weight:600;font-size:12px}
 tr.summe td{font-weight:700;border-bottom:0}
+.rz{display:block;font-size:11px;color:var(--gelb);font-weight:500;white-space:nowrap;line-height:1.2}
+tr.resz td{color:var(--gelb);border-top:0;padding-top:2px;padding-bottom:2px}
+tr.totz td{color:var(--muted);border-top:0;padding-top:2px}
 .tabwrap{overflow-x:auto}
 label{display:block;font-size:13px;color:var(--muted);margin:12px 0 4px}
 input,select{width:100%;font-size:16px;padding:10px;border-radius:10px;border:1px solid var(--line);
@@ -297,7 +300,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px}
 <script>
 /* Adresse des Cloudflare-Workers. Leer = Probe-Modus (alles nur auf diesem Handy). */
 const WORKER_URL = "https://millebeier.rjtp6r9s9h.workers.dev/";
-const FASSUNG = "16.11.2026 g";
+const FASSUNG = "16.11.2026 h";
 
 /* === Logik === (kein DOM; test/logik.mjs schneidet diesen Block aus) */
 const LAGER = "Lager";
@@ -1101,10 +1104,17 @@ function renderStart() {
 }
 
 /* Bestand eines Halters: Flaschen, Fässer extra („10 + 3 F.“). */
+/* Reserviert anzeigen (vom Nutzer, 16.11.2026, Fassung h, Variante A): groß steht, was noch FREI ist, darunter klein gelb
+   „🚚 n“ = für geplante Bestellungen reserviert. Gilt in Stock, Iwwersiicht/Pro Zort und Pro Persoun. */
+const resAlle = k => Z.halter.reduce((a, h) => a + reserviertBei(Z, h, k), 0);
+const resZeile = (r, fass) => r ? `<span class="rz">🚚 ${r}${fass ? ` + ${fass} F.` : ""}</span>` : fass ? `<span class="rz">🚚 ${fass} F.</span>` : "";
 function mengeText(h) {
   const fl = Z.sortenNamen.reduce((a, s) => a + hat(Z, h, s), 0);
-  const fa = Z.sortenNamen.flatMap(s => fassNamen(Z, s)).reduce((a, k) => a + hat(Z, h, k), 0);
-  return fa ? `${fl} <small class="muted">+ ${fa} F.</small>` : String(fl);
+  const fassK = Z.sortenNamen.flatMap(s => fassNamen(Z, s));
+  const fa = fassK.reduce((a, k) => a + hat(Z, h, k), 0);
+  const rFl = Z.sortenNamen.reduce((a, s) => a + reserviertBei(Z, h, s), 0), rFa = fassK.reduce((a, k) => a + reserviertBei(Z, h, k), 0);
+  const frei = fl - rFl, freiFa = fa - rFa;
+  return `${frei < 0 ? `<span style="color:var(--rot)">${frei}</span>` : frei}${fa ? ` <small class="muted">+ ${freiFa} F.</small>` : ""}${resZeile(rFl, rFa)}`;
 }
 
 function renderUebersicht() {
@@ -1129,8 +1139,9 @@ function renderUebersicht() {
   const archivZ = Z.sortenNamen.filter(s => imArchiv(s) && benutzt(s));
   const asum = f => archivZ.reduce((a, s) => a + Z.sorten[s][f], 0); // nur Flaschen
   // Fässer als eingerückte Zeilen unter ihrem Bier (vom Nutzer: kein eigenes Bier).
-  const fassZeilen = s => fassNamen(Z, s).map(k => { const y = Z.sorten[k]; return `<tr class="fass"><td>🛢️ Fass ${zerlege(k).l} l</td><td>${y.abgefuellt}</td><td>${y.verkauft}</td><td>${y.abgang}</td><td><b>${y.da}</b></td></tr>`; }).join("");
-  const zeile = (s, klein) => { const x = Z.sorten[s]; return `<tr class="klick ${klein ? "klein" : ""} ${OFFEN_SORTE === s ? "auf" : ""}" data-sorte="${esc(s)}"><td>${esc(bierText(s))}</td><td>${x.abgefuellt}</td><td>${x.verkauft}</td><td>${x.abgang}</td><td><b>${x.da}</b></td></tr>${fassZeilen(s)}`; };
+  const fassZeilen = s => fassNamen(Z, s).map(k => { const y = Z.sorten[k], r = resAlle(k); return `<tr class="fass"><td>🛢️ Fass ${zerlege(k).l} l</td><td>${y.abgefuellt}</td><td>${y.verkauft}</td><td>${y.abgang}</td><td><b>${y.da - r}</b>${resZeile(r)}</td></tr>`; }).join("");
+  const zeile = (s, klein) => { const x = Z.sorten[s], r = resAlle(s); return `<tr class="klick ${klein ? "klein" : ""} ${OFFEN_SORTE === s ? "auf" : ""}" data-sorte="${esc(s)}"><td>${esc(bierText(s))}</td><td>${x.abgefuellt}</td><td>${x.verkauft}</td><td>${x.abgang}</td><td><b style="${x.da - r < 0 ? "color:var(--rot)" : ""}">${x.da - r}</b>${resZeile(r)}</td></tr>${fassZeilen(s)}`; };
+  const resFl = Z.sortenNamen.reduce((a, s) => a + resAlle(s), 0), resArchiv = archivZ.reduce((a, s) => a + resAlle(s), 0);
   box.innerHTML = `
   ${PROBE ? `<div class="probe">Prouf-Modus: Agaben bleiwen just op dësem Handy.</div>` : ""}
   <div class="card"><div class="kacheln">
@@ -1140,16 +1151,16 @@ function renderUebersicht() {
     <div class="kachel offen"><b>${euro(Z.offen)}</b><span>nach ausstoend${Z.kaeufer.filter(k => k.offen > 0).length ? ` (${Z.kaeufer.filter(k => k.offen > 0).length} Leit)` : ""}</span></div>
   </div></div>
   <div class="card"><h2>Pro Zort</h2><div class="tabwrap"><table>
-    <tr><th>Zort</th><th>Ofgefëllt</th><th>Verkaaft</th><th>Fort</th><th>Nach do</th></tr>
+    <tr><th>Zort</th><th>Ofgefëllt</th><th>Verkaaft</th><th>Fort</th><th>Nach do<br><small>fräi</small></th></tr>
     ${zeilen.map(s => zeile(s, false)).join("")}
-    ${archivZ.length ? `<tr class="klick archivzeile ${ARCHIV_UEB ? "auf" : ""}" data-archiv><td>📦 Archiv (${archivZ.length})</td><td>${asum("abgefuellt")}</td><td>${asum("verkauft")}</td><td>${asum("abgang")}</td><td><b>${asum("da")}</b></td></tr>
+    ${archivZ.length ? `<tr class="klick archivzeile ${ARCHIV_UEB ? "auf" : ""}" data-archiv><td>📦 Archiv (${archivZ.length})</td><td>${asum("abgefuellt")}</td><td>${asum("verkauft")}</td><td>${asum("abgang")}</td><td><b>${asum("da") - resArchiv}</b>${resZeile(resArchiv)}</td></tr>
       ${ARCHIV_UEB ? archivZ.map(s => zeile(s, true)).join("") : ""}` : ""}
-    <tr class="summe"><td>Total</td><td>${F.abgefuellt}</td><td>${F.verkauft}</td><td>${F.abgang}</td><td>${F.da}</td></tr>
+    <tr class="summe"><td>Total</td><td>${F.abgefuellt}</td><td>${F.verkauft}</td><td>${F.abgang}</td><td>${F.da - resFl}${resZeile(resFl)}</td></tr>
   </table></div>
-  <div class="hinweis">„Fort“ = selwer gedronk, verschenkt oder futti. Op ▶ tippen: wien huet wat wiem verkaaft.</div></div>
+  <div class="hinweis">„Fort“ = selwer gedronk, verschenkt oder futti. „Nach do“ = nach fräi; 🚚 = reservéiert fir geplangt Bestellungen. Op ▶ tippen: wien huet wat wiem verkaaft.</div></div>
   ${OFFEN_SORTE && Z.sorten[OFFEN_SORTE] ? sorteDetail(OFFEN_SORTE) : ""}
   <div class="card"><h2>Pro Persoun</h2><div class="tabwrap"><table>
-    <tr><th></th><th>Huet nach</th><th>Verkaaft</th><th>Ëmsaz</th><th>Op</th></tr>
+    <tr><th></th><th>Huet nach<br><small>fräi</small></th><th>Verkaaft</th><th>Ëmsaz</th><th>Op</th></tr>
     ${leute.map(p => { const P = Z.personen[p] || { verkauft: 0, umsatz: 0, offen: 0 };
       const n = mengeText(p);
       return `<tr><td>${esc(p)}</td><td>${n}</td><td>${P.verkauft}${P.faesser ? ` <small class="muted">+ ${P.faesser} F.</small>` : ""}</td><td>${euro(P.umsatz)}</td><td>${P.offen ? euro(P.offen) : "–"}</td></tr>`; }).join("")}
@@ -2322,12 +2333,18 @@ function renderBestand() {
   const res = Z.halter.flatMap(h => Object.entries(Z.reserviert[h] || {}).filter(([, n]) => n > 0).map(([k, n]) => `${n} × ${postenText([{ sorte: k, n }]).replace(/^\d+ × /, "")} ${beim(h)}`));
   tab.innerHTML = `<div class="card"><h2>Wien huet wat?</h2><h3><svg class="flasche" viewBox="0 0 24 48" aria-hidden="true"><rect x="9" y="1" width="6" height="3" rx="1" fill="#c9c9c9"/><path d="M9.5 4h5v8c0 2 1 3 2.5 5s3 4 3 7.5V44a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3V24.5c0-3.5 1.5-5.5 3-7.5S9.5 14 9.5 12z" fill="#8a4b14"/><rect x="5" y="26" width="14" height="10" rx="1.5" fill="#f3ece2"/><rect x="7.5" y="29.5" width="9" height="3" rx="1" fill="#e3141b"/></svg> Fläschen</h3><div class="tabwrap"><table>
     <tr><th></th>${sorten.map(s => `<th>${esc(bierText(s))}</th>`).join("")}<th>Σ</th></tr>
-    ${Z.halter.map(h => `<tr><td>${h === LAGER ? "📦 Lager" : esc(h)}</td>${sorten.map(s => { const n = hat(Z, h, s); return `<td style="${n < 0 ? "color:var(--rot)" : ""}">${n || "–"}</td>`; }).join("")}<td><b>${sorten.reduce((a, s) => a + hat(Z, h, s), 0)}</b></td></tr>`).join("")}
-    <tr class="summe"><td>Total</td>${sorten.map(s => `<td>${Z.sorten[s].da}</td>`).join("")}<td>${Z.flaschen.da}</td></tr>
+    ${Z.halter.map(h => { const rS = sorten.reduce((a, s) => a + reserviertBei(Z, h, s), 0);
+      return `<tr><td>${h === LAGER ? "📦 Lager" : esc(h)}</td>${sorten.map(s => { const n = hat(Z, h, s), r = reserviertBei(Z, h, s), fr = n - r;
+        return `<td style="${fr < 0 ? "color:var(--rot)" : ""}">${!n && !r ? "–" : `<span class="${!fr ? "muted" : ""}">${fr}</span>`}${resZeile(r)}</td>`; }).join("")}<td><b>${sorten.reduce((a, s) => a + hat(Z, h, s), 0) - rS}</b>${resZeile(rS)}</td></tr>`; }).join("")}
+    ${(() => { const rT = sorten.map(s => resAlle(s)), rSum = rT.reduce((a, b) => a + b, 0);
+      return `<tr class="summe"><td>${rSum ? "Fräi" : "Total"}</td>${sorten.map((s, i) => `<td>${Z.sorten[s].da - rT[i]}</td>`).join("")}<td>${Z.flaschen.da - rSum}</td></tr>` + (rSum ?
+      `<tr class="resz"><td>+ reservéiert</td>${rT.map(r => `<td>${r}</td>`).join("")}<td>${rSum}</td></tr>
+       <tr class="totz"><td>= Total</td>${sorten.map(s => `<td>${Z.sorten[s].da}</td>`).join("")}<td>${Z.flaschen.da}</td></tr>` : ""); })()}
   </table></div>
   ${faesser.length ? `<h3>🛢️ Fässer</h3><div class="tabwrap"><table>
     <tr><th></th>${faesser.map(k => `<th>${esc(bierText(zerlege(k).bier))}<br>${zerlege(k).l} l</th>`).join("")}</tr>
-    ${Z.halter.filter(h => faesser.some(k => hat(Z, h, k))).map(h => `<tr><td>${h === LAGER ? "📦 Lager" : esc(h)}</td>${faesser.map(k => `<td>${hat(Z, h, k) || "–"}</td>`).join("")}</tr>`).join("")}
+    ${Z.halter.filter(h => faesser.some(k => hat(Z, h, k))).map(h => `<tr><td>${h === LAGER ? "📦 Lager" : esc(h)}</td>${faesser.map(k => { const n = hat(Z, h, k), r = reserviertBei(Z, h, k);
+      return `<td>${!n && !r ? "–" : n - r}${resZeile(r)}</td>`; }).join("")}</tr>`).join("")}
   </table></div>` : ""}
   ${res.length ? `<div class="meldung warn">🚚 Reservéiert fir geplangt Bestellungen: ${esc(res.join(" · "))}</div>` : ""}
   ${Z.halter.some(h => [...sorten, ...faesser].some(s => hat(Z, h, s) < 0)) ? `<div class="meldung warn">Rout Zuelen: Do gouf méi verkaaft oder weiderginn, wéi laut der App do war. Wahrscheinlech feelt eng Verdeelung.</div>` : ""}
