@@ -53,8 +53,18 @@ ist("zou: keng Kontaktdaten", await p.locator("#kListe").innerText(), t => !t.in
 await p.evaluate(() => { K_AUF.add(Z.kunden[0].kid); K_AKEEF.add(Z.kunden[0].kid); renderKunden(); });
 await p.click('[data-tab="bestand"]'); await p.click('[data-tab="kunden"]');
 ist("kuerz ewech: bleift op", await p.evaluate(() => K_AUF.size), 1);
-await p.click('[data-tab="bestand"]'); await p.evaluate(() => { K_WEG = Date.now() - 6 * 60 * 1000; }); await p.click('[data-tab="kunden"]');
+await p.click('[data-tab="bestand"]'); await p.evaluate(() => { ZU_WEG.kunden = Date.now() - 6 * 60 * 1000; }); await p.click('[data-tab="kunden"]');
 ist("no 6 min: alles zou", await p.evaluate(() => [K_AUF.size, K_AKEEF.size, document.querySelectorAll("#kListe .kz-inhalt").length]), [0, 0, 0]);
+// Datselwecht am Stock (Archiv vun de Béieren) an an der Iwwersiicht (Zort ▶ an Archiv)
+await p.evaluate(() => { ARCHIV_AUF = true; ARCHIV_UEB = true; OFFEN_SORTE = "NEIPA"; });
+await p.click('[data-tab="bestand"]'); await p.click('[data-tab="uebersicht"]'); await p.click('[data-tab="bestand"]');
+ist("kuerz ewech: Stock/Iwwersiicht bleiwen op", await p.evaluate(() => [ARCHIV_AUF, ARCHIV_UEB, OFFEN_SORTE]), [true, true, "NEIPA"]);
+await p.click('[data-tab="kunden"]'); await p.evaluate(() => { ZU_WEG.bestand = ZU_WEG.uebersicht = Date.now() - 6 * 60 * 1000; });
+await p.click('[data-tab="bestand"]');
+ist("no 6 min: Stock-Archiv zou", await p.evaluate(() => ARCHIV_AUF), false);
+await p.click('[data-tab="uebersicht"]');
+ist("no 6 min: Iwwersiicht zou", await p.evaluate(() => [ARCHIV_UEB, OFFEN_SORTE]), [false, ""]);
+await p.click('[data-tab="kunden"]');
 
 // Sich
 await p.fill("#kSuche", "fer"); await warte(100);

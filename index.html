@@ -259,7 +259,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px}
 <script>
 /* Adresse des Cloudflare-Workers. Leer = Probe-Modus (alles nur auf diesem Handy). */
 const WORKER_URL = "https://millebeier.rjtp6r9s9h.workers.dev/";
-const FASSUNG = "15.11.2026 m";
+const FASSUNG = "16.11.2026 a";
 
 /* === Logik === (kein DOM; test/logik.mjs schneidet diesen Block aus) */
 const LAGER = "Lager";
@@ -940,17 +940,26 @@ function tipptIn(el) {
 }
 
 const K_AUF = new Set(), K_AKEEF = new Set();
-/* Aufgeklappte Clienten (Kontakt und Akeef) klappen von selbst wieder zu, wenn man länger als K_ZU_MS nicht im Reiter
-   Client war — anderer Reiter oder App im Hintergrund (vom Nutzer, Fassung l). Kurz hin und her bleibt offen. */
-const K_ZU_MS = 5 * 60 * 1000;
-let K_WEG = null;
-function kundenZuklappenPruefen() {
-  if (K_WEG && Date.now() - K_WEG > K_ZU_MS) { K_AUF.clear(); K_AKEEF.clear(); }
-  K_WEG = null;
+/* Aufgeklapptes klappt von selbst wieder zu, wenn man länger als ZU_MS nicht in diesem Reiter war — anderer Reiter
+   oder App im Hintergrund. Kurz hin und her bleibt offen; solange man im Reiter bleibt, klappt nichts zu.
+   Client: Kontakt + Akeef (Fassung l); Stock: Archiv der Biere; Iwwersiicht: Sorten-▶ und Archiv (Fassung n, vom Nutzer). */
+const ZU_MS = 5 * 60 * 1000;
+const ZUKLAPPEN = {
+  kunden: () => { K_AUF.clear(); K_AKEEF.clear(); },
+  bestand: () => { ARCHIV_AUF = false; },
+  uebersicht: () => { ARCHIV_UEB = false; OFFEN_SORTE = ""; },
+};
+const ZU_WEG = {}; // Reiter → seit wann nicht mehr dort
+function zuklappenPruefen(tab) {
+  const jetzt = Date.now();
+  for (const r in ZUKLAPPEN) {
+    if (r === tab) { if (ZU_WEG[r] && jetzt - ZU_WEG[r] > ZU_MS) ZUKLAPPEN[r](); ZU_WEG[r] = null; }
+    else if (!ZU_WEG[r]) ZU_WEG[r] = jetzt;
+  }
 }
 function render() {
   const tab = bereit() ? TAB : "start";
-  if (tab === "kunden") kundenZuklappenPruefen(); else if (!K_WEG) K_WEG = Date.now();
+  zuklappenPruefen(tab);
   document.querySelectorAll("main > section").forEach(s => s.classList.toggle("versteckt", s.id !== "t-" + tab));
   $("#nav").classList.toggle("versteckt", !bereit());
   $("#zahnrad").classList.toggle("versteckt", !bereit());
@@ -2295,8 +2304,8 @@ async function updatePruefen() {
 }
 $("#neu").onclick = neuLaden;
 document.addEventListener("visibilitychange", () => {
-  if (document.visibilityState === "hidden") { if (!K_WEG) K_WEG = Date.now(); return; }
-  if (document.visibilityState === "visible") { if (TAB === "kunden") render(); abgleichen(); updatePruefen(); }
+  if (document.visibilityState === "hidden") { for (const r in ZUKLAPPEN) if (!ZU_WEG[r]) ZU_WEG[r] = Date.now(); return; }
+  if (document.visibilityState === "visible") { if (ZUKLAPPEN[TAB]) render(); abgleichen(); updatePruefen(); }
 });
 window.addEventListener("online", abgleichen);
 setInterval(() => { if (document.visibilityState === "visible") abgleichen(); }, 20000);

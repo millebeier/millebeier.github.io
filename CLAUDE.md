@@ -109,7 +109,7 @@ beim Verkaufen/Livraison und „Fläsche beweegen“ an, solange jemand welche h
   **Liste zeigt nur den Namen**: Firma, wenn gesetzt (auch wenn Name/Vorname da sind), sonst „Name Vorname“; **alphabetisch**
   (`kundeLabel`). Rotes ▶ klappt Kontaktdaten auf (Kontaktperson 👤, Adresse, Ort, tel:/mailto:-Links, Remarque,
   ✎ Änneren / ✕ Läschen; **klappt von selbst zu**, wenn man > 5 min nicht im Reiter war — anderer Reiter oder App im
-  Hintergrund, `K_WEG`/`K_ZU_MS`, Fassung l, vom Nutzer), darin „▶ Akeef (n)“ (`kaeufeVon`: Verkäufe und geplante/gelieferte Bestellungen **ab jetzt**, nie die
+  Hintergrund, Fassung l, vom Nutzer; seit 16.11. a gemeinsam mit Stock-Archiv und Iwwersiicht über `ZUKLAPPEN`/`ZU_WEG`/`ZU_MS`), darin „▶ Akeef (n)“ (`kaeufeVon`: Verkäufe und geplante/gelieferte Bestellungen **ab jetzt**, nie die
   alten Excel-Verkäufe; zugeordnet über `kid` oder den Namen; Datum, Biere, Betrag, bezahlt per / op / geplangt). Suchfeld
   oben (Name, Firma, Kontaktperson, Ort). Doppelt = gleiches Label. **Kein c/o-Feld** (vom Nutzer gefragt, abgesprochen):
   bei einer Firma sind Name/Vorname die Kontaktperson; Rechnungsadresse (`rechnungsAdresse`) = Firma / „À l'attention de
@@ -182,6 +182,8 @@ beim Verkaufen/Livraison und „Fläsche beweegen“ an, solange jemand welche h
   **Pro Zort zeigt nur aktuelle Biere**; archivierte (und Sorten ohne Eintrag) stehen gesammelt in einer Zeile
   „📦 Archiv (n)“ mit ihren Summen (Total bleibt vollständig), aufklappbar, darin je Bier kleiner und eingerückt,
   wieder mit ▶ zu den Verkäufen (vom Nutzer, 14.11.2026). Archiv zuklappen schließt ein offenes Archiv-Bier mit.
+  **Von selbst zuklappen** (vom Nutzer, Fassung 16.11. a): Iwwersiicht (Sorten-▶, Archiv) und Stock (Archiv der Biere) klappen
+  zu, wenn man > 5 min nicht im Reiter war — wie die Clienten (`ZUKLAPPEN` je Reiter, `zuklappenPruefen` in `render`).
   Kopf: Name `white-space:nowrap` — bei langem Status (offline) brach er sonst als „Millebé / ier“ um.
 - **Name im Kopf** ganz weiß, nur der Akzent auf dem é rot wie im Logo: weißes „e“ mit rotem Strich darüber (`.akz::after`), weil sich ein Akzent nicht einzeln einfärben lässt.
 - **Farben wie im Logo** (vom Nutzer, 13.11.2026): schwarz, weiß, Rot `--akzent` (#e3141b) für Knöpfe und markierte Reiter, Kopf mit rotem Strich und grauer Linie wie der Logo-Ring. Grün (bezahlt) und Gelb (offen) bleiben als Bedeutungsfarben.
