@@ -40,7 +40,7 @@ const lagerZeile = await p.evaluate(() => { const tr = [...document.querySelecto
   const i = [...document.querySelectorAll("#bTabelle tr th")].findIndex(th => th.textContent.includes("Hopfenkönig")); return tr.cells[i].innerText.replace(/\s+/g, " "); });
 ist("Stock: Lager zeigt frei + 🚚 reserviert", lagerZeile, "20 🚚 100");
 ist("Stock: Tabelle passt ohne seitlich zu scrollen", await p.evaluate(() => [...document.querySelectorAll("#bTabelle .tabwrap")].every(w => w.scrollWidth <= w.clientWidth)), true);
-ist("Stock: Kopf zweizeilig (Name / Datum)", await p.evaluate(() => [...document.querySelectorAll("#bTabelle th")].some(th => th.innerHTML.includes("Hopfenkönig<br><small>01.10.26</small>"))), true);
+ist("Stock: Kopf zweizeilig (Name / Datum)", await p.evaluate(() => [...document.querySelector("#bTabelle table").querySelectorAll("th")].some(th => th.innerHTML.includes("Hopfenkönig<br><small>01.10.26</small>"))), true);
 ist("Stock: Fräi / + 🚚 res. / = Total", await p.evaluate(() => [...document.querySelectorAll("#bTabelle tr")].map(r => r.cells[0] && r.cells[0].textContent.trim()).filter(t => /Fräi|res\.|Total/.test(t || ""))), ["Fräi", "+ 🚚 res.", "= Total"]);
 const uebA = await p.evaluate(() => { TAB = "uebersicht"; render(); const tr = document.querySelector('#t-uebersicht tr[data-sorte="Hopfenkönig (01.10.2026)"]'); return tr.cells[4].innerText.replace(/\s+/g, " "); });
 ist("Pro Zort: Nach do frei + 🚚", uebA, "20 🚚 100");
