@@ -148,7 +148,7 @@ beim Verkaufen/Livraison und „Fläsche beweegen“ an, solange jemand welche h
   Abo) bleibt 🍾. **Abo:** Worker `GET /kalender/<schlüssel>.ics`, Schlüssel = SHA-256("millebeier-kalender:"
   + CODE) Hex, 32 Zeichen (`kalenderSchluessel`, App und Worker gleich) — kein eigenes Secret; Code ändern = neuer Link.
   Knopf `webcal://…`, darunter „Klappt net?“ mit https-Adresse zum Kopieren. VTIMEZONE Europe/Luxembourg, Zeilen gefaltet
-  (≤ 75 Bytes), UID = tid. **Worker muss dafür neu eingefügt werden** (Stand 16.11.: vom Nutzer noch nicht gemeldet).
+  (≤ 75 Bytes), UID = tid. **Worker mit Kalender vom Nutzer am 16.11.2026 eingefügt.**
   **Livraison** (vom Nutzer, 14.11.2026): geplant, bis ein Verkauf mit `liv` = ihre id existiert („Geliwwert ✓“ legt ihn an,
   Flaschen aus `aus`, meist Lager — Verkauf hat dafür optional `aus`). Verkauf rückgängig → wieder geplant. Rechnung
   „gemaach“ = Eintrag `rechnung`. Geplantes zählt nirgends als verkauft.
