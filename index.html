@@ -283,7 +283,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px}
 <script>
 /* Adresse des Cloudflare-Workers. Leer = Probe-Modus (alles nur auf diesem Handy). */
 const WORKER_URL = "https://millebeier.rjtp6r9s9h.workers.dev/";
-const FASSUNG = "16.11.2026 b";
+const FASSUNG = "16.11.2026 c";
 
 /* === Logik === (kein DOM; test/logik.mjs schneidet diesen Block aus) */
 const LAGER = "Lager";
@@ -1490,7 +1490,7 @@ function renderKalForm(box, egal) {
     <div class="hinweis">Ouni Zäit = ganzen Dag.</div>
     <label>Wien ass dobäi?</label>
     <div class="leit">${Z.cfg.leute.map(p => `<button data-twer="${esc(p)}" class="${F.wer.includes(p) ? "an" : ""}">${esc(p)}</button>`).join("")}</div>
-    <label for="tWou">Wou (fräiwëlleg)</label><input id="tWou" value="${esc(F.wou)}" placeholder="z. B. bei Laurent">
+    <label for="tWou">Wou (fräiwëlleg)</label><input id="tWou" value="${esc(F.wou)}" placeholder="z. B. op der Millen">
     <label for="tNotiz">Remarque (fräiwëlleg)</label><input id="tNotiz" value="${esc(F.notiz)}">
     ${zeigeFolge ? `<div class="tfolge"><b>💡 No dem Braudag direkt mat plangen?</b>
       ${F.folge.map((f, i) => `<div class="tfz"><label class="check" style="margin:0;flex:1"><input type="checkbox" data-tfan="${i}" ${f.an ? "checked" : ""}> ${TERMIN_ARTEN[f.typ].ic} ${esc(TERMIN_ARTEN[f.typ].txt)}</label>
