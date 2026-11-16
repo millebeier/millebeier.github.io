@@ -154,7 +154,8 @@ beim Verkaufen/Livraison und „Fläsche beweegen“ an, solange jemand welche h
   „gemaach“ = Eintrag `rechnung`. Geplantes zählt nirgends als verkauft.
   **Pro Bier** (`proSorte`): Verkäufe, Abgänge, geplante Livraisons je Sorte; Betrag eines Mehrsorten-Verkaufs nach
   Listenpreis aufgeteilt (`anteil`). In der Iwwersiicht Sorte antippen. **Excel-Export** (`exportBlaetter` → SheetJS
-  0.18.5 von cdnjs, erst beim Tippen geladen): je Sorte ein Blatt wie die alte Tabelle, dazu Livraisons und Stock;
+  0.18.5 von cdnjs, erst beim Tippen geladen): je Sorte ein Blatt wie die alte Tabelle, dazu Bestellungen, **Clienten** (alle
+  Felder + Akeef/Total/dovun op/geplangt/Leschten Akaf, alphabetisch; vom Nutzer, Fassung 16.11. f) und Stock;
   Teilen-Leiste wie die anderen Dateien.
   **Fässer = Gebinde eines Biers** (vom Nutzer, 14.11.2026: „nicht als eigenständiges Bier“): Schlüssel im Bestand
   `fassKey(bier, 20|30)` = „<Bier> Keg 20l/30l“ — genau so hießen die früher als eigenes Bier angelegten Fässer, darum

@@ -121,10 +121,10 @@ ist("CSV Zeilen", c.trim().split("\r\n").length, 4);
     ["Paul", 2, 6, "Jo", "Nee"], ["verschenkt / Prouf", 1, 0, "–", "–"], ["Ferro Forum", 24, 60, "Jo", "Nee"], ["BEST", 6, 15, "geplangt 20.12.2026", "–"]]);
   ist("pro Sorte: Rechnung und Anlass", [ps[2].rechnung, ps[2].remarque], ["gemaach", "Kiermes"]);
   const bl = L.exportBlaetter(Y, t => "T");
-  ist("Export: Blätter", bl.map(b => b.name), ["NEIPA", "Brown Porter", "Bestellungen", "Stock"]);
+  ist("Export: Blätter", bl.map(b => b.name), ["NEIPA", "Brown Porter", "Bestellungen", "Clienten", "Stock"]);
   ist("Export: Summe NEIPA ohne geplant", bl[0].summe.slice(0, 7), ["Total", "", "", 27, "Fläschen", "", 66]);
   ist("Export: Livraisons", bl[2].zeilen.map(z => [z[1], z[6], z[7], z[8]]), [["Ferro Forum", "Jo", "gemaach", "Nee"], ["BEST", "geplangt", "", "–"]]);
-  ist("Export: Stock Lager", bl[3].zeilen[0].slice(0, 3), ["Lager", 66, 0]);
+  ist("Export: Stock Lager", bl[4].zeilen[0].slice(0, 3), ["Lager", 66, 0]);
   ist("Livraison ungültig ohne Datum", L.gueltig({ ...L2, datum: "20.12." }), false);
 }
 

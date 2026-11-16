@@ -98,12 +98,20 @@ ist("zuklappen", await p.locator("#t-uebersicht").innerText(), s => !s.includes(
 
 // Excel
 if (XLSX_JS && existsSync(XLSX_JS)) {
+  await p.evaluate(() => { eintragen([{ art: "kunde", v: 2, kid: "k-ferro-01", firma: "Ferro Forum", name: "Muller", vorname: "Jeff",
+    adresse: "1, rue de l'Usine\nBâtiment B", ort: "L-3895 Foetz", tel: "+352 621 123 456", mail: "info@ferroforum.lu", notiz: "Rechnung per Mail" },
+    { art: "kunde", v: 2, kid: "k-best-001", firma: "BEST", name: "", vorname: "" }]); render(); });
   const [dl] = await Promise.all([p.waitForEvent("download"), p.click("[data-excel]")]);
   const pfad = await dl.path();
   const require = createRequire(XLSX_JS);
   const X = require(XLSX_JS);
   const wb = X.read(readFileSync(pfad), { cellNF: true });
-  ist("Excel: Blätter", wb.SheetNames, ["NEIPA", "Brown Porter", "Bestellungen", "Stock"]);
+  ist("Excel: Blätter", wb.SheetNames, ["NEIPA", "Brown Porter", "Bestellungen", "Clienten", "Stock"]);
+  const kl = X.utils.sheet_to_json(wb.Sheets.Clienten, { header: 1, defval: "" });
+  const kk = kl.findIndex(r => r[0] === "Firma");
+  ist("Excel Clienten: Kopf", kl[kk], ["Firma", "Numm", "Virnumm", "Adress", "Uertschaft", "Telefon", "E-Mail", "Remarque", "Akeef", "Total", "dovun op", "geplangt", "Leschten Akaf"]);
+  ist("Excel Clienten: alphabetisch, BEST mit geplanter Bestellung", kl[kk + 1].slice(0, 1).concat(kl[kk + 1].slice(8, 12)), ["BEST", 1, 0, 0, 12]);
+  ist("Excel Clienten: Ferro Forum ganz", kl[kk + 2], ["Ferro Forum", "Muller", "Jeff", "1, rue de l'Usine, Bâtiment B", "L-3895 Foetz", "+352 621 123 456", "info@ferroforum.lu", "Rechnung per Mail", 1, 90, 0, 0, "5.12.2026"]);
   const neipa = X.utils.sheet_to_json(wb.Sheets.NEIPA, { header: 1, defval: "" });
   const kopf = neipa.findIndex(r => r[0] === "Datum");
   ist("Excel NEIPA: Kopf", neipa[kopf].slice(0, 9), ["Datum", "Client", "Kontakt", "Unzuel", "Gebinde", "Präis", "Recetten", "geliwwert?", "bezuel?"]);
