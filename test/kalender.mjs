@@ -31,15 +31,18 @@ await p.click('[data-ksicht="kommend"]');
 
 // Neuer Braudag mit Vorschlag
 await p.click("#tNeu");
-ist("Braudag vorgewählt, ich dabei", await p.evaluate(() => [KALFORM.typ, document.querySelector("#tTitel").value, KALFORM.wer]), ["braudag", "Braudag", ["Laurent"]]);
+ist("Braudag vorgewählt, alle dabei", await p.evaluate(() => [KALFORM.typ, document.querySelector("#tTitel").value, KALFORM.wer.slice().sort(), document.querySelectorAll("[data-twer].an").length]), ["braudag", "Braudag", ["Claude", "Jeff", "Laurent", "Marc"], 4]);
+ist("Haken am Anfang leer", await p.evaluate(() => [...document.querySelectorAll("[data-tfan]")].map(c => c.checked)), [false, false]);
+ist("Afëllen mit Bierflasche", await p.evaluate(() => !!document.querySelector('[data-ttyp="abfuellen"] svg.tflasche') && !!document.querySelector(".tfolge svg.tflasche")), true);
 ist("Vorschlag +7/+14 ab heute", [await p.inputValue('[data-tfd="0"]'), await p.inputValue('[data-tfd="1"]')], [plus(7), plus(14)]);
 await setze("#tDatum", plus(2));
 ist("Datum ändern → Vorschlag zieht mit", [await p.inputValue('[data-tfd="0"]'), await p.inputValue('[data-tfd="1"]')], [plus(9), plus(16)]);
 await setze('[data-tfd="1"]', plus(20));
 await setze("#tDatum", plus(3));
 ist("selbst geändertes Datum bleibt", [await p.inputValue('[data-tfd="0"]'), await p.inputValue('[data-tfd="1"]')], [plus(10), plus(20)]);
+await p.check('[data-tfan="0"]'); await p.check('[data-tfan="1"]');
 await p.selectOption("#tBier", "NEIPA");
-await p.click('[data-twer="Jeff"]');
+await p.click('[data-twer="Marc"]'); await p.click('[data-twer="Claude"]');
 await setze("#tUhr", "10:00"); await setze("#tBis", "09:00");
 await p.click("#tOk"); await warte(100);
 ist("Bis vor Zäit abgelehnt", await p.locator("#tMeld").innerText(), t => t.includes("Bis"));
@@ -48,10 +51,10 @@ ist("mitten im Eintrag", await p.evaluate(() => mittenImEintrag()), true);
 await warte(900); await p.click("#tOk"); await warte(200);
 const ts = await p.evaluate(() => Z.termine.map(t => [t.typ, t.datum, t.uhr || "", t.bier || "", (t.wer || []).join("+")]));
 ist("Braudag + Ëmschlauchen + Afëllen gespeichert", ts.filter(t => t[0] !== "reunioun"),
-  [["braudag", plus(3), "10:00", "NEIPA", "Laurent+Jeff"], ["umschlauchen", plus(10), "", "NEIPA", "Laurent+Jeff"], ["abfuellen", plus(20), "", "NEIPA", "Laurent+Jeff"]]);
+  [["braudag", plus(3), "10:00", "NEIPA", "Jeff+Laurent"], ["umschlauchen", plus(10), "", "NEIPA", "Jeff+Laurent"], ["abfuellen", plus(20), "", "NEIPA", "Jeff+Laurent"]]);
 ist("Meldung", await p.locator("#t-kalender .meldung").innerText(), t => t.includes("Agedroen") && t.includes("Ëmschlauchen"));
 ist("Reihenfolge in der Liste", await p.evaluate(() => [...document.querySelectorAll(".ter .tinh > b")].map(x => x.textContent.trim())),
-  ["🚚 Bestellung Reimen David", "🍺 Braudag · NEIPA", "🔄 Ëmschlauchen · NEIPA", "🍾 Afëllen · NEIPA"]);
+  ["🚚 Bestellung Reimen David", "🍺 Braudag · NEIPA", "🔄 Ëmschlauchen · NEIPA", "Afëllen · NEIPA"]);
 
 // Vorschlag abwählen; Art wechseln ändert den Titel nur, solange man ihn nicht selbst getippt hat
 await warte(900); await p.click("#tNeu");
@@ -61,9 +64,32 @@ await p.click('[data-ttyp="stand"]');
 ist("Art wechseln: Titel folgt, Vorschlag weg", [await p.inputValue("#tTitel"), await p.locator(".tfolge").count()], ["Stand / Fest", 0]);
 await p.fill("#tTitel", "Chrëschtmaart"); await p.click('[data-ttyp="reunioun"]');
 ist("selbst getippter Titel bleibt", await p.inputValue("#tTitel"), "Chrëschtmaart");
-await p.click('[data-ttyp="stand"]'); await p.click('[data-twer="Laurent"]'); await p.click('[data-twer="Marc"]');
+await p.click('[data-ttyp="stand"]'); await p.click('[data-twer="Laurent"]'); await p.click('[data-twer="Jeff"]'); await p.click('[data-twer="Claude"]');
+await p.selectOption("#tBier", "__neu");
+ist("neues Bier: Feld zum Eintippen", [await p.locator("#tBierNeu").count(), await p.evaluate(() => document.activeElement.id)], [1, "tBierNeu"]);
+await p.keyboard.type("Hazy Pale (Test)");
 await setze("#tDatum", plus(5)); await warte(900); await p.click("#tOk"); await warte(200);
-ist("Stand ohne mich", await p.evaluate(() => Z.termine.find(t => t.typ === "stand").wer), ["Marc"]);
+ist("Stand ohne mich, mit eingetipptem Bier", await p.evaluate(() => { const t = Z.termine.find(t => t.typ === "stand"); return [t.wer, t.bier]; }), [["Marc"], "Hazy Pale (Test)"]);
+const stand = await p.evaluate(() => Z.termine.find(t => t.typ === "stand").tid);
+await p.click(`[data-ter="${stand}"]`); await p.click(`[data-ted="${stand}"]`);
+ist("Ändern: eingetipptes Bier steht im Feld", [await p.inputValue("#tBier"), await p.inputValue("#tBierNeu")], ["__neu", "Hazy Pale (Test)"]);
+await p.selectOption("#tBier", "NEIPA");
+ist("Auswahl statt Eintippen: Feld weg", await p.locator("#tBierNeu").count(), 0);
+await p.click("#tZu");
+await p.click(`[data-ter="${stand}"]`);
+
+// Filter mit kleinen Symbolen
+ist("Filterleiste: All + 8 Arten + Bestellungen", await p.locator(".tfilter button").count(), 10);
+await p.click('[data-kfil="braudag"]');
+ist("nur Braudag", await p.evaluate(() => [...document.querySelectorAll(".ter .tinh > b")].map(x => x.textContent.trim())), ["🍺 Braudag · NEIPA"]);
+await p.click('[data-kfil="bestellung"]');
+ist("Braudag + Bestellungen", await p.evaluate(() => [...document.querySelectorAll(".ter .tinh > b")].map(x => x.textContent.trim())), ["🚚 Bestellung Reimen David", "🍺 Braudag · NEIPA"]);
+ist("All aus, zwei Symbole an", await p.evaluate(() => [document.querySelector('[data-kfil=""]').classList.contains("an"), document.querySelectorAll(".tfilter button.an").length]), [false, 2]);
+await p.click('[data-kfil="braudag"]'); await p.click('[data-kfil="bestellung"]');
+ist("alles abgewählt = All", await p.evaluate(() => [document.querySelector('[data-kfil=""]').classList.contains("an"), document.querySelectorAll(".ter").length]), [true, 5]);
+await p.click('[data-kfil="reunioun"]');
+ist("leerer Filter: Hinweis", await p.locator("#t-kalender").innerText(), t => t.includes("Näischt fir dëse Filter"));
+await p.click('[data-kfil=""]');
 
 // Just meng
 await p.click('[data-ksicht="meng"]');

@@ -141,7 +141,11 @@ beim Verkaufen/Livraison und „Fläsche beweegen“ an, solange jemand welche h
   antippen klappt auf (✎/✕; klappt nach 5 min wie die anderen zu). **Geplante Bestellungen stehen nur in der App** (gestrichelt
   „aus de Bestellungen“), **nicht im Abo** (vom Nutzer). **Vorschlag nach dem Braudag** (`NO_BRAUDAG`): Ëmschlauchen +7,
   Afëllen +14 Tage, je mit Haken und eigenem Datumsfeld (vom Nutzer: Datum änderbar); ziehen mit dem Braudag-Datum mit, bis man
-  sie selbst ändert; nur beim Anlegen. **Abo:** Worker `GET /kalender/<schlüssel>.ics`, Schlüssel = SHA-256("millebeier-kalender:"
+  sie selbst ändert; nur beim Anlegen; **Haken am Anfang leer** (vom Nutzer, Fassung d). **Fassung d** (vom Nutzer): Filterleiste
+  mit kleinen Symbolen ohne Namen (`KAL_FILTER`: „All“ + 8 Arten + 🚚 Bestellungen, mehrere wählbar, wirkt mit Kommend/Alles/
+  Just meng, klappt nach 5 min auf „All“ zurück); Béier aus der Liste **oder** „✏️ Neit Béier antippen …“ (Freitext, `bierNeu`);
+  „Wien ass dobäi?“ **standardmäßig alle**; Afëllen mit der Bierflasche der App (`FLASCHE_SVG`, `terminIc`) — in Text (Verlauf,
+  Abo) bleibt 🍾. **Abo:** Worker `GET /kalender/<schlüssel>.ics`, Schlüssel = SHA-256("millebeier-kalender:"
   + CODE) Hex, 32 Zeichen (`kalenderSchluessel`, App und Worker gleich) — kein eigenes Secret; Code ändern = neuer Link.
   Knopf `webcal://…`, darunter „Klappt net?“ mit https-Adresse zum Kopieren. VTIMEZONE Europe/Luxembourg, Zeilen gefaltet
   (≤ 75 Bytes), UID = tid. **Worker muss dafür neu eingefügt werden** (Stand 16.11.: vom Nutzer noch nicht gemeldet).
