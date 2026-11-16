@@ -53,9 +53,11 @@ header{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:3px so
 .tarten button i{display:block;font-style:normal;font-size:20px;height:26px;line-height:26px}
 .tflasche{width:11px;height:22px;vertical-align:-4px}
 .tarten .tflasche{width:12px;height:24px;vertical-align:-3px}
-.tfilter{display:flex;gap:4px;margin-top:8px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:2px}
-.tfilter button{flex:none;min-width:34px;height:34px;padding:0 6px;border-radius:9px;border:1px solid var(--line);background:var(--card2);color:var(--text);font-size:17px;line-height:1;cursor:pointer}
-.tfilter button.alle{font-size:13px;font-weight:700;padding:0 10px}
+/* alle zehn Filter in einer Zeile ohne Scrollen (vom Nutzer, Fassung e) */
+.tfilter{display:grid;grid-template-columns:auto repeat(9,minmax(0,1fr));gap:3px;margin-top:8px}
+.tfilter button{min-width:0;height:34px;padding:0;border-radius:8px;border:1px solid var(--line);background:var(--card2);color:var(--text);font-size:16px;line-height:1;cursor:pointer}
+.tfilter button.alle{font-size:12px;font-weight:700;padding:0 6px}
+.tfilter .tflasche{width:9px;height:18px;vertical-align:-3px}
 .tfilter button.an{border:2px solid var(--akzent);background:#2a1415}
 .tfilter button.alle.an{background:var(--akzent);border-color:var(--akzent)}
 .tarten button.an{border:2px solid var(--gruen)}
@@ -290,7 +292,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px}
 <script>
 /* Adresse des Cloudflare-Workers. Leer = Probe-Modus (alles nur auf diesem Handy). */
 const WORKER_URL = "https://millebeier.rjtp6r9s9h.workers.dev/";
-const FASSUNG = "16.11.2026 d";
+const FASSUNG = "16.11.2026 e";
 
 /* === Logik === (kein DOM; test/logik.mjs schneidet diesen Block aus) */
 const LAGER = "Lager";
@@ -307,6 +309,8 @@ const TERMIN_ARTEN = {
   reunioun: { ic: "🗣️", txt: "Reunioun" }, aanescht: { ic: "📝", txt: "Aanescht" },
 };
 // Vorschlag nach dem Braudag (vom Nutzer): Ëmschlauchen +7, Afëllen +14 Tage, im Formular änderbar.
+// Biersorten zum Auswählen im Kalender (vom Nutzer, Fassung e) — fest, nicht der Bestand; Neues über „Neien Béier antippen“.
+const TERMIN_BIERE = ["IPA", "NEIPA", "WHIPA", "Brown Porter", "Clasico", "Rusty"];
 const NO_BRAUDAG = [{ typ: "umschlauchen", tage: 7 }, { typ: "abfuellen", tage: 14 }];
 /* Gebinde: Fässer sind kein eigenes Bier, sondern „<Bier> Keg 20l“ / „<Bier> Keg 30l“ als Schlüssel im Bestand
    (so hießen die Fass-Biere vorher schon — Altbestand ordnet sich damit von selbst seinem Bier zu). */
@@ -598,7 +602,7 @@ function beschreibe(e, Z) {
     }
     case "bier": return `🍺 Béier: ${e.name}` + [e.stil, e.alk != null ? String(e.alk).replace(".", ",") + " %" : "", euro(e.preis), e.braudatum ? "gebraut " + datumKurz(e.braudatum) : ""].filter(Boolean).map(x => " · " + x).join("");
     case "bierstatus": return { archiv: "📦 Archivéiert: ", aktiv: "↩️ Aus dem Archiv zréck: ", weg: "✕ Béier geläscht: " }[e.status] + bierText(e.name);
-    case "termin": return e.weg ? `📅 Termin geläscht` : `📅 ${(TERMIN_ARTEN[e.typ] || {}).ic || ""} ${e.titel}${e.bier ? " · " + bierText(e.bier) : ""}, ${datumKurz(e.datum)}${e.uhr ? " " + e.uhr : ""}`;
+    case "termin": return e.weg ? `📅 Termin geläscht` : `📅 ${(TERMIN_ARTEN[e.typ] || {}).ic || ""} ${e.titel}${e.bier ? " · " + e.bier : ""}, ${datumKurz(e.datum)}${e.uhr ? " " + e.uhr : ""}`;
     case "kunde": return e.weg ? `📇 Client geläscht` : `📇 Client: ${e.v ? kundeLabel(e) : e.name}${e.ort ? " · " + e.ort : ""}`;
     case "datei": return `📎 ${FELDER[e.feld]}${e.bier ? " · " + e.bier : ""}: ${e.name}`;
     case "einstellungen": return `⚙️ Zorten/Präisser/Leit geännert: ${e.sorten.filter(s => !s.aus).map(s => `${s.name} ${euro(s.preis)}`).join(", ")}`;
@@ -1415,7 +1419,7 @@ function kalZeile(p, heute) {
   const wer = p.quelle === "termin" && (p.wer || []).length ? (p.wer || []).map(w => `<span class="chip">${esc(w)}</span>`).join("") : "";
   return `<div class="ter ${vorbei ? "vorbei" : ""}" data-ter="${esc(p.tid)}">
     <div class="tdat ${p.datum === heute ? "haut" : ""}"><small>${p.datum === heute ? "Haut" : p.datum === morgen ? "Muer" : wt}</small><b>${t}</b></div>
-    <div class="tinh"><b>${ic} ${esc(p.titel)}${p.bier ? " · " + esc(bierText(p.bier)) : ""}</b><div class="z">${esc(zeit)}</div>
+    <div class="tinh"><b>${ic} ${esc(p.titel)}${p.bier ? " · " + esc(p.bier) : ""}</b><div class="z">${esc(zeit)}</div>
       ${wer}${p.quelle === "bestellung" ? `<span class="chip auto">aus de Bestellungen</span>` : ""}
       ${auf ? `${p.notiz ? `<div class="hinweis" style="margin:6px 0 0">${esc(p.notiz)}</div>` : ""}
         <div class="knopfe" style="margin-top:8px">${p.quelle === "termin"
@@ -1495,15 +1499,15 @@ function leererTermin() {
 function renderKalForm(box, egal) {
   if (!egal && tipptIn(box)) return;
   const F = KALFORM;
-  const biere = Z.cfg.sorten.filter(x => !x.aus).map(x => x.name);
+  const biere = TERMIN_BIERE;
   if (F.bierNeu === undefined) F.bierNeu = !!F.bier && !biere.includes(F.bier);
   const zeigeFolge = !F.tid && F.typ === "braudag";
   box.innerHTML = `<div class="card"><h2>${F.tid ? "Termin änneren" : "Neien Termin"}</h2>
     <label>Wat?</label>
     <div class="tarten">${Object.entries(TERMIN_ARTEN).map(([k, a]) => `<button data-ttyp="${k}" class="${F.typ === k ? "an" : ""}"><i>${terminIc(k)}</i>${esc(a.txt)}</button>`).join("")}</div>
     <label for="tTitel">Titel</label><input id="tTitel" value="${esc(F.titel)}" autocapitalize="sentences">
-    <label for="tBier">Béier (fräiwëlleg)</label><select id="tBier"><option value="">–</option>${biere.map(b => `<option value="${esc(b)}" ${!F.bierNeu && b === F.bier ? "selected" : ""}>${esc(bierText(b))}</option>`).join("")}
-      <option value="__neu" ${F.bierNeu ? "selected" : ""}>✏️ Neit Béier antippen …</option></select>
+    <label for="tBier">Béier (fräiwëlleg)</label><select id="tBier"><option value="">–</option>${biere.map(b => `<option value="${esc(b)}" ${!F.bierNeu && b === F.bier ? "selected" : ""}>${esc(b)}</option>`).join("")}
+      <option value="__neu" ${F.bierNeu ? "selected" : ""}>✏️ Neien Béier antippen …</option></select>
     ${F.bierNeu ? `<input id="tBierNeu" value="${esc(F.bier)}" placeholder="z. B. Hazy Pale (Test)" autocapitalize="words" style="margin-top:6px">` : ""}
     <label for="tDatum">Datum</label><input id="tDatum" type="date" value="${esc(F.datum)}">
     <div class="zeile"><div><label for="tUhr">Zäit (fräiwëlleg)</label><input id="tUhr" type="time" value="${esc(F.uhr)}"></div>

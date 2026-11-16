@@ -143,7 +143,7 @@ beim Verkaufen/Livraison und „Fläsche beweegen“ an, solange jemand welche h
   Afëllen +14 Tage, je mit Haken und eigenem Datumsfeld (vom Nutzer: Datum änderbar); ziehen mit dem Braudag-Datum mit, bis man
   sie selbst ändert; nur beim Anlegen; **Haken am Anfang leer** (vom Nutzer, Fassung d). **Fassung d** (vom Nutzer): Filterleiste
   mit kleinen Symbolen ohne Namen (`KAL_FILTER`: „All“ + 8 Arten + 🚚 Bestellungen, mehrere wählbar, wirkt mit Kommend/Alles/
-  Just meng, klappt nach 5 min auf „All“ zurück); Béier aus der Liste **oder** „✏️ Neit Béier antippen …“ (Freitext, `bierNeu`);
+  Just meng, klappt nach 5 min auf „All“ zurück); Béier aus der Liste **oder** „✏️ Neien Béier antippen …“ (Freitext, `bierNeu`; Text vom Nutzer); Auswahl fest `TERMIN_BIERE` = IPA, NEIPA, WHIPA, Brown Porter, Clasico, Rusty (vom Nutzer, nicht der Bestand; im Kalender ohne Braudatum); Filter alle zehn in einer Zeile ohne Scrollen (Fassung e);
   „Wien ass dobäi?“ **standardmäßig alle**; Afëllen mit der Bierflasche der App (`FLASCHE_SVG`, `terminIc`) — in Text (Verlauf,
   Abo) bleibt 🍾. **Abo:** Worker `GET /kalender/<schlüssel>.ics`, Schlüssel = SHA-256("millebeier-kalender:"
   + CODE) Hex, 32 Zeichen (`kalenderSchluessel`, App und Worker gleich) — kein eigenes Secret; Code ändern = neuer Link.

@@ -41,6 +41,8 @@ await setze('[data-tfd="1"]', plus(20));
 await setze("#tDatum", plus(3));
 ist("selbst geändertes Datum bleibt", [await p.inputValue('[data-tfd="0"]'), await p.inputValue('[data-tfd="1"]')], [plus(10), plus(20)]);
 await p.check('[data-tfan="0"]'); await p.check('[data-tfan="1"]');
+ist("Biersorten fest (vom Nutzer)", await p.evaluate(() => [...document.querySelectorAll("#tBier option")].map(o => o.textContent.trim())),
+  ["–", "IPA", "NEIPA", "WHIPA", "Brown Porter", "Clasico", "Rusty", "✏️ Neien Béier antippen …"]);
 await p.selectOption("#tBier", "NEIPA");
 await p.click('[data-twer="Marc"]'); await p.click('[data-twer="Claude"]');
 await setze("#tUhr", "10:00"); await setze("#tBis", "09:00");
@@ -80,6 +82,11 @@ await p.click(`[data-ter="${stand}"]`);
 
 // Filter mit kleinen Symbolen
 ist("Filterleiste: All + 8 Arten + Bestellungen", await p.locator(".tfilter button").count(), 10);
+ist("alle Filter ohne Scrollen sichtbar (390 px)", await p.evaluate(() => { const l = document.querySelector(".tfilter"), r = l.getBoundingClientRect();
+  return l.scrollWidth <= l.clientWidth && [...l.children].every(b => { const x = b.getBoundingClientRect(); return x.left >= r.left - 1 && x.right <= r.right + 1; }); }), true);
+await p.setViewportSize({ width: 320, height: 700 });
+ist("auch bei 320 px", await p.evaluate(() => { const l = document.querySelector(".tfilter"); return l.scrollWidth <= l.clientWidth && document.documentElement.scrollWidth <= 320; }), true);
+await p.setViewportSize({ width: 390, height: 844 });
 await p.click('[data-kfil="braudag"]');
 ist("nur Braudag", await p.evaluate(() => [...document.querySelectorAll(".ter .tinh > b")].map(x => x.textContent.trim())), ["🍺 Braudag · NEIPA"]);
 await p.click('[data-kfil="bestellung"]');
