@@ -100,7 +100,7 @@ SERVER_AN = false;
 await B.click('[data-tab="verkaufen"]');
 await B.fill("#vVorname", "Tom"); await B.click('[data-plus="0"]'); await B.click('[data-bez="bar"]'); await B.click("#vSpeichern");
 await warte(300);
-ist("offline: wartet", await txt(B, "#sync"), s => s.includes("nach net geschéckt"));
+ist("offline: wartet", [await txt(B, "#sync"), await B.evaluate(() => document.querySelector("#syncInfo").textContent)], v => /⚠️|⏳/.test(v[0]) && v[1].includes("nach net geschéckt"));
 await B.reload(); await warte(300);
 ist("offline: übersteht Neuladen", await B.evaluate(() => AUSGANG.length), 2);
 SERVER_AN = true;

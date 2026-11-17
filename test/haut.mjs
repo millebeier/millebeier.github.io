@@ -5,7 +5,7 @@ let fehler = 0;
 const ist = (was, a, b) => { const ok = typeof b === "function" ? b(a) : JSON.stringify(a) === JSON.stringify(b); console.log(ok ? "✓" : "✗", was, ok ? "" : "→ " + JSON.stringify(a)); if (!ok) fehler++; };
 const warte = ms => new Promise(r => setTimeout(r, ms));
 const b = await pw.chromium.launch();
-const p = await b.newPage({ viewport: { width: 375, height: 812 } });
+const p = await b.newPage({ viewport: { width: 390, height: 844 } });
 const seitenfehler = []; p.on("pageerror", e => seitenfehler.push(e.message));
 await p.route(/workers\.dev/, r => r.abort());
 await p.addInitScript(() => { window.OHNE_ALTIMPORT = true; });
@@ -59,6 +59,28 @@ ist("Reiter mit Symbol und Namen", await p.evaluate(() => [...document.querySele
 await p.click('[data-tab="bestand"]');
 ist("Reiter wechselt", await p.evaluate(() => [TAB, document.querySelector('#nav [data-tab="bestand"]').classList.contains("an")]), ["bestand", true]);
 ist("Inhalt endet nicht unter den Reitern", await p.evaluate(() => { scrollTo(0, document.body.scrollHeight); const f = document.querySelector("#fuss").getBoundingClientRect(); return f.bottom <= document.querySelector("#nav").getBoundingClientRect().top + 1; }), true);
+// 🏠 oben und kurzes Sync-Zeichen (Fassung b)
+await p.click("#hautBtn");
+ist("🏠 führt zur Startseite und ist markiert", await p.evaluate(() => [TAB, document.querySelector("#hautBtn").classList.contains("an")]), ["haut", true]);
+ist("Sync kurz: ⚠️ und Anzahl (offline im Test)", await p.locator("#sync").innerText(), s => /^⚠️ \d+$/.test(s));
+ist("Langtext erst nach Antippen", await p.locator("#syncInfo").isVisible(), false);
+await p.click("#sync");
+ist("Antippen zeigt den ganzen Text", await p.locator("#syncInfo").innerText(), s => s.includes("nach net geschéckt") && s.includes("soubal d'Verbindung"));
+await warte(900); await p.click("#sync");
+ist("nochmal Antippen klappt zu", await p.locator("#syncInfo").isVisible(), false);
+ist("Kopf in einer Zeile (390 px)", await p.evaluate(() => document.querySelector(".kopf").getBoundingClientRect().height < 50), true);
+
+// 5-Minuten-Regel beim Zurückkommen
+const zurueck = minuten => p.evaluate(m => {
+  Object.defineProperty(document, "visibilityState", { get: () => "hidden", configurable: true }); document.dispatchEvent(new Event("visibilitychange"));
+  HAUT_WEG = Date.now() - m * 60 * 1000;
+  Object.defineProperty(document, "visibilityState", { get: () => "visible", configurable: true }); document.dispatchEvent(new Event("visibilitychange"));
+  return TAB; }, minuten);
+await p.click('[data-tab="uebersicht"]');
+ist("2 min weg: bleibt im Reiter", await zurueck(2), "uebersicht");
+ist("6 min weg: Startseite", await zurueck(6), "haut");
+await p.click('[data-tab="verkaufen"]'); await p.fill("#vVorname", "Halb ausgefëllt"); await p.evaluate(() => document.activeElement.blur());
+ist("6 min weg mitten im Eintrag: bleibt", await zurueck(6), "verkaufen");
 ist("keine Seitenfehler", seitenfehler, []);
 await b.close();
 console.log(fehler ? `${fehler} Fehler` : "Startseite: alles bestanden");

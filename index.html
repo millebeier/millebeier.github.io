@@ -31,9 +31,14 @@ header{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:3px so
 .kopf h1 img{width:36px;height:36px;display:block}
 .kopf h1 .akz{position:relative;display:inline-block}
 .kopf h1 .akz::after{content:"";position:absolute;left:.07em;top:.3em;width:.38em;height:.11em;background:var(--akzent);border-radius:1px;transform:rotate(-10deg)}
-#sync{font-size:12px;color:var(--muted);text-align:right;min-width:0;flex-shrink:1}
+/* Sync als kleines Zeichen (vom Nutzer, Fassung b: Kopf war zu voll); Antippen zeigt den ganzen Text darunter */
+#sync{flex:none;font-size:13px;font-weight:700;border-radius:10px;padding:3px 7px;white-space:nowrap;cursor:pointer;color:var(--gruen);background:none;border:0}
+#sync:empty{display:none}
+#sync.ok{font-size:18px;padding:2px 6px}
+@media (max-width:360px){.kopf{gap:5px}.kopf h1{font-size:18px;gap:6px}.kopf h1 img{width:28px;height:28px}.zahnrad{font-size:19px}#sync{padding:2px 5px;font-size:12px}}
+#syncInfo{margin:8px 0 2px;background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:9px 12px;font-size:14px;color:#ddd}
 .kopf h1 > span{white-space:nowrap} /* Name nie umbrechen, auch bei langem Status daneben */
-#sync.fehler{color:var(--gelb)}
+#sync.fehler{color:var(--gelb);background:#3a3115}
 .zahnrad{background:none;border:0;color:var(--text);font-size:22px;padding:4px 2px;cursor:pointer;position:relative;flex:none}
 .zahnrad.an{background:var(--akzent);border-radius:10px;padding:4px 6px}
 .kalic{display:inline-flex;flex-direction:column;width:26px;height:27px;border-radius:6px;overflow:hidden;background:#fff;vertical-align:middle;box-shadow:0 0 0 1px #000}
@@ -277,7 +282,8 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px}
 <header><div class="wrap">
   <div class="kopf">
     <h1 id="zurHaut" title="Startsäit"><img src="bilder/logo-96.png" alt=""><span aria-label="Millebéier">Milleb<span class="akz">e</span>ier</span></h1>
-    <div id="sync"></div>
+    <button id="sync" aria-label="Verbindung"></button>
+    <button class="zahnrad" id="hautBtn" aria-label="Startsäit">🏠</button>
     <button class="zahnrad" id="kalBtn" aria-label="Kalenner">📅</button>
     <button class="zahnrad" id="zahnrad" aria-label="Astellungen">⚙️</button>
   </div>
@@ -289,6 +295,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px}
     <button data-tab="uebersicht"><i>📊</i>Iwwersiicht</button>
     <button data-tab="kunden"><i>📇</i>Client</button>
   </nav>
+  <div id="syncInfo" class="versteckt"></div>
   <button id="neu" class="versteckt"></button>
 </div></header>
 
@@ -320,7 +327,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px}
 <script>
 /* Adresse des Cloudflare-Workers. Leer = Probe-Modus (alles nur auf diesem Handy). */
 const WORKER_URL = "https://millebeier.rjtp6r9s9h.workers.dev/";
-const FASSUNG = "17.11.2026 a";
+const FASSUNG = "17.11.2026 b";
 
 /* === Logik === (kein DOM; test/logik.mjs schneidet diesen Block aus) */
 const LAGER = "Lager";
@@ -1042,7 +1049,8 @@ const ZUKLAPPEN = {
   uebersicht: () => { ARCHIV_UEB = false; OFFEN_SORTE = ""; },
   kalender: () => { KAL_AUF.clear(); KAL_FILTER.clear(); KAL_MELD = ""; },
 };
-const ZU_WEG = {}; // Reiter → seit wann nicht mehr dort
+const ZU_WEG = {};
+let HAUT_WEG = null; // seit wann die App im Hintergrund ist (für die Startseite nach 5 min) // Reiter → seit wann nicht mehr dort
 function zuklappenPruefen(tab) {
   const jetzt = Date.now();
   for (const r in ZUKLAPPEN) {
@@ -1057,6 +1065,8 @@ function render() {
   $("#nav").classList.toggle("versteckt", !bereit());
   $("#zahnrad").classList.toggle("versteckt", !bereit());
   $("#kalBtn").classList.toggle("versteckt", !bereit());
+  $("#hautBtn").classList.toggle("versteckt", !bereit());
+  $("#hautBtn").classList.toggle("an", tab === "haut");
   $("#kalBtn").classList.toggle("an", tab === "kalender");
   const nKal = kalAnzahlBald(Z);
   // Kalenderblatt mit dem heutigen Tag statt 📅 (Apples Emoji zeigt immer „17“; vom Nutzer, Fassung g)
@@ -1073,15 +1083,21 @@ function render() {
   $("#fuss").innerHTML = `Versioun ${esc(FASSUNG)}` + (EIN.ich ? ` · Du bass ${esc(de(EIN.ich))}` : "");
 }
 
+let SYNC_AUF = false;
 function renderSync() {
-  const el = $("#sync");
-  let t = "";
-  if (PROBE) t = "Prouf-Modus";
-  else if (STATUS.fehler) t = "⚠️ " + STATUS.fehler;
-  else if (STATUS.zuletzt) t = "✓ synchroniséiert";
-  if (AUSGANG.length) t += `<br>⏳ ${AUSGANG.length} nach net geschéckt`;
-  el.innerHTML = t;
-  el.classList.toggle("fehler", !!STATUS.fehler || AUSGANG.length > 0);
+  const el = $("#sync"), info = $("#syncInfo"), n = AUSGANG.length;
+  // Kurz im Kopf: ✓ / ⏳ n / ⚠️ n; der ganze Text steht in #syncInfo (Antippen klappt ihn auf)
+  let kurz = "", lang = [];
+  if (PROBE) { kurz = "Prouf"; lang.push("Prouf-Modus: Agaben bleiwen just op dësem Handy."); }
+  else if (STATUS.fehler) { kurz = "⚠️" + (n ? " " + n : ""); lang.push("⚠️ " + STATUS.fehler); }
+  else if (n) kurz = "⏳ " + n;
+  else if (STATUS.zuletzt) { kurz = "✓"; lang.push("✓ Alles synchroniséiert."); }
+  if (n) lang.push(`⏳ ${n} nach net geschéckt — ${n === 1 ? "d'Agab geet" : "si ginn"} eraus, soubal d'Verbindung erëm do ass.`);
+  el.textContent = kurz;
+  el.classList.toggle("fehler", !!STATUS.fehler || n > 0);
+  el.classList.toggle("ok", kurz === "✓");
+  info.innerHTML = lang.map(esc).join("<br>");
+  info.classList.toggle("versteckt", !SYNC_AUF || !lang.length);
 }
 
 /* ---------- Startseite „Haut“ (vom Nutzer, 17.11.2026, Fassung j; Entwurf gezeigt) ----------
@@ -2614,6 +2630,8 @@ document.querySelectorAll("#nav button").forEach(b => b.onclick = () => {
   if (TAB === "verkaufen" && FORM) FORM.meldung = null;
   EFORM = null; render(); window.scrollTo(0, 0);
 });
+$("#sync").onclick = () => { SYNC_AUF = !SYNC_AUF; renderSync(); };
+$("#hautBtn").onclick = () => { TAB = "haut"; render(); window.scrollTo(0, 0); };
 $("#zurHaut").onclick = () => { if (!bereit()) return; TAB = "haut"; render(); window.scrollTo(0, 0); };
 $("#kalBtn").onclick = () => { TAB = "kalender"; KALFORM = null; KAL_MELD = ""; render(); window.scrollTo(0, 0); };
 $("#zahnrad").onclick = () => { TAB = "einst"; EFORM = null; render(); window.scrollTo(0, 0); };
@@ -2657,8 +2675,14 @@ async function updatePruefen() {
 }
 $("#neu").onclick = neuLaden;
 document.addEventListener("visibilitychange", () => {
-  if (document.visibilityState === "hidden") { for (const r in ZUKLAPPEN) if (!ZU_WEG[r]) ZU_WEG[r] = Date.now(); return; }
-  if (document.visibilityState === "visible") { if (ZUKLAPPEN[TAB]) render(); abgleichen(); updatePruefen(); }
+  if (document.visibilityState === "hidden") { for (const r in ZUKLAPPEN) if (!ZU_WEG[r]) ZU_WEG[r] = Date.now(); HAUT_WEG = Date.now(); return; }
+  if (document.visibilityState === "visible") {
+    // Länger als 5 min weg → Startseite (vom Nutzer, Fassung b), außer mitten in einem Eintrag
+    const lang = HAUT_WEG && Date.now() - HAUT_WEG > ZU_MS; HAUT_WEG = null;
+    if (lang && bereit() && TAB !== "haut" && !mittenImEintrag()) { TAB = "haut"; render(); window.scrollTo(0, 0); }
+    else if (ZUKLAPPEN[TAB]) render();
+    abgleichen(); updatePruefen();
+  }
 });
 window.addEventListener("online", abgleichen);
 setInterval(() => { if (document.visibilityState === "visible") abgleichen(); }, 20000);

@@ -198,6 +198,10 @@ beim Verkaufen/Livraison und „Fläsche beweegen“ an, solange jemand welche h
   gleich auf „Just meng“ (`NUR_MEINE`, `L_NUR_MEINE`), Zahlen = meine Schuldner / meine geplanten Bestellungen. Karten: „Du hues fräi“
   (meine Flaschen/Fässer frei + 🚚 reserviert), „Déi nächst Deeg“ (Termine + Bestellungen 7 Tage, max. 5, → Kalender), „Nach op bei
   dir“ (meine Käufer mit offenem Betrag, → Ausstoend). Nach dem Speichern bleibt man im Reiter (nicht zurück zur Startseite).
+  **Fassung 17.11. b** (vom Nutzer, Entwurf als Bild gezeigt): **🏠 oben** (`#hautBtn`, neben Kalender und Zahnrad; das Logo fand
+  keiner); **Sync nur als Zeichen** ✓ / ⏳ n / ⚠️ n (`#sync`), Antippen klappt den ganzen Text darunter auf (`#syncInfo`, `SYNC_AUF`) —
+  vorher brach „synchroniséiert“ auf bis zu vier Zeilen um; **länger als 5 min im Hintergrund → Startseite** (`HAUT_WEG`, `ZU_MS`),
+  außer `mittenImEintrag()`. Kopf unter 360 px etwas kleiner (passt bis 320 px).
 - **`durch` = wer eingetragen hat** (nicht `von` — das ist bei `bewegung` die Herkunft; die
   Verwechslung war der erste Fehler).
 - Bestand hängt am **Namen** — Leute nicht umbenennen, wenn sie Flaschen haben.

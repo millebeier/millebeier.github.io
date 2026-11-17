@@ -151,7 +151,7 @@ if (XLSX_JS && existsSync(XLSX_JS)) {
   });
   await warte(800);
   ist("alter Worker: Verkauf kommt trotzdem an", db.map(e => e.art), ["verkauf"]);
-  ist("alter Worker: Livraison wartet mit Hinweis", [await p2.evaluate(() => AUSGANG.map(e => e.art)), await p2.locator("#sync").innerText()], v => v[0].join() === "livraison" && v[1].includes("Worker muss aktualiséiert"));
+  ist("alter Worker: Livraison wartet mit Hinweis", [await p2.evaluate(() => AUSGANG.map(e => e.art)), await p2.evaluate(() => document.querySelector("#syncInfo").textContent)], v => v[0].join() === "livraison" && v[1].includes("Worker muss aktualiséiert"));
   await p2.close();
 }
 ist("Reiter heißt Bestellungen", await p.evaluate(() => document.querySelector('[data-tab="livraisons"]').textContent.includes("Bestellungen")), true);
