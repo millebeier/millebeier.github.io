@@ -195,7 +195,7 @@ beim Verkaufen/Livraison und „Fläsche beweegen“ an, solange jemand welche h
 - **Startseite „Haut“** (vom Nutzer, 17.11.2026, Fassung a; Entwurf als Bild gezeigt): `TAB = "haut"` **immer beim Öffnen** (EIN.tab merkt
   nur noch den letzten Reiter für „Zréck“), Tipp aufs Logo (`#zurHaut`) führt hin; kein Reiter markiert. „Moien <Name>“ + Datum; drei
   große Knöpfe **Verkafen / Ausstoend / Bestellungen** (heißen wie die Reiter, vom Nutzer) = Abkürzungen, Ausstoend und Bestellungen
-  gleich auf „Just meng“ (`NUR_MEINE`, `L_NUR_MEINE`), Zahlen = meine Schuldner / meine geplanten Bestellungen. Karten: „Du hues fräi“
+  gleich auf „Just meng“ (`NUR_MEINE`, `L_NUR_MEINE`), Zahlen = meine Schuldner / meine geplanten Bestellungen. Karten: „Du hues fräi“ (seit Fassung d „Du hues zur Verfügung“)
   (meine Flaschen/Fässer frei + 🚚 reserviert), „Déi nächst Deeg“ (Termine + Bestellungen 7 Tage, max. 5, → Kalender), „Nach op bei
   dir“ (meine Käufer mit offenem Betrag, → Ausstoend). Nach dem Speichern bleibt man im Reiter (nicht zurück zur Startseite).
   **Fassung 17.11. b** (vom Nutzer, Entwurf als Bild gezeigt): **🏠 oben** (`#hautBtn`, neben Kalender und Zahnrad; das Logo fand
@@ -203,6 +203,27 @@ beim Verkaufen/Livraison und „Fläsche beweegen“ an, solange jemand welche h
   vorher brach „synchroniséiert“ auf bis zu vier Zeilen um; **länger als 5 min im Hintergrund → Startseite** (`HAUT_WEG`, `ZU_MS`),
   außer `mittenImEintrag()`. Kopf unter 360 px etwas kleiner (passt bis 320 px).
   **Fassung 17.11. c** (vom Nutzer gemeldet): Zahnrad ⚙️ rot markiert wie 🏠/Kalender, solange Astellungen oder Verlaf offen sind.
+  **Fassung 17.11. d:** Karte heißt „Du hues zur Verfügung“ (vom Nutzer, statt „Du hues fräi“).
+- **Aufgaben „Ze maachen“** (vom Nutzer, 17.11.2026, Fassung d; Entwürfe als Bild gezeigt und abgesprochen — Notizen/Chat vorher
+  verworfen, WhatsApp reicht): **hinter dem Kalender-Knopf**, kein neuer Reiter: oben zwei große Kästen „📅 Kalenner“ (Vorgabe, darunter
+  wie bisher) und „✅ Aufgaben“ (`KAL_BEREICH`, `kalKaesten`), klein darunter „n dës Woch“ / „n op · m iwwerfälleg“. **Keine Zahl**
+  irgendwo (nicht am 🏠, die Kalender-Zahl zählt weiter nur Termine/Bestellungen; Kalender und Aufgaben getrennt — vom Nutzer).
+  Eintrag `aufgabe` (aid, text, fuer[] = Namen oder ["All"], bis?, ref? {typ liv|termin, id}, erledigt?, auto?); je aid gilt der
+  neueste → `Z.aufgaben`. **Abhaken gilt für alle** („✓ vum Jeff“, unter Erleedegt 30 Tage, zurückholbar; erledigt:false = „↩️ Erëm op“).
+  Anlegen nur in der Aufgaben-Ansicht (Text, Fir: Ech vorne/Leute/All, „📅 bis …“; Enter oder +) und per **„+ Aufgab“** an geplanter
+  Bestellung und aufgeklapptem Termin (Formular darunter, blauer Link zurück). Knöpfe dort **in einer Zeile** (`.knopfe.einz`, vom Nutzer;
+  unter 340 px dürfen sie umbrechen). Bestellung ändern: neue Fassung trägt `vorher`, `rechne` gibt jeder Bestellung `lid` (bleibt gleich)
+  — Aufgaben hängen an `lid`. Liste: Op / Just meng (fir mech oder All) / Erleedegt; Überfälliges rot zuerst.
+  **Automatische Aufgaben** (`autoAufgaben`, jedes Mal neu gerechnet, **immer gleich in der Liste**, 💡; Erklärung „💡 = Virschlag vun
+  der App …“ unten nur, wenn eine da ist — vom Nutzer). Abhaken = „im Blick“, Eintrag `aufgabe` mit `auto` unter ihrer aid (`aidVon`):
+  Rechnung maachen (Kontakt; weg mit Rechnung; abgehakt nach 14 Tagen wieder) · X erënneren ab 30 Tagen offen (Verkäufer; 14 Tage) ·
+  Gläich keen XY méi do < 24 frei zusammen (All; nie wieder, neue aid erst nach neuer Abfüllung) · Fir d'Bestellung … feelen (3 Tage
+  vorher, frühere Bestellungen zuerst bedient; „Huelen aus“ bzw. Kontakt beim Lager; am Liefertag eigene aid → kommt dann noch einmal) ·
+  Bestellung nach net als geliwwert markéiert (Kontakt; 7 Tage) · Haltbar bis in 30 Tagen (All; nie) · Däin Handy huet n Agaben nach net
+  geschéckt (> 24 h, nur dieses Handy, `aufExtra`, ohne Haken, Tipp öffnet den Sync-Text) · Afëllen fir XY plangen (Braudag > 7 Tage,
+  ≤ 60, kein Afëllen-Termin mit dem Bier danach; All; nie). Grenzen in `AUF_GRENZE` (vom Nutzer bestätigt).
+  **Startseite:** Karte „✅ Fir dech ze maachen“ (fir mech + All, auch 💡; max. 5, abhaken direkt; „alles ›“ → Aufgaben auf Just meng),
+  kein Anlegen dort (vom Nutzer). Excel-Blatt „Ze maachen“ (am Ende), Verlauf kennt Aufgaben.
 - **`durch` = wer eingetragen hat** (nicht `von` — das ist bei `bewegung` die Herkunft; die
   Verwechslung war der erste Fehler).
 - Bestand hängt am **Namen** — Leute nicht umbenennen, wenn sie Flaschen haben.
@@ -235,7 +256,7 @@ einstellungen/`alt26-…`; Löschungen (storno) bleiben nur, wenn ihr Ziel bleib
 geprüft (Gegenprobe gemacht). Die Datenbank ist von der Cloud-Umgebung aus nicht erreichbar — ausführen kann nur der
 Nutzer. Rückweg: D1 Time Travel (Restore auf einen Zeitpunkt davor).
 
-## Testen — vor jedem Push alle elf, jeder mit eigenem Rückgabewert
+## Testen — vor jedem Push alle zwölf, jeder mit eigenem Rückgabewert
 - `node test/logik.mjs` — schneidet `Logik`…`Oberfläche` aus der HTML (Gegenprobe gemacht).
 - `node test/worker.mjs` — Worker mit nachgebauter D1, auch Kalender-.ics (Gegenprobe gemacht).
 - `node test/oberflaeche.mjs` — Playwright, zwei Handys gegen den echten Worker-Code, offline.
@@ -255,6 +276,9 @@ Nutzer. Rückweg: D1 Time Travel (Restore auf einen Zeitpunkt davor).
   Ändern/Löschen, Abo-Link aus dem Code, Zuklappen (Gegenprobe gemacht).
 - `node test/haut.mjs` — Startseite beim Öffnen, Logo, drei Knöpfe auf „Just meng“, Karten nur mit eigenen Daten, Reiter unten
   (fest, Namen passen bei 375 px, Inhalt endet über den Reitern) (Gegenprobe gemacht).
+- `node test/aufgaben.mjs` — Aufgaben: Kästen am Kalender, anlegen (Enter/+, Fir, bis), Just meng, abhaken/zurück, „+ Aufgab“ an Bestellung
+  (auch nach Ändern verlinkt) und Termin, Knöpfe in einer Zeile, 💡 Rechnung + Erklärung, nach 14 Tagen wieder, Startseite nur meine,
+  „nicht geschickt“, Excel (Gegenprobe gemacht). Automatische Aufgaben im Einzelnen in `logik.mjs` (Gegenprobe gemacht).
 - `node test/biere.mjs` — Bier anlegen/ändern/archivieren/zurückholen/löschen (zwei Rückfragen, Gegenprobe gemacht),
   rotes ✕ im Verlauf, rotes Dreieck.
 

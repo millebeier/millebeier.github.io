@@ -101,6 +101,33 @@ nav .badge.grau{background:var(--card2);border:1px solid var(--line)}
 .hz{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:8px 0;border-top:1px solid var(--line);font-size:15px}
 .card h2 + .hz{border-top:0}.hz b{font-size:17px}
 .gelb{color:var(--gelb)}
+/* Aufgaben (vom Nutzer, 17.11.2026) */
+.kgross{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0 0}
+.kgross button{border-radius:14px;border:1px solid var(--line);background:var(--card2);color:var(--text);padding:11px 4px;cursor:pointer;text-align:center}
+.kgross button b{display:block;font-size:17px} .kgross button small{display:block;font-size:12px;color:var(--muted);margin-top:2px}
+.kgross button.an{background:var(--akzent);border-color:var(--akzent)} .kgross button.an small{color:#fdd}
+.aufz{display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-top:1px solid #262626}
+.aufz:first-of-type{border-top:0}
+.abox{width:26px;height:26px;flex:none;border:2px solid #888;border-radius:7px;background:none;color:#10200f;font-weight:900;font-size:15px;padding:0;cursor:pointer;line-height:1}
+.abox.an{background:var(--gruen);border-color:var(--gruen)} .abox.leer{border:0;font-size:18px;text-align:center;cursor:default}
+.atx{flex:1;min-width:0;font-size:15px;overflow-wrap:anywhere} .atx small{display:block;color:var(--muted);font-size:12.5px;margin-top:2px}
+.aufz.erl .atx{color:var(--muted)}
+.atx .rot{color:var(--rot);font-weight:700}
+.alink{color:#8cb8ff;cursor:pointer;white-space:nowrap} .alink .tflasche{height:14px;width:auto;vertical-align:-2px}
+.aleg{margin-top:10px;padding-top:8px;border-top:1px solid #333;font-size:13px;color:var(--muted)}
+.aform .atitel{display:block;color:var(--gelb);margin-bottom:6px}
+.aneu{display:flex;gap:6px} .aneu input{flex:1;margin:0}
+.aplus{flex:none;width:48px;border:0;border-radius:10px;background:var(--akzent);color:#fff;font-size:24px;font-weight:700;cursor:pointer}
+.afuer{display:flex;flex-wrap:wrap;gap:5px;align-items:center;margin-top:8px;font-size:13px;color:var(--muted)}
+.afuer button{border:1px solid var(--line);background:none;color:#ddd;border-radius:14px;padding:4px 10px;font-size:13px;cursor:pointer}
+.afuer button.an{background:#3a1012;border-color:var(--akzent);color:#fff}
+.liv .aform,.ter .aform{margin-top:10px;background:#1d1a0c;border:1px solid #4a4115;border-radius:12px;padding:10px}
+.knopf.gelbk{border-color:var(--gelb);color:var(--gelb)}
+.knopfe.einz{flex-wrap:nowrap;gap:5px} .knopfe.einz .knopf{flex:1 1 auto;min-width:0;padding:9px 4px;font-size:13px;white-space:nowrap}
+.knopfe.einz.t .knopf{font-size:14px;padding:9px 6px}
+@media (max-width:340px){.knopfe.einz{flex-wrap:wrap}.knopfe.einz .knopf{flex:0 1 auto;padding:9px 8px}}
+.hkopf{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.hmehr{background:none;border:0;color:var(--muted);font-size:14px;cursor:pointer;padding:2px 0;font-weight:500}
 .hklick{cursor:pointer}
 .card h3{font-size:15px;margin:14px 0 6px;color:var(--akzent2)}
 .muted{color:var(--muted)} small{font-size:13px}
@@ -327,7 +354,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px}
 <script>
 /* Adresse des Cloudflare-Workers. Leer = Probe-Modus (alles nur auf diesem Handy). */
 const WORKER_URL = "https://millebeier.rjtp6r9s9h.workers.dev/";
-const FASSUNG = "17.11.2026 c";
+const FASSUNG = "17.11.2026 d";
 
 /* === Logik === (kein DOM; test/logik.mjs schneidet diesen Block aus) */
 const LAGER = "Lager";
@@ -336,7 +363,7 @@ const STANDARD = {
   leute: ["Jeff", "Marc", "Claude", "Laurent"],
 };
 const GRUENDE = { getrunken: "selwer gedronk", verschenkt: "verschenkt / Prouf", kaputt: "futti", sonst: "soss eppes" };
-const ARTEN = ["abfuellung", "bewegung", "abgang", "verkauf", "zahlung", "einstellungen", "storno", "livraison", "rechnung", "bier", "bierstatus", "datei", "kunde", "termin"];
+const ARTEN = ["abfuellung", "bewegung", "abgang", "verkauf", "zahlung", "einstellungen", "storno", "livraison", "rechnung", "bier", "bierstatus", "datei", "kunde", "termin", "aufgabe"];
 /* Kalender (vom Nutzer, 16.11.2026): feste Arten; Akafen bewusst nicht (vom Nutzer). Reihenfolge = Knöpfe im Formular. */
 const TERMIN_ARTEN = {
   braudag: { ic: "🍺", txt: "Braudag" }, umschlauchen: { ic: "🔄", txt: "Ëmschlauchen" }, hopfen: { ic: "🌿", txt: "Hopfestopfen" },
@@ -390,7 +417,8 @@ function gueltig(e) {
       return text(e.kunde, 120) && text(e.kontakt, 30) && text(e.aus, 30) && geld(e.betrag) && postenOk(e.posten) &&
         typeof e.datum === "string" && /^\d{4}-\d{2}-\d{2}$/.test(e.datum) &&
         (e.anlass === undefined || e.anlass === "" || text(e.anlass, 80)) && (e.kid === undefined || typeof e.kid === "string") && kfOk(e.kf) &&
-        (e.notiz === undefined || (typeof e.notiz === "string" && e.notiz.length <= 300));
+        (e.notiz === undefined || (typeof e.notiz === "string" && e.notiz.length <= 300)) &&
+        (e.vorher === undefined || (typeof e.vorher === "string" && e.vorher.length <= 80));
     case "rechnung": return typeof e.ref === "string";
     case "bier":
       return text(e.name, 30) && e.name !== LAGER && geld(e.preis) && optDatum(e.braudatum) && optDatum(e.mhd) &&
@@ -404,6 +432,11 @@ function gueltig(e) {
         uhrOk(e.uhr) && uhrOk(e.bis) && optText(e.bier, 120) && optText(e.wou, 120) && optText(e.notiz, 300) &&
         (e.wer === undefined || (Array.isArray(e.wer) && e.wer.length <= 12 && e.wer.every(w => text(w, 30))))));
     }
+    case "aufgabe": // Aufgaben (vom Nutzer, 17.11.2026): je aid gilt der neueste Eintrag; abhaken = derselbe Inhalt mit erledigt
+      return typeof e.aid === "string" && /^[A-Za-z0-9_:-]{6,100}$/.test(e.aid) && (e.weg === true || (text(e.text, 200) &&
+        Array.isArray(e.fuer) && e.fuer.length >= 1 && e.fuer.length <= 12 && e.fuer.every(w => text(w, 30)))) &&
+        optDatum(e.bis) && (e.erledigt === undefined || typeof e.erledigt === "boolean") && (e.auto === undefined || typeof e.auto === "boolean") &&
+        (e.ref === undefined || (e.ref && ["liv", "termin"].includes(e.ref.typ) && typeof e.ref.id === "string" && e.ref.id.length <= 80));
     case "kunde":
       return typeof e.kid === "string" && /^[A-Za-z0-9_-]{6,64}$/.test(e.kid) && (e.weg === true || text(e.firma, 80) || text(e.name, 80) || text(e.vorname, 60)) &&
         (e.alias === undefined || (Array.isArray(e.alias) && e.alias.length <= 20 && e.alias.every(a => text(a, 120)))) &&
@@ -529,7 +562,9 @@ function rechne(eintraege) {
   const liv = new Map();
   for (const e of aktiv) if (e.art === "livraison") {
     const K = kundeZu(e.kid, e.kunde);
-    liv.set(e.id, { ...e, kundeText: e.kunde, kunde: K ? K.label : e.kunde, kid: K ? K.kid : e.kid, verkauf: null }); for (const p of e.posten) st(p.sorte);
+    // lid: bleibt beim Ändern gleich (neue Fassung trägt `vorher`), damit Aufgaben an der Bestellung hängen bleiben
+    let lid = e.id, x = e; for (let i = 0; x && x.vorher && i < 50; i++) { lid = x.vorher; x = nachId.get(x.vorher); }
+    liv.set(e.id, { ...e, lid, kundeText: e.kunde, kunde: K ? K.label : e.kunde, kid: K ? K.kid : e.kid, verkauf: null }); for (const p of e.posten) st(p.sorte);
   }
   for (const v of vk.values()) if (v.liv && liv.has(v.liv)) { liv.get(v.liv).verkauf = v; v.livraison = liv.get(v.liv); }
   for (const e of aktiv) if (e.art === "rechnung" && vk.has(e.ref)) vk.get(e.ref).rechnungGemacht = true;
@@ -580,6 +615,9 @@ function rechne(eintraege) {
     // Termine (Kalender): je tid gilt der neueste Eintrag, weg = gelöscht; nach Datum und Uhrzeit sortiert
     termine: (() => { const m = new Map(); for (const e of aktiv) if (e.art === "termin") m.set(e.tid, e);
       return [...m.values()].filter(t => !t.weg).sort((a, b) => a.datum.localeCompare(b.datum) || (a.uhr || "").localeCompare(b.uhr || "")); })(),
+    // Aufgaben: je aid der neueste Eintrag; erstDurch/erstZeit = wer sie angelegt hat
+    aufgaben: (() => { const m = new Map(), erst = new Map(); for (const e of aktiv) if (e.art === "aufgabe") { m.set(e.aid, e); if (!erst.has(e.aid)) erst.set(e.aid, e); }
+      return [...m.values()].filter(a => !a.weg).map(a => ({ ...a, erstDurch: erst.get(a.aid).durch, erstZeit: erst.get(a.aid).zeit })); })(),
     kaeufer: [...kaeufer.values()].sort((a, b) => b.offen - a.offen || a.name.localeCompare(b.name, "de")),
     kasse, offen,
     umsatz: runde([...vk.values()].reduce((a, v) => a + v.betrag, 0)),
@@ -638,6 +676,8 @@ function beschreibe(e, Z) {
     case "bier": return `🍺 Béier: ${e.name}` + [e.stil, e.alk != null ? String(e.alk).replace(".", ",") + " %" : "", euro(e.preis), e.braudatum ? "gebraut " + datumKurz(e.braudatum) : ""].filter(Boolean).map(x => " · " + x).join("");
     case "bierstatus": return { archiv: "📦 Archivéiert: ", aktiv: "↩️ Aus dem Archiv zréck: ", weg: "✕ Béier geläscht: " }[e.status] + bierText(e.name);
     case "termin": return e.weg ? `📅 Termin geläscht` : `📅 ${(TERMIN_ARTEN[e.typ] || {}).ic || ""} ${e.titel}${e.bier ? " · " + e.bier : ""}, ${datumKurz(e.datum)}${e.uhr ? " " + e.uhr : ""}`;
+    case "aufgabe": return e.weg ? `✅ Aufgab geläscht` : e.erledigt ? `☑️ Ofgehaakt: ${e.auto ? "💡 " : ""}${e.text}` : e.erledigt === false ? `↩️ Erëm op: ${e.text}`
+      : `✅ Aufgab: ${e.text} · fir ${e.fuer.join(", ")}${e.bis ? " · bis " + datumKurz(e.bis) : ""}`;
     case "kunde": return e.weg ? `📇 Client geläscht` : `📇 Client: ${e.v ? kundeLabel(e) : e.name}${e.ort ? " · " + e.ort : ""}`;
     case "datei": return `📎 ${FELDER[e.feld]}${e.bier ? " · " + e.bier : ""}: ${e.name}`;
     case "einstellungen": return `⚙️ Zorten/Präisser/Leit geännert: ${e.sorten.filter(s => !s.aus).map(s => `${s.name} ${euro(s.preis)}`).join(", ")}`;
@@ -797,7 +837,7 @@ function proSorte(Z, sorte) {
 
 /* Tabellen für den Excel-Export: je Sorte ein Blatt wie bisher, dazu Livraisons und Stock.
    Reine Daten (Zeilen als Arrays), damit der Test ohne Excel-Bibliothek prüfen kann. */
-function exportBlaetter(Z, zeitFmt) {
+function exportBlaetter(Z, zeitFmt, heute = tagVon(Date.now())) {
   const blaetter = [];
   const kopf = ["Datum", "Client", "Kontakt", "Unzuel", "Gebinde", "Präis", "Recetten", "geliwwert?", "bezuel?", "bezuelt per", "Rechnung", "Remarquen"];
   for (const s of Z.sortenNamen) {
@@ -830,10 +870,19 @@ function exportBlaetter(Z, zeitFmt) {
         k.length, runde(fest.reduce((a, r) => a + r.betrag, 0)), runde(fest.reduce((a, r) => a + (r.offen || 0), 0)),
         runde(geplant.reduce((a, r) => a + r.betrag, 0)), letzt ? (letzt.datum ? datumKurz(letzt.datum) : zeitFmt(letzt.zeit)) : ""];
     }), summe: null });
+  // Aufgaben (vom Nutzer, 17.11.2026): eigene (offen und erledigt) und die offenen der App
+  const AS = aufgabenStand(Z, heute, Date.now());
+  const bezug = a => { if (!a.ref) return ""; if (a.ref.typ === "liv") { const L = Z.livraisons.find(x => x.lid === a.ref.id); return L ? `Bestellung ${L.kunde} ${datumKurz(L.datum)}` : ""; }
+    const t = Z.termine.find(x => x.tid === a.ref.id); return t ? `${t.titel}${t.bier ? " · " + t.bier : ""} ${datumKurz(t.datum)}` : ""; };
   const alleK = Z.sortenNamen.flatMap(s => artikelVon(Z, s));
   blaetter.push({ name: "Stock", titel: "Stock", info: ["Total = Fläschen; Fässer an hiren eegene Kolonnen."], kopf: ["", ...alleK.map(artikelText), "Total Fl."],
     zeilen: Z.halter.map(h => [h, ...alleK.map(k => hat(Z, h, k)), Z.sortenNamen.reduce((a, s) => a + hat(Z, h, s), 0)]),
     summe: ["Total", ...alleK.map(k => Z.sorten[k].da), Z.flaschen.da] });
+  blaetter.push({ name: "Ze maachen", titel: "Ze maachen", info: ["💡 = Virschlag vun der App"],
+    kopf: ["Aufgab", "Fir", "Bis", "Status", "Erleedegt vum", "Erleedegt den", "Ugeluecht vum", "Ugeluecht den", "Bezuch"],
+    zeilen: [...AS.op.map(a => [(a.auto ? "💡 " : "") + a.text, a.fuer.join(", "), a.bis ? datumKurz(a.bis) : "", "op", "", "", a.auto ? "App" : a.erstDurch || "", a.auto ? "" : zeitFmt(a.erstZeit), bezug(a)]),
+      ...Z.aufgaben.filter(a => a.erledigt).map(a => [(a.auto ? "💡 " : "") + a.text, a.fuer.join(", "), a.bis ? datumKurz(a.bis) : "", "erleedegt", a.durch || "", zeitFmt(a.zeit), a.auto ? "App" : a.erstDurch || "", a.auto ? "" : zeitFmt(a.erstZeit), bezug(a)])],
+    summe: null });
   return blaetter;
 }
 
@@ -919,6 +968,101 @@ function neueId() {
   if (typeof crypto !== "undefined" && crypto.randomUUID) return crypto.randomUUID();
   return "x" + Date.now().toString(36) + Math.random().toString(36).slice(2, 12);
 }
+/* ---------- Aufgaben (vom Nutzer, 17.11.2026; Entwurf als Bild gezeigt) ----------
+   Eigene Aufgaben: Eintrag `aufgabe` (aid, text, fuer[], bis?, ref?), je aid gilt der neueste; abhaken = derselbe Inhalt mit
+   erledigt: true — gilt für alle. Automatische Aufgaben rechnet die App jedes Mal neu aus den Daten (💡); abgehakt wird
+   eine davon mit einem `aufgabe`-Eintrag (auto: true) unter ihrer aid. `wieder` = nach so vielen Tagen kommt sie zurück,
+   wenn die Sache noch offen ist (vom Nutzer: Rechnung/Erinnern 14, nicht geliefert 7, sonst nie). In der aid steckt, was
+   sich ändern muss, damit sie neu kommt (z. B. neue Abfüllung, neues Haltbar-Datum, Liefertag). */
+const AUF_GRENZE = { erinnern: 30, leer: 24, fehlt: 3, mhd: 30, afuellen: 7 }; // vom Nutzer bestätigt
+const tagVon = t => new Date(t).toLocaleDateString("sv-SE", { timeZone: "Europe/Luxembourg" });
+const tagPlus = (d, n) => { const x = new Date(d + "T12:00:00Z"); x.setUTCDate(x.getUTCDate() + n); return x.toISOString().slice(0, 10); };
+const tageVon = (a, b) => Math.round((Date.parse(b + "T12:00:00Z") - Date.parse(a + "T12:00:00Z")) / 86400000);
+const tagKurz = d => { const [, m, t] = d.split("-"); return `${+t}.${+m}.`; };
+const aidVon = (typ, schluessel) => { // kurze, gültige aid aus beliebigem Text (Biernamen haben Leerzeichen)
+  let h = 0x811c9dc5; for (const c of String(schluessel)) { h ^= c.codePointAt(0); h = Math.imul(h, 0x01000193) >>> 0; }
+  return `auto-${typ}-${h.toString(36)}`;
+};
+function autoAufgaben(Z, heute) {
+  const out = [], plan = Z.livraisons.filter(L => !L.verkauf);
+  const kurzBier = n => artikelText(n);
+  // Rechnung maachen: geliefert, Rechnung gewünscht, noch nicht gemacht
+  for (const L of Z.livraisons) if (L.verkauf && L.rechnung && !L.verkauf.rechnungGemacht)
+    out.push({ aid: aidVon("rechnung", L.verkauf.id), typ: "rechnung", text: `Rechnung maachen: ${L.kunde}`, sub: `geliwwert ${tagKurz(L.datum)}`,
+      fuer: [L.kontakt], ref: { typ: "liv", id: L.lid }, wieder: 14 });
+  // X erënneren: offen seit mindestens 30 Tagen, je Verkäufer und Käufer
+  const gr = new Map();
+  for (const v of Z.verkaeufe) if (v.offen > 0) {
+    const k = v.verkaeufer + "|" + v.kaeufer.trim().toLowerCase(), tag = v.datum || tagVon(v.zeit);
+    const g = gr.get(k) || { verk: v.verkaeufer, name: v.kaeufer.trim(), summe: 0, aelteste: tag };
+    g.summe = runde(g.summe + v.offen); if (tag < g.aelteste) g.aelteste = tag; gr.set(k, g);
+  }
+  for (const [k, g] of gr) { const d = tageVon(g.aelteste, heute); if (d >= AUF_GRENZE.erinnern)
+    out.push({ aid: aidVon("erinnern", k), typ: "erinnern", text: `${g.name} erënneren · ${euro(g.summe)}`, sub: `op zënter ${d} Deeg`,
+      fuer: [g.verk], link: { typ: "offen" }, wieder: 14 }); }
+  // Gläich keen XY méi do: aktives Bier, weniger als 24 Flaschen frei (alle zusammen); neu nach der nächsten Abfüllung
+  for (const c of Z.cfg.sorten) if (!c.aus && !c.archiv) {
+    const x = Z.sorten[c.name]; if (!x || !x.abgefuellt) continue;
+    const fr = Z.halter.reduce((a, h) => a + frei(Z, h, c.name), 0);
+    if (fr < AUF_GRENZE.leer) out.push({ aid: aidVon("leer", c.name + "|" + x.abgefuellt), typ: "leer",
+      text: fr <= 0 ? `Keen ${kurzBier(c.name)} méi do` : `Gläich keen ${kurzBier(c.name)} méi do`, sub: `just nach ${Math.max(0, fr)} fräi`,
+      fuer: ["All"], link: { typ: "bestand" }, wieder: null });
+  }
+  // Fir d'Bestellung feelen …: in den nächsten 3 Tagen, bei „Huelen aus“ nicht genug (frühere Bestellungen zuerst bedient);
+  // am Liefertag selbst eine eigene aid → kommt dann noch einmal, auch wenn vorher abgehakt (vom Nutzer)
+  const verbraucht = {};
+  for (const L of plan) {
+    const fehlt = [];
+    for (const p of L.posten) {
+      const k = L.aus + "|" + p.sorte, vorher = verbraucht[k] || 0; verbraucht[k] = vorher + p.n;
+      const rest = hat(Z, L.aus, p.sorte) - vorher, f = Math.min(p.n, p.n - rest);
+      if (f > 0) fehlt.push(`${f} ${artikelText(p.sorte)}`);
+    }
+    if (!fehlt.length || L.datum < heute || L.datum > tagPlus(heute, AUF_GRENZE.fehlt)) continue;
+    const haut = L.datum === heute;
+    out.push({ aid: aidVon(haut ? "fehlthaut" : "fehlt", L.lid), typ: "fehlt", text: haut ? `Haut feelen fir ${L.kunde}: ${fehlt.join(", ")}` : `Fir d'Bestellung ${L.kunde} feelen ${fehlt.join(", ")}`,
+      sub: `${L.aus === LAGER ? "vum Lager" : "vum " + L.aus}`, bis: L.datum, fuer: [L.aus === LAGER ? L.kontakt : L.aus], ref: { typ: "liv", id: L.lid }, wieder: null });
+  }
+  // Bestellung nach net als geliwwert markéiert: Lieferdatum vorbei
+  for (const L of plan) if (L.datum < heute)
+    out.push({ aid: aidVon("geliwwert", L.lid + "|" + L.datum), typ: "geliwwert", text: `Bestellung ${L.kunde} (${tagKurz(L.datum)}) nach net als geliwwert markéiert`,
+      sub: "", rot: true, fuer: [L.kontakt], ref: { typ: "liv", id: L.lid }, wieder: 7 });
+  // Haltbar bis …: in 30 Tagen erreicht, noch Flaschen da
+  for (const c of Z.cfg.sorten) {
+    const m = c.meta && c.meta.mhd, da = (Z.sorten[c.name] || {}).da || 0;
+    if (m && da > 0 && m <= tagPlus(heute, AUF_GRENZE.mhd))
+      out.push({ aid: aidVon("mhd", c.name + "|" + m), typ: "mhd", text: `${kurzBier(c.name)} ${m < heute ? "war" : "nach"} haltbar bis ${tagKurz(m)} · ${da} Fläschen do`,
+        sub: "", rot: m < heute, fuer: ["All"], link: { typ: "bestand" }, wieder: null });
+  }
+  // Afëllen fir XY plangen: Braudag mehr als 7 Tage her (höchstens 60), kein Afëllen-Termin für dieses Bier danach
+  for (const t of Z.termine) if (t.typ === "braudag" && t.bier) {
+    const d = tageVon(t.datum, heute); if (d <= AUF_GRENZE.afuellen || d > 60) continue;
+    const b = t.bier.trim().toLowerCase();
+    if (Z.termine.some(x => x.typ === "abfuellen" && (x.bier || "").trim().toLowerCase() === b && x.datum >= t.datum)) continue;
+    out.push({ aid: aidVon("afuellen", t.tid), typ: "afuellen", text: `Afëllen fir ${t.bier} plangen`, sub: `Braudag ${tagKurz(t.datum)}`,
+      fuer: ["All"], ref: { typ: "termin", id: t.tid }, wieder: null });
+  }
+  return out.map(a => ({ ...a, auto: true }));
+}
+/* Offene und erledigte Aufgaben zusammen: eigene + automatische (mit ihrem Abhak-Stand). `extra` = weitere automatische
+   (z. B. „nicht geschickt“, die nur das Handy kennt). Offene: Überfälliges zuerst, dann nach Datum, ohne Datum zuletzt. */
+function aufgabenStand(Z, heute, jetzt, extra = []) {
+  const nachAid = new Map(Z.aufgaben.map(a => [a.aid, a]));
+  const op = [], erl = [], wieder = new Set();
+  for (const a of Z.aufgaben) if (!a.auto) (a.erledigt ? erl : op).push(a);
+  for (const A of [...autoAufgaben(Z, heute), ...extra]) {
+    const h = nachAid.get(A.aid);
+    if (h && h.erledigt && !(A.wieder && jetzt - h.zeit > A.wieder * 86400000)) continue;
+    if (h && h.erledigt) wieder.add(A.aid);
+    op.push(h && h.erledigt ? { ...A, nochmal: true } : A);
+  }
+  for (const a of Z.aufgaben) if (a.auto && a.erledigt && !wieder.has(a.aid)) erl.push(a);
+  const rang = a => a.bis ? (a.bis < heute ? "0" + a.bis : "1" + a.bis) : a.rot ? "0" : "2";
+  op.sort((a, b) => rang(a).localeCompare(rang(b)) || (a.erstZeit || 0) - (b.erstZeit || 0));
+  erl.sort((a, b) => b.zeit - a.zeit);
+  return { op, erl: erl.filter(a => jetzt - a.zeit < 30 * 86400000) };
+}
+const aufFuerMich = (a, ich) => a.fuer.includes(ich) || a.fuer.includes("All");
 /* === Oberfläche === */
 
 const SP = "millebeier_v1";              // {code, ich, tab}
@@ -1047,7 +1191,7 @@ const ZUKLAPPEN = {
   kunden: () => { K_AUF.clear(); K_AKEEF.clear(); },
   bestand: () => { ARCHIV_AUF = false; },
   uebersicht: () => { ARCHIV_UEB = false; OFFEN_SORTE = ""; },
-  kalender: () => { KAL_AUF.clear(); KAL_FILTER.clear(); KAL_MELD = ""; },
+  kalender: () => { KAL_AUF.clear(); KAL_FILTER.clear(); KAL_MELD = ""; A_MELD = ""; A_INLINE = null; AUF_SICHT = "op"; },
 };
 const ZU_WEG = {};
 let HAUT_WEG = null; // seit wann die App im Hintergrund ist (für die Startseite nach 5 min) // Reiter → seit wann nicht mehr dort
@@ -1118,6 +1262,7 @@ function renderHaut() {
       <span><b style="${n - r < 0 ? "color:var(--rot)" : ""}">${n - r}</b>${r ? `<small class="gelb"> 🚚 ${r}</small>` : ""}</span></div>`);
   }
   const bald = kalenderPunkte(Z).filter(p => p.datum >= h && p.datum <= plusTage(h, 7)).slice(0, 5);
+  const meineAuf = aufStand().op.filter(a => aufFuerMich(a, ich));
   const wann = p => { const [, mm, tt] = p.datum.split("-").map(Number); const tag = p.datum === h ? "Haut" : p.datum === plusTage(h, 1) ? "Muer" : `${WOCHENTAG[new Date(Date.UTC(+p.datum.slice(0, 4), mm - 1, tt)).getUTCDay()]} ${tt}.${mm}.`;
     return tag + (p.uhr ? " · " + p.uhr : ""); };
   box.innerHTML = `<div class="hallo">Moien ${esc(ich)} 👋<small>${WOCHENTAG_LANG[new Date(Date.UTC(j, m - 1, t)).getUTCDay()]}, ${t}. ${MONATE[m - 1]}</small></div>
@@ -1126,16 +1271,20 @@ function renderHaut() {
       <button data-hgeh="offen" class="hg">${meineOffen.size ? `<span class="badge">${meineOffen.size}</span>` : ""}<i>💶</i>Ausstoend</button>
       <button data-hgeh="livraisons" class="hb">${meineBest ? `<span class="badge">${meineBest}</span>` : ""}<i>🚚</i>Bestellungen</button>
     </div>
-    <div class="card"><h2>🍺 Du hues fräi</h2>${zeilen.join("") || `<div class="leer">Du hues momentan keng Fläschen.</div>`}</div>
+    <div class="card" id="hAuf"><h2 class="hkopf">✅ Fir dech ze maachen<button class="hmehr" data-hgeh="aufgaben">alles ›</button></h2>
+      ${meineAuf.length ? meineAuf.slice(0, 5).map(a => aufZeile(a, h, true)).join("") + (meineAuf.length > 5 ? `<div class="muted" style="font-size:14px;margin-top:6px">+ ${meineAuf.length - 5} weider</div>` : "")
+        + (meineAuf.slice(0, 5).some(a => a.auto) ? AUF_LEGENDE : "") : `<div class="leer">✓ Näischt ze maachen.</div>`}</div>
+    <div class="card"><h2>🍺 Du hues zur Verfügung</h2>${zeilen.join("") || `<div class="leer">Du hues momentan keng Fläschen.</div>`}</div>
     <div class="card hklick" data-hgeh="kalender"><h2>📅 Déi nächst Deeg</h2>${bald.length ? bald.map(p => `<div class="hz"><span>${terminIc(p.quelle === "bestellung" ? "bestellung" : p.typ)} ${esc(p.titel)}${p.bier ? " · " + esc(p.bier) : ""}</span><span class="muted">${esc(wann(p))}</span></div>`).join("")
       : `<div class="leer">Näischt an de nächste 7 Deeg.</div>`}</div>
     <div class="card hklick" data-hgeh="offen"><h2>💶 Nach op bei dir</h2>${meineOffen.size ? [...meineOffen].sort((a, b) => b[1] - a[1]).map(([n, b]) => `<div class="hz"><span>${esc(n)}</span><b class="gelb">${euro(b)}</b></div>`).join("")
       : `<div class="leer">✓ Keen ass dir eppes schëlleg.</div>`}</div>`;
+  aufListeBinden($("#hAuf"));
   box.querySelectorAll("[data-hgeh]").forEach(el => el.onclick = () => {
     const z = el.dataset.hgeh;
     if (z === "offen") NUR_MEINE = true;
     if (z === "livraisons") L_NUR_MEINE = true;
-    if (z === "kalender") { KALFORM = null; KAL_MELD = ""; }
+    if (z === "kalender" || z === "aufgaben") { KALFORM = null; KAL_MELD = ""; A_MELD = ""; A_INLINE = null; KAL_BEREICH = z; if (z === "aufgaben") AUF_SICHT = "meng"; TAB = "kalender"; render(); window.scrollTo(0, 0); return; }
     else { EIN.tab = z; merke(SP, EIN); }
     if (z === "verkaufen" && FORM) FORM.meldung = null;
     TAB = z; render(); window.scrollTo(0, 0);
@@ -1535,15 +1684,17 @@ function kalZeile(p, heute) {
     <div class="tinh"><b>${ic} ${esc(p.titel)}${p.bier ? " · " + esc(p.bier) : ""}</b><div class="z">${esc(zeit)}</div>
       ${wer}${p.quelle === "bestellung" ? `<span class="chip auto">aus de Bestellungen</span>` : ""}
       ${auf ? `${p.notiz ? `<div class="hinweis" style="margin:6px 0 0">${esc(p.notiz)}</div>` : ""}
-        <div class="knopfe" style="margin-top:8px">${p.quelle === "termin"
-          ? `<button class="knopf" data-ted="${esc(p.tid)}">✎ Änneren</button><button class="knopf rot" data-tweg="${esc(p.tid)}">✕ Läschen</button>`
-          : `<button class="knopf" data-tliv>→ Bei d'Bestellungen</button>`}</div>` : ""}
+        <div class="knopfe ${p.quelle === "termin" ? "einz t" : ""}" style="margin-top:8px">${p.quelle === "termin"
+          ? `<button class="knopf" data-ted="${esc(p.tid)}">✎ Änneren</button><button class="knopf rot" data-tweg="${esc(p.tid)}">✕ Läschen</button><button class="knopf gelbk" data-tauf="${esc(p.tid)}">+ Aufgab</button>`
+          : `<button class="knopf" data-tliv>→ Bei d'Bestellungen</button>`}</div>
+        ${p.quelle === "termin" && A_INLINE && A_INLINE.wo === "termin:" + p.tid ? aufFormHtml(A_INLINE.F, `Nei Aufgab fir ${p.titel} ${tagKurz(p.datum)}`) : ""}` : ""}
     </div></div>`;
 }
 function renderKalender() {
   const box = $("#t-kalender");
   if (KALFORM) return renderKalForm(box);
   if (tipptIn(box)) return;
+  if (KAL_BEREICH === "aufgaben") return renderAufgaben(box);
   const heute = heuteLux();
   let liste = kalenderPunkte(Z);
   if (KAL_SICHT !== "alles") liste = liste.filter(p => p.datum >= heute);
@@ -1556,7 +1707,7 @@ function renderKalender() {
     html += kalZeile(p, heute);
   }
   const url = KAL_SCHLUESSEL && WORKER_URL ? WORKER_URL.replace(/\/+$/, "") + "/kalender/" + KAL_SCHLUESSEL + ".ics" : "";
-  box.innerHTML = `<div class="card" style="padding:10px 14px"><div class="seg drei" style="margin:0">
+  box.innerHTML = kalKaesten() + `<div class="card" style="padding:10px 14px"><div class="seg drei" style="margin:0">
       <button data-ksicht="kommend" class="${KAL_SICHT === "kommend" ? "an" : ""}">Kommend</button>
       <button data-ksicht="alles" class="${KAL_SICHT === "alles" ? "an" : ""}">Alles</button>
       <button data-ksicht="meng" class="${KAL_SICHT === "meng" ? "an" : ""}">Just meng</button></div>
@@ -1574,6 +1725,12 @@ function renderKalender() {
         <div class="hinweis">Adress kopéieren an als Kalenner-Abonnement abannen. iPhone: Astellungen → Kalenner → Konten → Kont dobäisetzen → Aner → Kalenner-Abonnement. Google: „Aner Kalenner“ → „Per URL“.</div>
         <input id="tUrl" readonly value="${esc(url)}"><button class="knopf" id="tKop" style="margin-top:6px">Adress kopéieren</button></details>
       <div class="hinweis">Wien dëse Link huet, gesäit d'Terminer — just ënner iech deelen.</div>`}</div>`;
+  kalKaestenBinden(box);
+  // „+ Aufgab“ am Termin: Formular im aufgeklappten Termin
+  box.querySelectorAll("[data-tauf]").forEach(b => b.onclick = () => { A_INLINE = { neu: true, wo: "termin:" + b.dataset.tauf, F: leereAufgabe({ typ: "termin", id: b.dataset.tauf }) }; renderKalender(); });
+  const af = box.querySelector(".ter .aform");
+  if (af && A_INLINE && A_INLINE.neu) { A_INLINE.neu = false; af.querySelector("input").focus(); }
+  if (af && A_INLINE) aufFormBinden(af, A_INLINE.F, () => renderKalender(), text => { KAL_MELD = `✓ Aufgab agedroen: ${text}`; A_INLINE = null; renderKalender(); }, () => { A_INLINE = null; renderKalender(); });
   if (WORKER_URL && !KAL_SCHLUESSEL && EIN.code) kalenderSchluessel(EIN.code).then(k => { KAL_SCHLUESSEL = k; if (TAB === "kalender") renderKalender(); }).catch(() => {});
   box.querySelectorAll("[data-ksicht]").forEach(b => b.onclick = () => { KAL_SICHT = b.dataset.ksicht; KAL_MELD = ""; renderKalender(); });
   box.querySelectorAll("[data-kfil]").forEach(b => b.onclick = () => {
@@ -1582,7 +1739,7 @@ function renderKalender() {
     KAL_MELD = ""; renderKalender();
   });
   box.querySelectorAll("[data-ter]").forEach(d => d.onclick = ev => {
-    if (ev.target.closest("button")) return;
+    if (ev.target.closest("button, input, .aform")) return;
     const k = d.dataset.ter; KAL_AUF.has(k) ? KAL_AUF.delete(k) : KAL_AUF.add(k); renderKalender();
   });
   box.querySelectorAll("[data-ted]").forEach(b => b.onclick = () => {
@@ -1684,8 +1841,143 @@ function renderKalForm(box, egal) {
   };
 }
 
+/* ---------- Aufgaben: Oberfläche (vom Nutzer, 17.11.2026) ----------
+   Hinter dem Kalender-Knopf: zwei große Kästen „📅 Kalenner“ (Vorgabe) und „✅ Aufgaben“ — kein neuer Reiter. Anlegen nur dort
+   und per „+ Aufgab“ an Bestellung/Termin (Link dorthin); die Startseite zeigt nur, was mich betrifft. Keine Zahl irgendwo. */
+let KAL_BEREICH = "kalender", AUF_SICHT = "op", AFORM = null, A_INLINE = null, A_MELD = "";
+const leereAufgabe = ref => ({ text: "", fuer: [EIN.ich], bisAuf: false, bis: "", ref: ref || null });
+// „Däin Handy huet n Agaben nach net geschéckt“: kennt nur dieses Handy, darum nicht in autoAufgaben
+function aufExtra() {
+  if (!AUSGANG.length) return [];
+  const alt = Math.min(...AUSGANG.map(e => e.zeit));
+  if (Date.now() - alt < 24 * 3600 * 1000) return [];
+  return [{ aid: "auto-sync-handy", typ: "sync", auto: true, text: `Däin Handy huet ${AUSGANG.length} Agab${AUSGANG.length === 1 ? "" : "en"} nach net geschéckt`,
+    sub: "Tipp hei fir méi", fuer: [EIN.ich], link: { typ: "sync" }, ohneHaken: true }];
+}
+const aufStand = () => aufgabenStand(Z, heuteLux(), Date.now(), aufExtra());
+const fuerText = f => f.includes("All") ? "fir All" : "fir " + f.join(", ");
+function aufLink(a) {
+  const r = a.ref || a.link; if (!r) return "";
+  if (r.typ === "liv") { const L = Z.livraisons.find(x => x.lid === r.id); return L ? `<span class="alink" data-alink="liv:${esc(r.id)}">🚚 ${esc(L.kunde)} ›</span>` : ""; }
+  if (r.typ === "termin") { const t = Z.termine.find(x => x.tid === r.id); return t ? `<span class="alink" data-alink="termin:${esc(r.id)}">${terminIc(t.typ)} ${esc(t.titel)} ${esc(tagKurz(t.datum))} ›</span>` : ""; }
+  return `<span class="alink" data-alink="${r.typ}:">${{ offen: "Ausstoend", bestand: "Stock", sync: "Synchronisatioun" }[r.typ] || ""} ›</span>`;
+}
+function bisText(d, h) {
+  const [j, m, t] = d.split("-").map(Number), wt = WOCHENTAG[new Date(Date.UTC(j, m - 1, t)).getUTCDay()];
+  if (d < h) return `<span class="rot">⚠️ war bis ${d === plusTage(h, -1) ? "gëschter" : `${wt} ${t}.${m}.`}</span>`;
+  return d === h ? `<span class="gelb">bis haut</span>` : `bis ${d === plusTage(h, 1) ? "muer" : `${wt} ${t}.${m}.`}`;
+}
+function aufZeile(a, h, start) {
+  const teile = [];
+  if (a.erledigt) teile.push(`✓ vum ${esc(a.durch)}, ${esc(datumText(a.zeit).replace(/\.\d{4}$/, "."))}`);
+  else {
+    if (a.sub) teile.push(a.rot ? `<span class="rot">${esc(a.sub)}</span>` : esc(a.sub));
+    if (a.bis) teile.push(bisText(a.bis, h));
+    if (a.rot && !a.sub && !a.bis) teile.push(`<span class="rot">⚠️ iwwerfälleg</span>`);
+    if (a.nochmal) teile.push("nach eng Kéier");
+  }
+  if (!start || a.fuer.includes("All")) teile.push(esc(fuerText(a.fuer)));
+  const l = !a.erledigt ? aufLink(a) : ""; if (l) teile.push(l);
+  const box = a.ohneHaken ? `<span class="abox leer">⏳</span>` : a.erledigt
+    ? `<button class="abox an" data-azrk="${esc(a.aid)}" aria-label="Erëm op">✓</button>` : `<button class="abox" data-ahak="${esc(a.aid)}" aria-label="Ofhaken"></button>`;
+  return `<div class="aufz ${a.erledigt ? "erl" : ""}" ${a.ohneHaken ? `data-alink="sync:"` : ""}>${box}<div class="atx">${a.auto ? "💡 " : ""}${esc(a.text)}${teile.length ? `<small>${teile.join(" · ")}</small>` : ""}</div></div>`;
+}
+const AUF_LEGENDE = `<div class="aleg">💡 = Virschlag vun der App. Si verschwënnt vu selwer, soubal et erleedegt ass. Ofhaken heescht „ech hunn et am A“.</div>`;
+// Abhaken / zurückholen: derselbe Inhalt neu, mit erledigt (gilt für alle)
+function aufHaken(aid, erledigt) {
+  const S = aufStand();
+  const a = [...S.op, ...S.erl].find(x => x.aid === aid) || Z.aufgaben.find(x => x.aid === aid); if (!a || a.ohneHaken) return;
+  eintragen([{ art: "aufgabe", aid, text: a.text, fuer: [...a.fuer], ...(a.bis ? { bis: a.bis } : {}), ...(a.ref ? { ref: { ...a.ref } } : {}), ...(a.auto ? { auto: true } : {}), erledigt }]);
+}
+function aufGehe(z) {
+  const [typ, id] = z.split(/:(.*)/s);
+  if (typ === "sync") { SYNC_AUF = true; render(); window.scrollTo(0, 0); return; }
+  if (typ === "termin") {
+    const t = Z.termine.find(x => x.tid === id); if (!t) return;
+    TAB = "kalender"; KAL_BEREICH = "kalender"; KALFORM = null; KAL_FILTER.clear(); KAL_AUF.add(id); if (t.datum < heuteLux()) KAL_SICHT = "alles";
+    render(); const el = document.querySelector(`[data-ter="${CSS.escape(id)}"]`); if (el) el.scrollIntoView({ block: "center" }); return;
+  }
+  TAB = typ === "liv" ? "livraisons" : typ; EIN.tab = TAB; merke(SP, EIN);
+  if (typ === "liv") L_NUR_MEINE = false;
+  render(); window.scrollTo(0, 0);
+  if (typ === "liv") { const el = document.querySelector(`[data-lid="${CSS.escape(id)}"]`); if (el) el.scrollIntoView({ block: "center" }); }
+}
+function aufListeBinden(root) {
+  root.querySelectorAll("[data-ahak]").forEach(b => b.onclick = ev => { ev.stopPropagation(); aufHaken(b.dataset.ahak, true); });
+  root.querySelectorAll("[data-azrk]").forEach(b => b.onclick = ev => { ev.stopPropagation(); aufHaken(b.dataset.azrk, false); });
+  root.querySelectorAll("[data-alink]").forEach(b => b.onclick = ev => { ev.stopPropagation(); aufGehe(b.dataset.alink); });
+}
+// Formular: oben in der Aufgaben-Ansicht und eingeklappt unter Bestellung/Termin („+ Aufgab“)
+function aufFormHtml(F, titel) {
+  const wer = [EIN.ich, ...Z.cfg.leute.filter(p => p !== EIN.ich), "All"];
+  return `<div class="aform">${titel ? `<b class="atitel">✅ ${esc(titel)}</b>` : ""}
+    <div class="aneu"><input data-af="text" value="${esc(F.text)}" placeholder="Nei Aufgab …" autocapitalize="sentences" enterkeyhint="done" maxlength="200">${titel ? "" : `<button class="aplus" data-af="ok" aria-label="Aufgab dobäisetzen">+</button>`}</div>
+    <div class="afuer">Fir: ${wer.map(p => `<button data-afuer="${esc(p)}" class="${F.fuer.includes(p) ? "an" : ""}">${esc(p === EIN.ich ? "Ech" : p)}</button>`).join("")}
+      <button data-af="bisauf" class="${F.bisAuf ? "an" : ""}">📅 bis …</button></div>
+    ${F.bisAuf ? `<input type="date" data-af="bis" value="${esc(F.bis)}" style="margin-top:6px">` : ""}
+    ${titel ? `<div class="knopfe"><button class="knopf gruen" data-af="ok">Späicheren</button><button class="knopf" data-af="zu">Ofbriechen</button></div>` : ""}
+    <div data-af="meld"></div></div>`;
+}
+function aufFormBinden(root, F, neuBauen, fertig, zu) {
+  const q = k => root.querySelector(`[data-af="${k}"]`);
+  const t = q("text"); t.oninput = () => { F.text = t.value; };
+  t.onkeydown = e => { if (e.key === "Enter") { e.preventDefault(); speichern(); } };
+  const bi = q("bis"); if (bi) bi.oninput = bi.onchange = () => { F.bis = bi.value; };
+  q("bisauf").onclick = () => { F.bisAuf = !F.bisAuf; if (!F.bisAuf) F.bis = ""; if (document.activeElement) document.activeElement.blur(); neuBauen(); };
+  root.querySelectorAll("[data-afuer]").forEach(b => b.onclick = () => {
+    const p = b.dataset.afuer;
+    if (p === "All") F.fuer = ["All"];
+    else { F.fuer = F.fuer.filter(x => x !== "All"); F.fuer = F.fuer.includes(p) ? F.fuer.filter(x => x !== p) : [...F.fuer, p]; }
+    if (!F.fuer.length) F.fuer = [EIN.ich];
+    root.querySelectorAll("[data-afuer]").forEach(x => x.classList.toggle("an", F.fuer.includes(x.dataset.afuer)));
+  });
+  const z = q("zu"); if (z) z.onclick = zu;
+  q("ok").onclick = speichern;
+  function speichern() {
+    const meld = m => { q("meld").innerHTML = `<div class="meldung fehler">${esc(m)}</div>`; };
+    const text = String(F.text || "").trim().replace(/\s+/g, " ");
+    if (!text) return meld("Wat ass ze maachen?");
+    if (F.bisAuf && F.bis && !/^\d{4}-\d{2}-\d{2}$/.test(F.bis)) return meld("Datum stëmmt net.");
+    const e = { art: "aufgabe", aid: "a-" + neueId().replace(/[^A-Za-z0-9-]/g, "").slice(0, 40), text, fuer: [...F.fuer],
+      ...(F.bisAuf && F.bis ? { bis: F.bis } : {}), ...(F.ref ? { ref: { ...F.ref } } : {}) };
+    if (!gueltig({ ...e, id: "x", zeit: 0 })) return meld("Eppes ass ze laang oder net richteg.");
+    if (document.activeElement) document.activeElement.blur();
+    if (!eintragen([e]).length) return;
+    fertig(text);
+  }
+}
+function kalKaesten() {
+  const h = heuteLux(), [j, m, t] = h.split("-").map(Number), wt = new Date(Date.UTC(j, m - 1, t)).getUTCDay();
+  const sonntag = plusTage(h, (7 - wt) % 7);
+  const nK = kalenderPunkte(Z).filter(p => p.datum >= h && p.datum <= sonntag).length;
+  const S = aufStand(), nU = S.op.filter(a => (a.bis && a.bis < h) || a.rot).length;
+  return `<div class="kgross">
+    <button data-kber="kalender" class="${KAL_BEREICH === "kalender" ? "an" : ""}"><b>📅 Kalenner</b><small>${nK ? `${nK} dës Woch` : "näischt dës Woch"}</small></button>
+    <button data-kber="aufgaben" class="${KAL_BEREICH === "aufgaben" ? "an" : ""}"><b>✅ Aufgaben</b><small>${S.op.length ? `${S.op.length} op${nU ? ` · ${nU} iwwerfälleg` : ""}` : "näischt op"}</small></button></div>`;
+}
+function kalKaestenBinden(box) {
+  box.querySelectorAll("[data-kber]").forEach(b => b.onclick = () => { KAL_BEREICH = b.dataset.kber; KAL_MELD = ""; A_MELD = ""; A_INLINE = null; renderKalender(); window.scrollTo(0, 0); });
+}
+function renderAufgaben(box) {
+  const h = heuteLux(), S = aufStand();
+  if (!AFORM) AFORM = leereAufgabe();
+  const liste = AUF_SICHT === "erl" ? S.erl : AUF_SICHT === "meng" ? S.op.filter(a => aufFuerMich(a, EIN.ich)) : S.op;
+  box.innerHTML = kalKaesten() + `
+    <div class="card" id="aNeu">${aufFormHtml(AFORM, "")}${A_MELD ? `<div class="meldung ok">${esc(A_MELD)}</div>` : ""}</div>
+    <div class="card"><div class="seg drei" style="margin:0 0 6px">
+      <button data-asicht="op" class="${AUF_SICHT === "op" ? "an" : ""}">Op</button>
+      <button data-asicht="meng" class="${AUF_SICHT === "meng" ? "an" : ""}">Just meng</button>
+      <button data-asicht="erl" class="${AUF_SICHT === "erl" ? "an" : ""}">Erleedegt</button></div>
+      ${liste.length ? liste.map(a => aufZeile(a, h, false)).join("") : `<div class="leer">${AUF_SICHT === "erl" ? "Déi lescht 30 Deeg näischt ofgehaakt." : "✓ Näischt ze maachen."}</div>`}
+      ${AUF_SICHT !== "erl" && liste.some(a => a.auto) ? AUF_LEGENDE : ""}</div>`;
+  kalKaestenBinden(box);
+  aufFormBinden($("#aNeu"), AFORM, () => renderKalender(), text => { A_MELD = `✓ Agedroen: ${text}`; AFORM = leereAufgabe(); renderKalender(); });
+  box.querySelectorAll("[data-asicht]").forEach(b => b.onclick = () => { AUF_SICHT = b.dataset.asicht; A_MELD = ""; renderKalender(); });
+  aufListeBinden(box);
+}
+
 /* ---------- Livraisons ---------- */
-let LFORM = null, L_NEU = false, L_NUR_MEINE = false;
+let LFORM = null, L_NEU = false, L_NUR_MEINE = false, L_MELD_AUF = "";
 function leereLivraison() {
   const morgen = new Date(Date.now() + 86400000).toLocaleDateString("sv-SE", { timeZone: TZ });
   // „Huelen aus“: Vorgabe ist, wer einträgt (vom Nutzer, Fassung x); ändern nur über den Knopf „Änneren“
@@ -1700,6 +1992,7 @@ function renderLivraisons() {
 }
 function renderLListe() {
   const box = $("#lListe");
+  if (tipptIn(box)) return; // „+ Aufgab“-Formular: nicht neu bauen, während getippt wird
   const heute = new Date().toLocaleDateString("sv-SE", { timeZone: TZ });
   // All / Just meng wie bei Ausstoend (vom Nutzer, Fassung y): „meng“ = ich bin Kontakt oder es kommt aus meinem Bestand
   const meine = L => !L_NUR_MEINE || L.kontakt === EIN.ich || L.aus === EIN.ich;
@@ -1712,16 +2005,17 @@ function renderLListe() {
         ${v.offen <= 0 ? `<span class="chip ok">✓ bezuelt</span>` : `<span class="chip warn">${euro(v.offen)} op</span>`}` : "";
     const knoepfe = !v ? `<button class="knopf gruen" data-geliwwert="${esc(L.id)}">Geliwwert ✓</button>
         <button class="knopf" data-led="${esc(L.id)}">✎ Änneren</button>
-        <button class="knopf" data-lweg="${esc(L.id)}">Läschen</button>`
+        <button class="knopf" data-lweg="${esc(L.id)}">Läschen</button><button class="knopf gelbk" data-lauf="${esc(L.lid)}">+ Aufgab</button>`
       : `${L.rechnung && !v.rechnungGemacht ? `<button class="knopf" data-rechnung="${esc(v.id)}">🧾 Rechnung gemaach</button>` : ""}
          ${v.offen > 0 ? `<button class="knopf gruen" data-lbezuelt="${esc(v.id)}">Bezuelt ✓</button>` : ""}`;
-    return `<div class="liv"><div class="kopfz"><b>${esc(L.kunde)}</b><span>${euro(L.betrag)}</span></div>
+    return `<div class="liv" data-lid="${esc(L.lid)}"><div class="kopfz"><b>${esc(L.kunde)}</b><span>${euro(L.betrag)}</span></div>
       <div class="wann ${!v && L.datum <= heute ? "faellig" : ""}">${!v && L.datum < heute ? "⚠️ " : ""}${esc(datumKurz(L.datum))} · ${esc(postenText(L.posten))} · ${esc(L.kontakt)}${L.aus !== L.kontakt ? ` (${esc(L.aus === LAGER ? "vum Lager" : "vum " + L.aus)})` : ""}</div>
       ${L.anlass || L.notiz ? `<div class="hinweis" style="margin-top:4px">${esc([L.anlass, L.notiz].filter(Boolean).join(" · "))}</div>` : ""}
-      ${status}<div class="knopfe">${knoepfe}</div></div>`;
+      ${status}<div class="knopfe ${!v ? "einz" : ""}">${knoepfe}</div>
+      ${!v && A_INLINE && A_INLINE.wo === "liv:" + L.lid ? aufFormHtml(A_INLINE.F, `Nei Aufgab fir d'Bestellung ${L.kunde}`) : ""}</div>`;
   };
   box.innerHTML = `<div class="card" style="padding:10px 14px"><div class="seg" style="margin:0"><button data-lmeine="0" class="${L_NUR_MEINE ? "" : "an"}">All</button><button data-lmeine="1" class="${L_NUR_MEINE ? "an" : ""}">Just meng</button></div></div>
-    <div class="card"><h2>Geplangt (${geplant.length})</h2>
+    <div class="card"><h2>Geplangt (${geplant.length})</h2>${L_MELD_AUF ? `<div class="meldung ok">${esc(L_MELD_AUF)}</div>` : ""}
       ${geplant.length ? geplant.map(karte).join("") : `<div class="leer">Keng Bestellung geplangt.</div>`}</div>
     <div class="card"><h2>Geliwwert</h2>
       ${fertig.length ? fertig.slice(0, 40).map(karte).join("") : `<div class="leer">Nach keng.</div>`}</div>`;
@@ -1737,6 +2031,10 @@ function renderLListe() {
     L_NEU = true; renderLForm(true);
     lFormOben();
   });
+  box.querySelectorAll("[data-lauf]").forEach(b => b.onclick = () => { A_INLINE = { neu: true, wo: "liv:" + b.dataset.lauf, F: leereAufgabe({ typ: "liv", id: b.dataset.lauf }) }; L_MELD_AUF = ""; renderLListe(); });
+  const laf = box.querySelector(".liv .aform");
+  if (laf && A_INLINE && A_INLINE.neu) { A_INLINE.neu = false; laf.querySelector("input").focus(); }
+  if (laf && A_INLINE) aufFormBinden(laf, A_INLINE.F, () => renderLListe(), text => { A_INLINE = null; L_MELD_AUF = `✓ Aufgab agedroen: ${text}`; renderLListe(); }, () => { A_INLINE = null; renderLListe(); });
   box.querySelectorAll("[data-lmeine]").forEach(b => b.onclick = () => { L_NUR_MEINE = b.dataset.lmeine === "1"; renderLListe(); });
   box.querySelectorAll("[data-geliwwert]").forEach(b => b.onclick = () => {
     const L = Z.livraisons.find(x => x.id === b.dataset.geliwwert); if (!L) return;
@@ -1813,7 +2111,7 @@ function renderLForm(egal) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(F.datum)) return meld("Wéini? Datum feelt.");
     if (!posten.length) return meld("Wat gëtt geliwwert? Mindestens eng Fläsch.");
     const e = { art: "livraison", kunde: KE.name, ...(KE.kid ? { kid: KE.kid } : KE.kf ? { kf: KE.kf } : {}), kontakt: F.kontakt, aus: F.aus, datum: F.datum, posten,
-      betrag: F.betrag != null ? F.betrag : lAuto(), rechnung: !!F.rechnung, anlass: F.anlass.trim(), notiz: F.notiz.trim() };
+      betrag: F.betrag != null ? F.betrag : lAuto(), rechnung: !!F.rechnung, anlass: F.anlass.trim(), notiz: F.notiz.trim(), ...(F.ersetzt ? { vorher: F.ersetzt } : {}) };
     if (!gueltig({ ...e, id: "x", zeit: 0 })) return meld("Eppes ass ze laang oder net richteg.");
     // Geplante Livraisons zählen schon (reserviert): reicht der freie Rest nicht, warnen (vom Nutzer, 14.11.2026).
     // Beim Ändern zählt die alte Fassung nicht gegen sich selbst.
@@ -2634,7 +2932,7 @@ document.querySelectorAll("#nav button").forEach(b => b.onclick = () => {
 $("#sync").onclick = () => { SYNC_AUF = !SYNC_AUF; renderSync(); };
 $("#hautBtn").onclick = () => { TAB = "haut"; render(); window.scrollTo(0, 0); };
 $("#zurHaut").onclick = () => { if (!bereit()) return; TAB = "haut"; render(); window.scrollTo(0, 0); };
-$("#kalBtn").onclick = () => { TAB = "kalender"; KALFORM = null; KAL_MELD = ""; render(); window.scrollTo(0, 0); };
+$("#kalBtn").onclick = () => { TAB = "kalender"; KAL_BEREICH = "kalender"; A_INLINE = null; KALFORM = null; KAL_MELD = ""; render(); window.scrollTo(0, 0); };
 $("#zahnrad").onclick = () => { TAB = "einst"; EFORM = null; render(); window.scrollTo(0, 0); };
 /* ---------- Neue Fassung ----------
    Beim Öffnen und bei jeder Rückkehr zur App: liegt bei GitHub eine andere FASSUNG, lädt die App

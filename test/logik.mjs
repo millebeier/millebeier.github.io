@@ -4,7 +4,7 @@ const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
 const a = html.indexOf("/* === Logik ===");
 const b = html.indexOf("/* === Oberfläche ===");
 if (a < 0 || b < 0) { console.error("Marken nicht gefunden"); process.exit(1); }
-const L = new Function(html.slice(a, b) + "; return {rechne, gueltig, euro, verteile, erinnerung, csv, beschreibe, hat, LAGER, STANDARD, proSorte, exportBlaetter, anteil, dateienVon, altImport, altKorrekturen, bierText, postenText, frei, zuWenig, preisVon, fassKey, artikelVon};")();
+const L = new Function(html.slice(a, b) + "; return {rechne, gueltig, euro, verteile, erinnerung, csv, beschreibe, hat, LAGER, STANDARD, proSorte, exportBlaetter, anteil, dateienVon, altImport, altKorrekturen, bierText, postenText, frei, zuWenig, preisVon, fassKey, artikelVon, autoAufgaben, aufgabenStand, aidVon};")();
 
 let fehler = 0, n = 0;
 const ist = (was, wert, soll) => { n++; const ok = JSON.stringify(wert) === JSON.stringify(soll); if (!ok) { fehler++; console.log(`✗ ${was}: ${JSON.stringify(wert)} statt ${JSON.stringify(soll)}`); } };
@@ -121,7 +121,7 @@ ist("CSV Zeilen", c.trim().split("\r\n").length, 4);
     ["Paul", 2, 6, "Jo", "Nee"], ["verschenkt / Prouf", 1, 0, "–", "–"], ["Ferro Forum", 24, 60, "Jo", "Nee"], ["BEST", 6, 15, "geplangt 20.12.2026", "–"]]);
   ist("pro Sorte: Rechnung und Anlass", [ps[2].rechnung, ps[2].remarque], ["gemaach", "Kiermes"]);
   const bl = L.exportBlaetter(Y, t => "T");
-  ist("Export: Blätter", bl.map(b => b.name), ["NEIPA", "Brown Porter", "Bestellungen", "Clienten", "Stock"]);
+  ist("Export: Blätter", bl.map(b => b.name), ["NEIPA", "Brown Porter", "Bestellungen", "Clienten", "Stock", "Ze maachen"]);
   ist("Export: Summe NEIPA ohne geplant", bl[0].summe.slice(0, 7), ["Total", "", "", 27, "Fläschen", "", 66]);
   ist("Export: Livraisons", bl[2].zeilen.map(z => [z[1], z[6], z[7], z[8]]), [["Ferro Forum", "Jo", "gemaach", "Nee"], ["BEST", "geplangt", "", "–"]]);
   ist("Export: Stock Lager", bl[4].zeilen[0].slice(0, 3), ["Lager", 66, 0]);
@@ -261,6 +261,73 @@ ist("CSV Zeilen", c.trim().split("\r\n").length, 4);
   ist("Excel: Spalte „bezuelt per“", [blN.kopf[9], blN.zeilen[0][8], blN.zeilen[0][9]], ["bezuelt per", "Jo", "Iwwerweisung, Bar"]);
   ist("Zahlung: unbekannte Art ungültig", L.gueltig({ ...z1, wie: "paypal" }), false);
   ist("Verlauf: Zahlart", L.beschreibe(z2, Y), "✓ 60 € bezuelt per Bar: BEST (beim Jeff)");
+}
+
+// ---------- Aufgaben (vom Nutzer, 17.11.2026) ----------
+{
+  const H = "2026-11-17", T = Date.parse("2026-11-17T10:00:00Z"), TAG = 86400000;
+  let z = T - 40 * TAG, i = 0;
+  const A = (art, x, zeit) => ({ id: "auf-" + String(++i).padStart(5, "0"), zeit: zeit ?? (z += 1000), art, durch: "Laurent", ...x });
+  const bier = A("bier", { name: "NEIPA", preis: 3, mhd: "2026-12-01" });
+  const ab = A("abfuellung", { sorte: "NEIPA", n: 40 });
+  const zuJeff = A("bewegung", { sorte: "NEIPA", n: 10, von: "Lager", an: "Jeff" });
+  // offen seit 35 Tagen (Jeff → Paul), offen seit 5 Tagen (Laurent → Anne)
+  const alt = A("verkauf", { verkaeufer: "Jeff", kaeufer: "Paul", posten: [{ sorte: "NEIPA", n: 2 }], betrag: 6, datum: "2026-10-13" });
+  const neu = A("verkauf", { verkaeufer: "Laurent", kaeufer: "Anne", posten: [{ sorte: "NEIPA", n: 2 }], betrag: 6, datum: "2026-11-12" });
+  // Bestellung geliefert, Rechnung offen; Bestellung übermorgen, zu wenig im Lager; Bestellung von gestern, nicht geliefert
+  const l1 = A("livraison", { kunde: "Ferro Forum", kontakt: "Marc", aus: "Lager", datum: "2026-11-10", posten: [{ sorte: "NEIPA", n: 6 }], betrag: 18, rechnung: true });
+  const v1 = A("verkauf", { verkaeufer: "Marc", kaeufer: "Ferro Forum", posten: [{ sorte: "NEIPA", n: 6 }], betrag: 18, aus: "Lager", liv: l1.id }, T - 7 * TAG);
+  const l2 = A("livraison", { kunde: "BEST", kontakt: "Laurent", aus: "Lager", datum: "2026-11-19", posten: [{ sorte: "NEIPA", n: 30 }], betrag: 90, rechnung: false });
+  const l3 = A("livraison", { kunde: "Rock Solid", kontakt: "Claude", aus: "Lager", datum: "2026-11-16", posten: [{ sorte: "NEIPA", n: 1 }], betrag: 3, rechnung: false });
+  const br = A("termin", { tid: "t-brau-01", typ: "braudag", titel: "Braudag", datum: "2026-11-05", bier: "IPA" });
+  const eig = A("aufgabe", { aid: "a-eigen-01", text: "Etiketten bestellen", fuer: ["Laurent"], bis: "2026-11-16" });
+  const eig2 = A("aufgabe", { aid: "a-eigen-02", text: "Malz kafen", fuer: ["All"] });
+  const ein = [bier, ab, zuJeff, alt, neu, l1, v1, l2, l3, br, eig, eig2];
+  let Y = L.rechne(ein);
+  const auto = L.autoAufgaben(Y, H);
+  const typen = auto.map(a => a.typ).sort();
+  ist("Auto: alle Arten", typen, ["afuellen", "erinnern", "fehlt", "geliwwert", "leer", "mhd", "rechnung"]);
+  const von = t => auto.find(a => a.typ === t);
+  ist("Rechnung: Text, für Kontakt, Link zur Bestellung", [von("rechnung").text, von("rechnung").fuer, von("rechnung").ref], ["Rechnung maachen: Ferro Forum", ["Marc"], { typ: "liv", id: l1.id }]);
+  ist("Erinnern: nur ab 30 Tagen, für den Verkäufer", [von("erinnern").text, von("erinnern").sub, von("erinnern").fuer, auto.filter(a => a.typ === "erinnern").length], ["Paul erënneren · 6 €", "op zënter 35 Deeg", ["Jeff"], 1]);
+  // Lager 24 (31 reserviert), Jeff 8, Laurent −2 → zusammen −1 frei
+  ist("Leer: nichts mehr frei", [von("leer").text, von("leer").sub, von("leer").fuer], ["Keen NEIPA méi do", "just nach 0 fräi", ["All"]]);
+  ist("Leer: unter 24 frei", L.autoAufgaben(L.rechne([...ein, A("abfuellung", { sorte: "NEIPA", n: 10 })]), H).find(a => a.typ === "leer").text, "Gläich keen NEIPA méi do");
+  ist("Fehlt: Bestellung in 2 Tagen, Rock Solid (früher) zuerst bedient", [von("fehlt").text, von("fehlt").fuer, von("fehlt").bis], ["Fir d'Bestellung BEST feelen 7 NEIPA", ["Laurent"], "2026-11-19"]);
+  ist("Nicht geliefert: gestern", [von("geliwwert").text, von("geliwwert").fuer, von("geliwwert").wieder], ["Bestellung Rock Solid (16.11.) nach net als geliwwert markéiert", ["Claude"], 7]);
+  ist("Haltbar bis", von("mhd").text, "NEIPA nach haltbar bis 1.12. · 30 Fläschen do");
+  ist("Afëllen plangen", [von("afuellen").text, von("afuellen").ref], ["Afëllen fir IPA plangen", { typ: "termin", id: "t-brau-01" }]);
+  // Gegenproben: Afëllen-Termin da → weg; Rechnung gemacht → weg; bezahlt → weg
+  const gegen = L.autoAufgaben(L.rechne([...ein, A("termin", { tid: "t-afue-01", typ: "abfuellen", titel: "Afëllen", datum: "2026-11-20", bier: "ipa " }),
+    A("rechnung", { ref: v1.id }), A("zahlung", { ref: alt.id, betrag: 6 })]), H).map(a => a.typ).sort();
+  ist("Gegenprobe: erledigte Sachen verschwinden von selbst", gegen, ["fehlt", "geliwwert", "leer", "mhd"]);
+  ist("Fehlt am Liefertag: eigene aid", L.autoAufgaben(Y, "2026-11-19").find(a => a.typ === "fehlt").aid !== von("fehlt").aid, true);
+  // Liste: überfällige eigene zuerst
+  let S = L.aufgabenStand(Y, H, T);
+  ist("Liste: Überfälliges zuerst", S.op[0].text, "Bestellung Rock Solid (16.11.) nach net als geliwwert markéiert");
+  ist("Liste: eigene drin, keine erledigten", [S.op.some(a => a.aid === "a-eigen-01"), S.erl.length], [true, 0]);
+  // Abhaken: eigene → erledigt; Rechnung → 14 Tage weg, danach wieder; Leer → nie wieder
+  const hak = (a, zeit) => A("aufgabe", { aid: a.aid, text: a.text, fuer: a.fuer, ...(a.auto ? { auto: true } : {}), erledigt: true }, zeit);
+  const ein2 = [...ein, hak({ aid: "a-eigen-01", text: "Etiketten bestellen", fuer: ["Laurent"] }, T - TAG), hak(von("rechnung"), T - TAG), hak(von("leer"), T - TAG), hak(von("geliwwert"), T - 8 * TAG)];
+  Y = L.rechne(ein2);
+  S = L.aufgabenStand(Y, H, T);
+  ist("Abgehakt: eigene, Rechnung und Leer weg; nicht geliefert nach 7 Tagen wieder da",
+    ["a-eigen-01", von("rechnung").aid, von("leer").aid, von("geliwwert").aid].map(aid => S.op.some(a => a.aid === aid)), [false, false, false, true]);
+  ist("… und als „nochmal“ markiert", S.op.find(a => a.aid === von("geliwwert").aid).nochmal, true);
+  ist("Erledigt-Liste", S.erl.map(a => a.text).sort(), ["Etiketten bestellen", "Keen NEIPA méi do", "Rechnung maachen: Ferro Forum"]);
+  S = L.aufgabenStand(Y, "2026-12-02", T + 15 * TAG);
+  ist("Nach 15 Tagen: Rechnung wieder da, Leer nicht", [S.op.some(a => a.aid === von("rechnung").aid), S.op.some(a => a.typ === "leer")], [true, false]);
+  // Neue Abfüllung → Leer kann neu kommen (andere aid)
+  const nachAb = L.autoAufgaben(L.rechne([...ein2, A("abfuellung", { sorte: "NEIPA", n: 1 })]), H).find(a => a.typ === "leer");
+  ist("Leer nach neuer Abfüllung: neue aid", nachAb && nachAb.aid !== von("leer").aid, true);
+  // Bestellung ändern: lid bleibt, Aufgabe hängt weiter dran
+  const l2b = A("livraison", { ...l2, id: undefined, datum: "2026-11-20", vorher: l2.id });
+  const Y3 = L.rechne([...ein, A("storno", { ref: l2.id }), { ...l2b, id: "auf-l2b" }]);
+  ist("Geänderte Bestellung behält lid", Y3.livraisons.find(x => x.id === "auf-l2b").lid, l2.id);
+  ist("Gültig: Aufgabe ohne Text nein, weg ja", [L.gueltig({ id: "x", zeit: 1, art: "aufgabe", aid: "a-eigen-09", fuer: ["All"] }), L.gueltig({ id: "x", zeit: 1, art: "aufgabe", aid: "a-eigen-09", weg: true })], [false, true]);
+  ist("Verlauf: Aufgabe", L.beschreibe(eig, Y), "✅ Aufgab: Etiketten bestellen · fir Laurent · bis 16.11.2026");
+  const bl = L.exportBlaetter(Y, t => "x", H).find(b => b.name === "Ze maachen");
+  ist("Excel: Ze maachen mit offenen und erledigten", [bl.zeilen.some(r => r[0] === "Malz kafen" && r[3] === "op"), bl.zeilen.some(r => r[0] === "Etiketten bestellen" && r[3] === "erleedegt" && r[4] === "Laurent")], [true, true]);
 }
 
 console.log(fehler ? `${fehler} von ${n} Prüfungen fehlgeschlagen` : `Alle ${n} Prüfungen bestanden`);

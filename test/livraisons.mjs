@@ -106,7 +106,7 @@ if (XLSX_JS && existsSync(XLSX_JS)) {
   const require = createRequire(XLSX_JS);
   const X = require(XLSX_JS);
   const wb = X.read(readFileSync(pfad), { cellNF: true });
-  ist("Excel: Blätter", wb.SheetNames, ["NEIPA", "Brown Porter", "Bestellungen", "Clienten", "Stock"]);
+  ist("Excel: Blätter", wb.SheetNames, ["NEIPA", "Brown Porter", "Bestellungen", "Clienten", "Stock", "Ze maachen"]);
   const kl = X.utils.sheet_to_json(wb.Sheets.Clienten, { header: 1, defval: "" });
   const kk = kl.findIndex(r => r[0] === "Firma");
   ist("Excel Clienten: Kopf", kl[kk], ["Firma", "Numm", "Virnumm", "Adress", "Uertschaft", "Telefon", "E-Mail", "Remarque", "Akeef", "Total", "dovun op", "geplangt", "Leschten Akaf"]);
