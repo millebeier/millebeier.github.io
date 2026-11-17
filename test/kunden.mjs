@@ -15,7 +15,7 @@ await p.evaluate(() => { localStorage.clear(); window.OHNE_ALTIMPORT = true; EIN
 const liste = () => p.evaluate(() => [...document.querySelectorAll("#kListe .kz > .kz-kopf")].map(b => b.textContent.trim()));
 
 // Reiter und Verlauf
-ist("Reiter Client statt Verlaf", await p.evaluate(() => [...document.querySelectorAll("nav [data-tab]")].map(b => b.textContent).slice(-1)), ["Client"]);
+ist("Reiter Client statt Verlaf", await p.evaluate(() => [...document.querySelectorAll("nav [data-tab]")].map(b => b.textContent.replace(/[^A-Za-zäëéü]/g, "")).slice(-1)), ["Client"]);
 ist("kee Stammclienten méi bei Bestellungen", await p.evaluate(() => !!document.querySelector("#kBuch")), false);
 await p.click("#zahnrad"); await p.click("#eVerlauf");
 ist("Verlaf iwwer d'Zahnrad", await p.locator("#t-verlauf").innerText(), t => t.includes("Verlaf"));

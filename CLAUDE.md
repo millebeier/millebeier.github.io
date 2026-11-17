@@ -4,7 +4,8 @@ Bestands- und Kassen-App für **Millebéier** (so geschrieben wie im Logo; Repo,
 (Luxemburg). **App-Texte auf Luxemburgisch** (vom Nutzer, 13.11.2026). **Reiter nach dem Ablauf** (vom Nutzer gewählt): Stock · Verkafen · Bestellungen · Ausstoend · Iwwersiicht · Client
 (seit Fassung 15.11. e; der **Verlauf** liegt seitdem im Zahnrad ⚙️ → „📜 Verlaf“, mit „← Zréck an d'Astellungen“)
 („Bestellungen“ hieß bis Fassung w „Livraisons“ — vom Nutzer umbenannt, auch alle Texte und das Excel-Blatt; im Code
-heißen Reiter, Funktionen und die Eintragsart weiter `livraison(s)`) (Handy 3 je Reihe, ab 600 px 6); mit dem Nutzer und in Code/Doku Deutsch, Du-Form. Angelegt 13.11.2026.
+heißen Reiter, Funktionen und die Eintragsart weiter `livraison(s)`). **Seit Fassung 17.11. a: Reiter unten** (fest am Bildschirmrand, Symbol + Name,
+  6 in einer Reihe, im Home-Bildschirm 22 px Abstand für den Home-Balken — am iPhone noch nicht gesehen) und **Startseite „Haut“** (s. u.); mit dem Nutzer und in Code/Doku Deutsch, Du-Form. Angelegt 13.11.2026.
 
 ## Arbeitsweise (vom Nutzer, 15.11.2026)
 **Nicht einfach bauen.** Bei neuen Funktionen und größeren Änderungen (Aufbau, Reiter, Abläufe) erst einen Vorschlag
@@ -191,6 +192,12 @@ beim Verkaufen/Livraison und „Fläsche beweegen“ an, solange jemand welche h
   (Ausschnitt der Geldscheine)); gewählt = grüner Rahmen + ✓.
   `rechne()` baut daraus den ganzen Stand. Rückgängig = storno, nie löschen; ein storniertes
   Verkauf nimmt seine Zahlungen mit. Storno eines Storno zählt nicht.
+- **Startseite „Haut“** (vom Nutzer, 17.11.2026, Fassung a; Entwurf als Bild gezeigt): `TAB = "haut"` **immer beim Öffnen** (EIN.tab merkt
+  nur noch den letzten Reiter für „Zréck“), Tipp aufs Logo (`#zurHaut`) führt hin; kein Reiter markiert. „Moien <Name>“ + Datum; drei
+  große Knöpfe **Verkafen / Ausstoend / Bestellungen** (heißen wie die Reiter, vom Nutzer) = Abkürzungen, Ausstoend und Bestellungen
+  gleich auf „Just meng“ (`NUR_MEINE`, `L_NUR_MEINE`), Zahlen = meine Schuldner / meine geplanten Bestellungen. Karten: „Du hues fräi“
+  (meine Flaschen/Fässer frei + 🚚 reserviert), „Déi nächst Deeg“ (Termine + Bestellungen 7 Tage, max. 5, → Kalender), „Nach op bei
+  dir“ (meine Käufer mit offenem Betrag, → Ausstoend). Nach dem Speichern bleibt man im Reiter (nicht zurück zur Startseite).
 - **`durch` = wer eingetragen hat** (nicht `von` — das ist bei `bewegung` die Herkunft; die
   Verwechslung war der erste Fehler).
 - Bestand hängt am **Namen** — Leute nicht umbenennen, wenn sie Flaschen haben.
@@ -223,7 +230,7 @@ einstellungen/`alt26-…`; Löschungen (storno) bleiben nur, wenn ihr Ziel bleib
 geprüft (Gegenprobe gemacht). Die Datenbank ist von der Cloud-Umgebung aus nicht erreichbar — ausführen kann nur der
 Nutzer. Rückweg: D1 Time Travel (Restore auf einen Zeitpunkt davor).
 
-## Testen — vor jedem Push alle zehn, jeder mit eigenem Rückgabewert
+## Testen — vor jedem Push alle elf, jeder mit eigenem Rückgabewert
 - `node test/logik.mjs` — schneidet `Logik`…`Oberfläche` aus der HTML (Gegenprobe gemacht).
 - `node test/worker.mjs` — Worker mit nachgebauter D1, auch Kalender-.ics (Gegenprobe gemacht).
 - `node test/oberflaeche.mjs` — Playwright, zwei Handys gegen den echten Worker-Code, offline.
@@ -241,13 +248,14 @@ Nutzer. Rückweg: D1 Time Travel (Restore auf einen Zeitpunkt davor).
   Umbenennen: aktueller Name überall, nichts fällt aus „Akeef“ (Gegenprobe gemacht).
 - `node test/kalender.mjs` — Kalender: Termin, Vorschlag +7/+14 mit änderbarem Datum, Bestellungen nur in der App, Filter,
   Ändern/Löschen, Abo-Link aus dem Code, Zuklappen (Gegenprobe gemacht).
+- `node test/haut.mjs` — Startseite beim Öffnen, Logo, drei Knöpfe auf „Just meng“, Karten nur mit eigenen Daten, Reiter unten
+  (fest, Namen passen bei 375 px, Inhalt endet über den Reitern) (Gegenprobe gemacht).
 - `node test/biere.mjs` — Bier anlegen/ändern/archivieren/zurückholen/löschen (zwei Rückfragen, Gegenprobe gemacht),
   rotes ✕ im Verlauf, rotes Dreieck.
 
 ## Ideen, nicht gebaut
-**Durchsicht aus Brauer-Sicht (17.11.2026), Antwort des Nutzers:** vielleicht später **Startseite „Haut“** (große Knöpfe **Verkafen /
-Ausstoend / Bestellungen** — heißen wie die Reiter, vom Nutzer; Abkürzungen dorthin, schon auf „Just meng“, „Du hues fräi“, nächste Termine, „Nach op bei dir“) und **Reiter unten** mit Symbolen — Entwürfe als Bild
-gezeigt, noch nicht entschieden. Später vielleicht: +6/+24-Knöpfe, Packs/Sonderpreise. **Abgelehnt** (vom Nutzer): Stand-Verkauf ohne
+**Durchsicht aus Brauer-Sicht (17.11.2026), Antwort des Nutzers:** **Startseite und Reiter unten gebaut** (Fassung 17.11. a, siehe
+Aufbau). Später vielleicht: +6/+24-Knöpfe, Packs/Sonderpreise. **Abgelehnt** (vom Nutzer): Stand-Verkauf ohne
 Namen (Stand wird am Ende gesammelt unter Firma eingetragen), „Bargeld bei wem“, Fässer als Leihgut (sind keins), Rückgängig-Leiste,
 Reiter zusammenlegen (einzeln findet man sie eher), Afëllen-Termin → Bestand, „älteste Flaschen zuerst“.
 Allgemeine Dateien ohne Bier (Logik kann `bier: ""` schon);

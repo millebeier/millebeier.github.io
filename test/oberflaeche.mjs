@@ -45,7 +45,7 @@ await A.waitForSelector(".meldung.fehler");
 ist("falscher Code wird gemeldet", await txt(A, "#sMeld"), s => s.includes("stëmmt net"));
 await A.fill("#sCode", "hopfen"); await A.click("#sCodeOk");
 await A.click('[data-ich="Laurent"]');
-ist("Verkaufen offen", await A.locator("#t-verkaufen").isVisible(), true);
+ist("nach der Anmeldung die Startseite", [await A.locator("#t-haut").isVisible(), await txt(A, "#t-haut")], v => v[0] && v[1].includes("Moien Laurent"));
 
 ist("Fußzeile mit Artikel", await txt(A, "#fuss"), s => s.includes("Du bass de Laurent"));
 // Bestand: abfüllen und zuteilen

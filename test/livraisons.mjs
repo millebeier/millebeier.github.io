@@ -154,7 +154,7 @@ if (XLSX_JS && existsSync(XLSX_JS)) {
   ist("alter Worker: Livraison wartet mit Hinweis", [await p2.evaluate(() => AUSGANG.map(e => e.art)), await p2.locator("#sync").innerText()], v => v[0].join() === "livraison" && v[1].includes("Worker muss aktualiséiert"));
   await p2.close();
 }
-ist("Reiter heißt Bestellungen", await p.evaluate(() => document.querySelector('[data-tab="livraisons"]').textContent.trim().startsWith("Bestellungen")), true);
+ist("Reiter heißt Bestellungen", await p.evaluate(() => document.querySelector('[data-tab="livraisons"]').textContent.includes("Bestellungen")), true);
 ist("keine Seitenfehler", seitenfehler, []);
 await p.screenshot({ path: process.env.BILD || "/dev/null", fullPage: true }).catch(() => {});
 await b.close();
