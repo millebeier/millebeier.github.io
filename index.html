@@ -354,7 +354,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px}
 <script>
 /* Adresse des Cloudflare-Workers. Leer = Probe-Modus (alles nur auf diesem Handy). */
 const WORKER_URL = "https://millebeier.rjtp6r9s9h.workers.dev/";
-const FASSUNG = "17.11.2026 d";
+const FASSUNG = "17.11.2026 e";
 
 /* === Logik === (kein DOM; test/logik.mjs schneidet diesen Block aus) */
 const LAGER = "Lager";
@@ -1274,11 +1274,11 @@ function renderHaut() {
     <div class="card" id="hAuf"><h2 class="hkopf">✅ Fir dech ze maachen<button class="hmehr" data-hgeh="aufgaben">alles ›</button></h2>
       ${meineAuf.length ? meineAuf.slice(0, 5).map(a => aufZeile(a, h, true)).join("") + (meineAuf.length > 5 ? `<div class="muted" style="font-size:14px;margin-top:6px">+ ${meineAuf.length - 5} weider</div>` : "")
         + (meineAuf.slice(0, 5).some(a => a.auto) ? AUF_LEGENDE : "") : `<div class="leer">✓ Näischt ze maachen.</div>`}</div>
-    <div class="card"><h2>🍺 Du hues zur Verfügung</h2>${zeilen.join("") || `<div class="leer">Du hues momentan keng Fläschen.</div>`}</div>
     <div class="card hklick" data-hgeh="kalender"><h2>📅 Déi nächst Deeg</h2>${bald.length ? bald.map(p => `<div class="hz"><span>${terminIc(p.quelle === "bestellung" ? "bestellung" : p.typ)} ${esc(p.titel)}${p.bier ? " · " + esc(p.bier) : ""}</span><span class="muted">${esc(wann(p))}</span></div>`).join("")
       : `<div class="leer">Näischt an de nächste 7 Deeg.</div>`}</div>
     <div class="card hklick" data-hgeh="offen"><h2>💶 Nach op bei dir</h2>${meineOffen.size ? [...meineOffen].sort((a, b) => b[1] - a[1]).map(([n, b]) => `<div class="hz"><span>${esc(n)}</span><b class="gelb">${euro(b)}</b></div>`).join("")
-      : `<div class="leer">✓ Keen ass dir eppes schëlleg.</div>`}</div>`;
+      : `<div class="leer">✓ Keen ass dir eppes schëlleg.</div>`}</div>
+    <div class="card"><h2>🍺 Du hues zur Verfügung</h2>${zeilen.join("") || `<div class="leer">Du hues momentan keng Fläschen.</div>`}</div>`;
   aufListeBinden($("#hAuf"));
   box.querySelectorAll("[data-hgeh]").forEach(el => el.onclick = () => {
     const z = el.dataset.hgeh;

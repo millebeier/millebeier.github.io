@@ -195,7 +195,7 @@ beim Verkaufen/Livraison und „Fläsche beweegen“ an, solange jemand welche h
 - **Startseite „Haut“** (vom Nutzer, 17.11.2026, Fassung a; Entwurf als Bild gezeigt): `TAB = "haut"` **immer beim Öffnen** (EIN.tab merkt
   nur noch den letzten Reiter für „Zréck“), Tipp aufs Logo (`#zurHaut`) führt hin; kein Reiter markiert. „Moien <Name>“ + Datum; drei
   große Knöpfe **Verkafen / Ausstoend / Bestellungen** (heißen wie die Reiter, vom Nutzer) = Abkürzungen, Ausstoend und Bestellungen
-  gleich auf „Just meng“ (`NUR_MEINE`, `L_NUR_MEINE`), Zahlen = meine Schuldner / meine geplanten Bestellungen. Karten: „Du hues fräi“ (seit Fassung d „Du hues zur Verfügung“)
+  gleich auf „Just meng“ (`NUR_MEINE`, `L_NUR_MEINE`), Zahlen = meine Schuldner / meine geplanten Bestellungen. Karten (seit Fassung e in dieser Reihenfolge, vom Nutzer): „✅ Fir dech ze maachen“, „Déi nächst Deeg“, „Nach op bei dir“, ganz unten „Du hues zur Verfügung“ (bis Fassung d „Du hues fräi“, weiter oben)
   (meine Flaschen/Fässer frei + 🚚 reserviert), „Déi nächst Deeg“ (Termine + Bestellungen 7 Tage, max. 5, → Kalender), „Nach op bei
   dir“ (meine Käufer mit offenem Betrag, → Ausstoend). Nach dem Speichern bleibt man im Reiter (nicht zurück zur Startseite).
   **Fassung 17.11. b** (vom Nutzer, Entwurf als Bild gezeigt): **🏠 oben** (`#hautBtn`, neben Kalender und Zahnrad; das Logo fand

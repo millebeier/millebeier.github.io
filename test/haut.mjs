@@ -34,6 +34,8 @@ const txt = await p.locator("#t-haut").innerText();
 ist("Du hues fräi: 30 − 4 verkauft − 10 reserviert = 16, 🚚 10", txt, t => /NEIPA\s+16\s*🚚 10/.test(t));
 ist("Déi nächst Deeg: Braudag morgen und Bestellungen, nichts in 20 Tagen", txt, t => t.includes("Braudag · NEIPA") && t.includes("Muer · 09:00") && t.includes("Bestellung Reimen David") && !t.includes("Reunioun"));
 ist("Nach op bei dir: nur meine Käufer", txt, t => t.includes("Paul Weber") && t.includes("12 €") && !t.includes("Anne"));
+ist("Reihenfolge der Karten (vom Nutzer, Fassung e)", await p.evaluate(() => [...document.querySelectorAll("#t-haut .card h2")].map(h => h.firstChild.textContent.trim())),
+  ["✅ Fir dech ze maachen", "📅 Déi nächst Deeg", "💶 Nach op bei dir", "🍺 Du hues zur Verfügung"]);
 ist("Zahlen an den Knöpfen: 1 offen, 1 Bestellung von mir", await p.evaluate(() => [...document.querySelectorAll(".hgross .badge")].map(x => x.textContent)), ["1", "1"]);
 
 // Knöpfe
