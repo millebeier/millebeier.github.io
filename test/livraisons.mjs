@@ -154,6 +154,44 @@ if (XLSX_JS && existsSync(XLSX_JS)) {
   ist("alter Worker: Livraison wartet mit Hinweis", [await p2.evaluate(() => AUSGANG.map(e => e.art)), await p2.evaluate(() => document.querySelector("#syncInfo").textContent)], v => v[0].join() === "livraison" && v[1].includes("Worker muss aktualiséiert"));
   await p2.close();
 }
+// Vorauszahlung (vom Nutzer, Fassung h): kein eigener Knopf, die Bezahl-Zeile an der geplanten Bestellung antippen
+{
+  const p3 = await b.newPage({ viewport: { width: 390, height: 844 } });
+  p3.on("dialog", d => d.accept());
+  await p3.route(/workers\.dev/, r => r.abort());
+  await p3.addInitScript(() => { window.OHNE_ALTIMPORT = true; });
+  await p3.goto(new URL("../index.html", import.meta.url).href);
+  await p3.evaluate(() => { localStorage.clear(); localStorage.setItem("millebeier_v1", JSON.stringify({ code: "x", ich: "Laurent" })); });
+  await p3.reload();
+  await p3.evaluate(() => { eintragen([{ art: "abfuellung", sorte: "NEIPA", n: 100 },
+    { art: "livraison", kunde: "TC Smash", kontakt: "Laurent", aus: "Lager", datum: plusTage(heuteLux(), 3), posten: [{ sorte: "NEIPA", n: 24 }], betrag: 72, rechnung: false }]);
+    TAB = "livraisons"; render(); });
+  ist("Vorauszahlung: Zeile statt Knopf, Knöpfe bleiben in einer Zeile", await p3.evaluate(() => [document.querySelector("[data-lvor]").textContent.trim(), document.querySelector("#lListe .knopfe.einz").children.length]), ["💶 Nach net bezuelt ›", 4]);
+  await p3.click("[data-lvor]");
+  ist("Fenster: Wéivill? mit ganzem Betrag", [await p3.locator("#zahlBetrag").isVisible(), await p3.inputValue("#zahlWieviel")], [true, "72"]);
+  await p3.fill("#zahlWieviel", "30");
+  await p3.click('#zahlWahl [data-wie="bar"]'); await warte(200);
+  ist("Acompte: 30 € Bar — 42 € op", await p3.locator("[data-lvor]").innerText(), t => t.includes("30 € Acompte · Bar — 42 € op"));
+  ist("in der Kasse", await p3.evaluate(() => Z.kasse), 30);
+  await warte(900); await p3.click("[data-lvor]");
+  ist("Rest vorbelegt", await p3.inputValue("#zahlWieviel"), "42");
+  await p3.fill("#zahlWieviel", "50");
+  await p3.click('#zahlWahl [data-wie="wero"]');
+  ist("zu viel: abgelehnt, Fenster bleibt", [await p3.locator("#zahlWahl").isVisible(), await p3.evaluate(() => Z.kasse)], [true, 30]);
+  await p3.fill("#zahlWieviel", "42"); await warte(900);
+  await p3.click('#zahlWahl [data-wie="wero"]'); await warte(200);
+  ist("ganz bezahlt: grüne Zeile, nicht mehr antippbar", [await p3.locator("#lListe .chip.ok").innerText(), await p3.locator("[data-lvor]").count()], [ "✓ 72 € bezuelt · Bar, WERO", 0]);
+  ist("Aufgabe: huet scho bezuelt — nach liwweren", await p3.evaluate(() => aufStand().op.map(a => a.text)), t => t.includes("TC Smash huet scho bezuelt — nach liwweren"));
+  // Löschen fragt nach; „Nee“ lässt alles stehen
+  await p3.click("[data-lweg]");
+  ist("Löschen fragt nach (schon bezahlt)", await p3.locator("#frageWahl").innerText(), t => t.includes("72 € bezuelt") && t.includes("zréckbezuelt"));
+  await p3.click('#frageWahl [data-wahl="nee"]'); await warte(200);
+  ist("„Nee“: Bestellung bleibt", await p3.evaluate(() => [Z.livraisons.length, Z.kasse]), [1, 72]);
+  // Liefern: angerechnet, nichts unter Ausstoend
+  await p3.click("[data-geliwwert]"); await warte(200);
+  ist("geliefert: bezahlt, nichts offen", await p3.evaluate(() => [Z.verkaeufe[0].offen, Z.offen, Z.kasse, aufStand().op.some(a => a.typ === "liwweren")]), [0, 0, 72, false]);
+  await p3.close();
+}
 ist("Reiter heißt Bestellungen", await p.evaluate(() => document.querySelector('[data-tab="livraisons"]').textContent.includes("Bestellungen")), true);
 ist("keine Seitenfehler", seitenfehler, []);
 await p.screenshot({ path: process.env.BILD || "/dev/null", fullPage: true }).catch(() => {});

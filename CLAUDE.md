@@ -155,6 +155,16 @@ beim Verkaufen/Livraison und „Fläsche beweegen“ an, solange jemand welche h
   **Livraison** (vom Nutzer, 14.11.2026): geplant, bis ein Verkauf mit `liv` = ihre id existiert („Geliwwert ✓“ legt ihn an,
   Flaschen aus `aus`, meist Lager — Verkauf hat dafür optional `aus`). Verkauf rückgängig → wieder geplant. Rechnung
   „gemaach“ = Eintrag `rechnung`. Geplantes zählt nirgends als verkauft.
+  **Vorauszahlung** (vom Nutzer, 17.11.2026, Fassung h; Entwurf als Bild gezeigt): Leute zahlen oft per WERO/SumUp, sobald das Bier
+  da ist, geliefert wird später. **Kein eigener Knopf** (Knopfreihe bleibt einzeilig): an jeder geplanten Bestellung eine antippbare
+  Zeile „💶 Nach net bezuelt ›“ → Zahlungsfenster mit **„Wéivill?“** (vorbelegt: alles bzw. der Rest; weniger = Acompte, mehr abgelehnt)
+  → Eintrag `zahlung` mit `vor: true`, `ref` = **lid** der Bestellung (bleibt beim Ändern). Danach „✓ 72 € bezuelt · WERO“ bzw.
+  „30 € Acompte · Bar — 6 € op ›“. Zählt **sofort in der Kasse** (`Z.kasse`, `kasseNach`), nicht unter Ausstoend; bei „Geliwwert ✓“
+  wird sie dem Verkauf angerechnet (`rechne`: `livNachLid`, `L.vorbezahlt`, `L.vorWie`). **Kein Feld beim Planen** (vom Nutzer).
+  Löschen einer bezahlten Bestellung fragt „Do sinn schonn … bezuelt“ → „Jo, d'Suen sinn zréckbezuelt — läschen“ / „Nee — Bestellung
+  bleift“; gelöscht zählt das Geld nicht mehr. Automatische Aufgabe 💡 „X huet scho bezuelt — nach liwweren“ (sofort, für den Kontakt,
+  abgehakt nach 7 Tagen wieder; Datum vorbei → rot und ersetzt „nach net als geliwwert markéiert“). Excel Bestellungen: „Jo (am Viraus)“ /
+  „Acompte 30 €“ + „bezuelt per“; Verlauf „💶 Virauszuelung …“.
   **Pro Bier** (`proSorte`): Verkäufe, Abgänge, geplante Livraisons je Sorte; Betrag eines Mehrsorten-Verkaufs nach
   Listenpreis aufgeteilt (`anteil`). In der Iwwersiicht Sorte antippen. **Excel-Export** (`exportBlaetter` → SheetJS
   0.18.5 von cdnjs, erst beim Tippen geladen): je Sorte ein Blatt wie die alte Tabelle, dazu Bestellungen, **Clienten** (alle
@@ -265,6 +275,7 @@ Nutzer. Rückweg: D1 Time Travel (Restore auf einen Zeitpunkt davor).
 - `XLSX_JS=…/xlsx.full.min.js node test/livraisons.mjs` — Livraison planen/liefern/Rechnung/bezahlen, Liste pro Bier,
   Excel-Export (Datei wird mit SheetJS zurückgelesen), alter Worker. cdnjs ist in der Cloud-Umgebung gesperrt:
   SheetJS 0.18.5 per `npm install xlsx@0.18.5` in den Scratchpad, Pfad über `XLSX_JS`; ohne wird der Excel-Teil übersprungen.
+  Auch Vorauszahlung (Zeile antippen, Acompte, zu viel abgelehnt, Löschen fragt nach, Anrechnen beim Liefern); Logik in `logik.mjs` (Gegenprobe gemacht).
 - `XLSX_JS=… PDFJS_DIR=…/pdfjs-dist/build node test/dateien.mjs` (mit XLSX_JS auch .ods-Anzeige) — Dateien: PDF mit Vorschau, Foto, 1,5 MB in 3 Stücken (Byte für
   Byte auf dem zweiten Handy, Gegenprobe gemacht), Anzeige, Ersetzen, Löschen, > 10 MB abgelehnt. pdf.js per
   `npm install pdfjs-dist@3.11.174` in den Scratchpad. `test/fake-d1.mjs` = gemeinsame nachgebaute D1. Achtung beim

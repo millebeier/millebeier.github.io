@@ -330,5 +330,47 @@ ist("CSV Zeilen", c.trim().split("\r\n").length, 4);
   ist("Excel: Ze maachen mit offenen und erledigten", [bl.zeilen.some(r => r[0] === "Malz kafen" && r[3] === "op"), bl.zeilen.some(r => r[0] === "Etiketten bestellen" && r[3] === "erleedegt" && r[4] === "Laurent")], [true, true]);
 }
 
+// ---------- Vorauszahlung an der Bestellung (vom Nutzer, Fassung h) ----------
+{
+  const H = "2026-11-17", T = Date.parse("2026-11-17T10:00:00Z");
+  let z = T - 5 * 86400000, i = 0;
+  const A = (art, x) => ({ id: "vor-" + String(++i).padStart(5, "0"), zeit: (z += 1000), art, durch: "Laurent", ...x });
+  const ab = A("abfuellung", { sorte: "NEIPA", n: 100 });
+  const L1 = A("livraison", { kunde: "TC Smash", kontakt: "Laurent", aus: "Lager", datum: "2026-11-20", posten: [{ sorte: "NEIPA", n: 24 }], betrag: 72, rechnung: true });
+  const L2 = A("livraison", { kunde: "Barthel Steve", kontakt: "Jeff", aus: "Lager", datum: "2026-11-15", posten: [{ sorte: "NEIPA", n: 12 }], betrag: 36, rechnung: false });
+  const z1 = A("zahlung", { ref: L1.id, vor: true, betrag: 72, wie: "wero" });
+  const z2 = A("zahlung", { ref: L2.id, vor: true, betrag: 30, wie: "bar" });
+  let ein = [ab, L1, L2, z1, z2];
+  let Y = L.rechne(ein);
+  const l = k => Y.livraisons.find(x => x.kunde === k);
+  ist("Vorauszahlung: an der Bestellung", [l("TC Smash").vorbezahlt, l("TC Smash").vorWie, l("Barthel Steve").vorbezahlt], [72, ["wero"], 30]);
+  ist("Vorauszahlung: sofort in der Kasse, je Art", [Y.kasse, Y.kasseNach], [102, { wero: 72, bar: 30 }]);
+  ist("Vorauszahlung: nicht unter Ausstoend", [Y.offen, Y.kaeufer.length], [0, 0]);
+  const auto = L.autoAufgaben(Y, H);
+  const liw = auto.filter(a => a.typ === "liwweren");
+  ist("Erinnerung: bezahlt, nach liwweren", liw.map(a => [a.text, a.sub, a.fuer[0], !!a.rot]), [
+    ["Barthel Steve huet scho bezuelt — nach liwweren", "30 € Acompte per Bar · geplangt 15.11.", "Jeff", true],
+    ["TC Smash huet scho bezuelt — nach liwweren", "72 € per WERO · geplangt 20.11.", "Laurent", false]]);
+  ist("Lieferdatum vorbei + bezahlt: kein zweites „nach net als geliwwert markéiert“", auto.some(a => a.typ === "geliwwert"), false);
+  ist("Verlauf: Virauszuelung", L.beschreibe(z1, Y), "💶 Virauszuelung 72 € per WERO: TC Smash");
+  // Bestellung ändern: Zahlung bleibt (lid)
+  const L1b = { ...A("livraison", { kunde: "TC Smash", kontakt: "Laurent", aus: "Lager", datum: "2026-11-21", posten: [{ sorte: "NEIPA", n: 24 }], betrag: 72, rechnung: true, vorher: L1.id }) };
+  ein = [...ein, A("storno", { ref: L1.id }), L1b];
+  Y = L.rechne(ein);
+  ist("Geänderte Bestellung behält die Vorauszahlung", [l("TC Smash").vorbezahlt, Y.kasse], [72, 102]);
+  // Liefern: angerechnet, Rest offen; Erinnerung weg
+  const v1 = A("verkauf", { verkaeufer: "Laurent", kaeufer: "TC Smash", posten: [{ sorte: "NEIPA", n: 24 }], betrag: 72, aus: "Lager", liv: L1b.id });
+  const v2 = A("verkauf", { verkaeufer: "Jeff", kaeufer: "Barthel Steve", posten: [{ sorte: "NEIPA", n: 12 }], betrag: 36, aus: "Lager", liv: L2.id });
+  Y = L.rechne([...ein, v1, v2]);
+  const vk = k => Y.verkaeufe.find(x => x.kaeufer === k);
+  ist("Geliefert: Vorauszahlung angerechnet", [vk("TC Smash").offen, vk("TC Smash").wie, vk("Barthel Steve").offen, Y.offen, Y.kasse], [0, ["wero"], 6, 6, 102]);
+  ist("Geliefert: Erinnerung weg", L.autoAufgaben(Y, H).some(a => a.typ === "liwweren"), false);
+  // Bestellung gelöscht: Geld fällt aus der Kasse
+  Y = L.rechne([...ein, A("storno", { ref: L2.id })]);
+  ist("Gelöscht: Vorauszahlung zählt nicht mehr", Y.kasse, 72);
+  const bl = L.exportBlaetter(L.rechne([ab, L1, L2, z1, z2]), t => "x", H).find(b => b.name === "Bestellungen");
+  ist("Excel: vor der Lieferung bezahlt", bl.zeilen.map(r => [r[1], r[8], r[9]]), [["Barthel Steve", "Acompte 30 €", "Bar"], ["TC Smash", "Jo (am Viraus)", "WERO"]]);
+}
+
 console.log(fehler ? `${fehler} von ${n} Prüfungen fehlgeschlagen` : `Alle ${n} Prüfungen bestanden`);
 process.exit(fehler ? 1 : 0);

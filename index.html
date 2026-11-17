@@ -246,6 +246,7 @@ textarea.adr{min-height:64px}
 .aus-fest b{font-size:16px}
 .chip{display:inline-block;font-size:12px;padding:3px 8px;border-radius:9px;background:var(--card2);margin:6px 4px 0 0}
 .chip.ok{background:#1f3a20;color:#bfe8c0} .chip.warn{background:#3a3115;color:#f4e2a0}
+button.chip.lvor{border:0;font-family:inherit;cursor:pointer;color:#f4e2a0} button.chip.lvor.nb{border:1px dashed #8a7a3a;background:none;padding:2px 8px}
 /* Dreieck links fest, Name darf umbrechen (lange Namen wie „Brown Porter 01/2026 Keg 30l“ sprengten sonst die Tabelle) */
 tr.klick{cursor:pointer} tr.klick td:first-child{position:relative;padding-left:22px}
 tr.klick td:first-child::before{content:"▶";position:absolute;left:0;color:var(--akzent);font-size:15px}
@@ -292,6 +293,7 @@ textarea{width:100%;font:16px/1.4 inherit;padding:10px;border-radius:10px;border
 #frageKnoepfe button.gut{border-color:var(--gruen)}
 #zahlWahl{position:fixed;inset:0;z-index:25;background:rgba(0,0,0,.75);display:flex;align-items:flex-end;justify-content:center;padding:16px}
 #zahlWahl .card{width:100%;max-width:520px;margin:0}
+.zbetrag{display:flex;gap:8px;align-items:center} .zbetrag input{flex:1;font-size:20px;font-weight:700;margin:0} .zbetrag b{font-size:18px}
 #zahlWahl .seg button{padding:16px 4px;font-size:17px}
 #ansicht{position:fixed;inset:0;z-index:20;background:#000;overflow:auto;-webkit-overflow-scrolling:touch}
 .ansicht-kopf{position:sticky;top:0;display:flex;gap:8px;align-items:center;padding:10px 12px;background:#111;border-bottom:2px solid var(--akzent)}
@@ -347,6 +349,9 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px}
   <div id="frageKnoepfe"></div>
   <button class="haupt" id="frageZu" style="background:var(--card2);color:var(--text)">Ofbriechen</button></div></div>
 <div id="zahlWahl" class="versteckt"><div class="card"><h2 id="zahlTitel"></h2>
+  <div id="zahlBetrag" class="versteckt"><label for="zahlWieviel">Wéivill?</label>
+    <div class="zbetrag"><input id="zahlWieviel" inputmode="decimal" autocomplete="off"><b>€</b></div>
+    <div class="hinweis" id="zahlBetragInfo" style="margin:4px 0 10px"></div></div>
   <div class="seg zahl"></div>
   <button class="haupt" id="zahlZu" style="background:var(--card2);color:var(--text)">Ofbriechen</button></div></div>
 <div id="ansicht" class="versteckt"><div class="ansicht-kopf"><b id="ansichtName"></b>
@@ -356,7 +361,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px}
 <script>
 /* Adresse des Cloudflare-Workers. Leer = Probe-Modus (alles nur auf diesem Handy). */
 const WORKER_URL = "https://millebeier.rjtp6r9s9h.workers.dev/";
-const FASSUNG = "17.11.2026 g";
+const FASSUNG = "17.11.2026 h";
 
 /* === Logik === (kein DOM; test/logik.mjs schneidet diesen Block aus) */
 const LAGER = "Lager";
@@ -449,7 +454,8 @@ function gueltig(e) {
       return typeof e.fid === "string" && /^[A-Za-z0-9_-]{8,80}$/.test(e.fid) && text(e.name, 120) && optText(e.typ, 100) &&
         Number.isInteger(e.groesse) && e.groesse > 0 && Number.isInteger(e.teile) && e.teile >= 1 && e.teile <= 200 &&
         typeof e.bier === "string" && e.bier.length <= 30 && e.feld in FELDER;
-    case "zahlung": return typeof e.ref === "string" && geld(e.betrag) && e.betrag > 0 && (e.wie === undefined || e.wie in ZAHLARTEN);
+    case "zahlung": return typeof e.ref === "string" && geld(e.betrag) && e.betrag > 0 && (e.wie === undefined || e.wie in ZAHLARTEN) &&
+      (e.vor === undefined || typeof e.vor === "boolean"); // vor: Vorauszahlung, ref = lid der Bestellung (Fassung h)
     case "einstellungen":
       return Array.isArray(e.sorten) && e.sorten.length > 0 && e.sorten.length <= 30 &&
         e.sorten.every(s => s && text(s.name, 30) && geld(s.preis)) &&
@@ -571,12 +577,21 @@ function rechne(eintraege) {
   for (const v of vk.values()) if (v.liv && liv.has(v.liv)) { liv.get(v.liv).verkauf = v; v.livraison = liv.get(v.liv); }
   for (const e of aktiv) if (e.art === "rechnung" && vk.has(e.ref)) vk.get(e.ref).rechnungGemacht = true;
   let kasse = 0;
+  const kasseNach = {};
+  // Vorauszahlung (vom Nutzer, Fassung h): hängt an der Bestellung (lid, bleibt beim Ändern). Vor der Lieferung zählt sie in der
+  // Kasse und an der Bestellung, danach am Verkauf der Lieferung. Bestellung gelöscht → zählt nicht mehr (wie ein stornierter Verkauf).
+  const livNachLid = new Map([...liv.values()].map(L => [L.lid, L]));
+  for (const L of liv.values()) { L.vorbezahlt = 0; L.vorWie = []; }
   for (const e of aktiv) if (e.art === "zahlung") {
-    const v = vk.get(e.ref);
-    if (!v) continue; // Verkauf rückgängig gemacht → Zahlung zählt nicht mehr
-    v.bezahlt = runde(v.bezahlt + e.betrag);
-    if (e.wie) (v.wie ||= []).includes(e.wie) || v.wie.push(e.wie);
+    let v = null;
+    if (e.vor) {
+      const L = livNachLid.get(e.ref); if (!L) continue;
+      L.vorbezahlt = runde(L.vorbezahlt + e.betrag); if (e.wie && !L.vorWie.includes(e.wie)) L.vorWie.push(e.wie);
+      v = L.verkauf;
+    } else { v = vk.get(e.ref); if (!v) continue; } // Verkauf rückgängig gemacht → Zahlung zählt nicht mehr
+    if (v) { v.bezahlt = runde(v.bezahlt + e.betrag); if (e.wie) (v.wie ||= []).includes(e.wie) || v.wie.push(e.wie); }
     kasse = runde(kasse + e.betrag);
+    kasseNach[e.wie || "?"] = runde((kasseNach[e.wie || "?"] || 0) + e.betrag);
   }
   let offen = 0;
   const kaeufer = new Map();
@@ -603,8 +618,6 @@ function rechne(eintraege) {
   for (const L of liv.values()) if (!L.verkauf) for (const p of L.posten) {
     (reserviert[L.aus] ||= {}); reserviert[L.aus][p.sorte] = (reserviert[L.aus][p.sorte] || 0) + p.n;
   }
-  const kasseNach = {};
-  for (const e of aktiv) if (e.art === "zahlung" && vk.has(e.ref)) kasseNach[e.wie || "?"] = runde((kasseNach[e.wie || "?"] || 0) + e.betrag);
 
   return {
     reserviert, kasseNach, cfg, basisSorten, geloescht, liste, aktiv, storniert, nachId, bestand, halter, sorten, sortenNamen, personen,
@@ -667,6 +680,8 @@ function beschreibe(e, Z) {
     case "abgang": return `🗑️ ${e.n} × ${artikelText(e.sorte)} ${beim(e.wer)}: ${GRUENDE[e.grund]}`;
     case "verkauf": return `${e.alt ? "📜 Al Tabell:" : e.liv ? "🚚 Geliwwert" : "💶"} ${e.verkaeufer} → ${((Z && Z.vkNachId && Z.vkNachId.get(e.id)) || e).kaeufer}: ${postenText(e.posten)} · ${euro(e.betrag)}`;
     case "zahlung": {
+      if (e.vor) { const L = Z && ((Z.livraisons || []).find(x => x.lid === e.ref) || Z.nachId.get(e.ref));
+        return `💶 Virauszuelung ${euro(e.betrag)}${e.wie ? " per " + ZAHLARTEN[e.wie] : ""}` + (L ? `: ${L.kunde}` : ""); }
       const v = Z && Z.nachId.get(e.ref);
       return `✓ ${euro(e.betrag)} bezuelt${e.wie ? " per " + ZAHLARTEN[e.wie] : ""}` + (v ? `: ${v.kaeufer} (${beim(v.verkaeufer)})` : "");
     }
@@ -861,7 +876,8 @@ function exportBlaetter(Z, zeitFmt, heute = tagVon(Date.now())) {
     kopf: ["Datum", "Client", "Kontakt", "Wat", "Betrag", "Anlass", "geliwwert?", "Rechnung", "bezuel?", "bezuelt per", "Remarquen"],
     zeilen: Z.livraisons.map(L => [datumKurz(L.datum), L.kunde, L.kontakt, postenText(L.posten), L.betrag, L.anlass || "",
       L.verkauf ? "Jo" : "geplangt", L.rechnung ? (L.verkauf && L.verkauf.rechnungGemacht ? "gemaach" : "nach ze maachen") : "",
-      L.verkauf ? bezahltText(L.verkauf) : "–", L.verkauf ? wieListe(L.verkauf) : "", L.notiz || ""]), summe: null });
+      L.verkauf ? bezahltText(L.verkauf) : L.vorbezahlt ? (L.vorbezahlt >= L.betrag ? "Jo (am Viraus)" : `Acompte ${euro(L.vorbezahlt)}`) : "–",
+      L.verkauf ? wieListe(L.verkauf) : L.vorWie.map(w => ZAHLARTEN[w]).join(", "), L.notiz || ""]), summe: null });
   // Clienten mit allen Daten und ihren Käufen ab jetzt (vom Nutzer, Fassung f)
   blaetter.push({ name: "Clienten", titel: "Clienten", info: [],
     kopf: ["Firma", "Numm", "Virnumm", "Adress", "Uertschaft", "Telefon", "E-Mail", "Remarque", "Akeef", "Total", "dovun op", "geplangt", "Leschten Akaf"],
@@ -1025,8 +1041,16 @@ function autoAufgaben(Z, heute) {
     out.push({ aid: aidVon(haut ? "fehlthaut" : "fehlt", L.lid), typ: "fehlt", text: haut ? `Haut feelen fir ${L.kunde}: ${fehlt.join(", ")}` : `Fir d'Bestellung ${L.kunde} feelen ${fehlt.join(", ")}`,
       sub: `${L.aus === LAGER ? "vum Lager" : "vum " + L.aus}`, bis: L.datum, fuer: [L.aus === LAGER ? L.kontakt : L.aus], ref: { typ: "liv", id: L.lid }, wieder: null });
   }
+  // Schon bezahlt (ganz oder Acompte), noch nicht geliefert (vom Nutzer, Fassung h): sofort, für den Kontakt; abgehakt nach 7 Tagen
+  // wieder. Ist das Lieferdatum vorbei, steht nur diese (rot) und nicht zusätzlich „nach net als geliwwert markéiert“.
+  for (const L of plan) if (L.vorbezahlt > 0) {
+    const wie = L.vorWie.length ? " per " + L.vorWie.map(w => ZAHLARTEN[w]).join(", ") : "";
+    out.push({ aid: aidVon("liwweren", L.lid), typ: "liwweren", text: `${L.kunde} huet scho bezuelt — nach liwweren`,
+      sub: `${euro(L.vorbezahlt)}${L.vorbezahlt < L.betrag ? " Acompte" : ""}${wie} · geplangt ${tagKurz(L.datum)}`, rot: L.datum < heute,
+      fuer: [L.kontakt], ref: { typ: "liv", id: L.lid }, wieder: 7 });
+  }
   // Bestellung nach net als geliwwert markéiert: Lieferdatum vorbei
-  for (const L of plan) if (L.datum < heute)
+  for (const L of plan) if (L.datum < heute && !(L.vorbezahlt > 0))
     out.push({ aid: aidVon("geliwwert", L.lid + "|" + L.datum), typ: "geliwwert", text: `Bestellung ${L.kunde} (${tagKurz(L.datum)}) nach net als geliwwert markéiert`,
       sub: "", rot: true, fuer: [L.kontakt], ref: { typ: "liv", id: L.lid }, wieder: 7 });
   // Haltbar bis …: in 30 Tagen erreicht, noch Flaschen da
@@ -2012,6 +2036,9 @@ function renderLListe() {
          ${v.offen > 0 ? `<button class="knopf gruen" data-lbezuelt="${esc(v.id)}">Bezuelt ✓</button>` : ""}`;
     return `<div class="liv" data-lid="${esc(L.lid)}"><div class="kopfz"><b>${esc(L.kunde)}</b><span>${euro(L.betrag)}</span></div>
       <div class="wann ${!v && L.datum <= heute ? "faellig" : ""}">${!v && L.datum < heute ? "⚠️ " : ""}${esc(datumKurz(L.datum))} · ${esc(postenText(L.posten))} · ${esc(L.kontakt)}${L.aus !== L.kontakt ? ` (${esc(L.aus === LAGER ? "vum Lager" : "vum " + L.aus)})` : ""}</div>
+      ${!v ? (L.vorbezahlt >= L.betrag && L.vorbezahlt > 0 ? `<span class="chip ok">✓ ${euro(L.vorbezahlt)} bezuelt${L.vorWie.length ? " · " + esc(L.vorWie.map(w => ZAHLARTEN[w]).join(", ")) : ""}</span>`
+        : L.vorbezahlt > 0 ? `<button class="chip warn lvor" data-lvor="${esc(L.lid)}">${euro(L.vorbezahlt)} Acompte${L.vorWie.length ? " · " + esc(L.vorWie.map(w => ZAHLARTEN[w]).join(", ")) : ""} — ${euro(runde(L.betrag - L.vorbezahlt))} op ›</button>`
+        : `<button class="chip lvor nb" data-lvor="${esc(L.lid)}">💶 Nach net bezuelt ›</button>`) : ""}
       ${L.anlass || L.notiz ? `<div class="hinweis" style="margin-top:4px">${esc([L.anlass, L.notiz].filter(Boolean).join(" · "))}</div>` : ""}
       ${status}<div class="knopfe ${!v ? "einz" : ""}">${knoepfe}</div>
       ${!v && A_INLINE && A_INLINE.wo === "liv:" + L.lid ? aufFormHtml(A_INLINE.F, `Nei Aufgab fir d'Bestellung ${L.kunde}`) : ""}</div>`;
@@ -2041,14 +2068,28 @@ function renderLListe() {
   box.querySelectorAll("[data-geliwwert]").forEach(b => b.onclick = () => {
     const L = Z.livraisons.find(x => x.id === b.dataset.geliwwert); if (!L) return;
     const kurz = L.posten.filter(p => p.n > hat(Z, L.aus, p.sorte));
-    let frage = `Bestellung vu ${L.kunde} geliwwert?\n\n${postenText(L.posten)} · ${euro(L.betrag)}`;
+    let frage = `Bestellung vu ${L.kunde} geliwwert?\n\n${postenText(L.posten)} · ${euro(L.betrag)}` + (L.vorbezahlt ? ` (${euro(L.vorbezahlt)} scho bezuelt)` : "");
     if (kurz.length) frage += `\n\nAchtung: laut der App huet ${de(L.aus)} just ${kurz.map(p => `${hat(Z, L.aus, p.sorte)} × ${postenText([p]).replace(/^\d+ × /, "")}`).join(", ")}.`;
     if (!confirm(frage)) return;
     eintragen([{ art: "verkauf", verkaeufer: L.kontakt, kaeufer: L.kunde, posten: L.posten, betrag: L.betrag, aus: L.aus, liv: L.id }]);
   });
-  box.querySelectorAll("[data-lweg]").forEach(b => b.onclick = () => {
+  box.querySelectorAll("[data-lweg]").forEach(b => b.onclick = async () => {
     const L = Z.livraisons.find(x => x.id === b.dataset.lweg); if (!L) return;
+    if (L.vorbezahlt > 0) { // schon bezahlt: Geld fällt mit aus der Kasse — nur wenn zurückbezahlt (vom Nutzer, Fassung h)
+      const k = await frageWaehlen(`Bestellung vu ${L.kunde} läschen?`, `Do sinn schonn ${euro(L.vorbezahlt)} bezuelt. Si ginn och aus der Kees erausgeholl.`,
+        [{ key: "jo", text: "Jo, d'Suen sinn zréckbezuelt — läschen" }, { key: "nee", text: "Nee — Bestellung bleift", gut: true }]);
+      if (k === "jo") eintragen([{ art: "storno", ref: L.id }]);
+      return;
+    }
     if (confirm(`Bestellung vu ${L.kunde} (${datumKurz(L.datum)}) läschen?`)) eintragen([{ art: "storno", ref: L.id }]);
+  });
+  // Vorauszahlung (vom Nutzer, Fassung h): kein eigener Knopf, die Bezahl-Zeile an der Bestellung antippen
+  box.querySelectorAll("[data-lvor]").forEach(b => b.onclick = () => {
+    const L = Z.livraisons.find(x => x.lid === b.dataset.lvor && !x.verkauf); if (!L) return;
+    const rest = runde(L.betrag - L.vorbezahlt); if (!(rest > 0)) return;
+    zahlartWaehlen(`${L.kunde}: ${L.vorbezahlt ? "Rescht " : ""}bezuelt?`, rest).then(r => {
+      if (r) eintragen([{ art: "zahlung", ref: L.lid, vor: true, betrag: r.betrag, wie: r.wie }]);
+    });
   });
   box.querySelectorAll("[data-rechnung]").forEach(b => b.onclick = () => eintragen([{ art: "rechnung", ref: b.dataset.rechnung }]));
   box.querySelectorAll("[data-lbezuelt]").forEach(b => b.onclick = () => {
@@ -2275,15 +2316,24 @@ async function fehlendesHolen(wer, posten) {
   return brauch.map(p => ({ art: "bewegung", sorte: p.sorte, n: p.n, von, an: wer }));
 }
 
-/* Zahlungsart wählen (Ausstoend, Livraisons): Fenster mit WERO / SumUp / Iwwerweisung / Bar. Gibt die Art oder null. */
-function zahlartWaehlen(titel) {
+/* Zahlungsart wählen (Ausstoend, Livraisons): Fenster mit WERO / SumUp / Iwwerweisung / Bar. Gibt die Art oder null.
+   Mit `bis` (Vorauszahlung, Fassung h): oben „Wéivill?“, vorbelegt mit allem; weniger = Acompte. Gibt dann {wie, betrag}. */
+function zahlartWaehlen(titel, bis) {
   return new Promise(fertig => {
     const box = $("#zahlWahl");
     $("#zahlTitel").textContent = titel;
+    const mitBetrag = typeof bis === "number", feld = $("#zahlWieviel");
+    $("#zahlBetrag").classList.toggle("versteckt", !mitBetrag);
+    if (mitBetrag) { feld.value = String(bis).replace(".", ","); $("#zahlBetragInfo").textContent = `Alles = ${euro(bis)}. Manner = Acompte, de Rescht bleift op.`; }
     box.querySelector(".seg").innerHTML = Object.keys(ZAHLARTEN).map(k => `<button data-wie="${k}" class="zbtn">${zahlInhalt(k)}</button>`).join("");
     box.classList.remove("versteckt");
-    const zu = wie => { box.classList.add("versteckt"); fertig(wie); };
-    box.querySelectorAll("[data-wie]").forEach(b => b.onclick = () => zu(b.dataset.wie));
+    const zu = wie => { box.classList.add("versteckt"); if (document.activeElement === feld) feld.blur(); fertig(wie); };
+    box.querySelectorAll("[data-wie]").forEach(b => b.onclick = () => {
+      if (!mitBetrag) return zu(b.dataset.wie);
+      const betrag = runde(Number(String(feld.value).replace(",", ".").replace(/[^\d.]/g, "")));
+      if (!(betrag > 0) || betrag > bis) { $("#zahlBetragInfo").innerHTML = `<span style="color:var(--rot)">Betrag tëschent 0 an ${esc(euro(bis))}.</span>`; return; }
+      zu({ wie: b.dataset.wie, betrag });
+    });
     $("#zahlZu").onclick = () => zu(null);
     box.onclick = e => { if (e.target === box) zu(null); };
   });
