@@ -245,6 +245,11 @@ Nutzer. Rückweg: D1 Time Travel (Restore auf einen Zeitpunkt davor).
   rotes ✕ im Verlauf, rotes Dreieck.
 
 ## Ideen, nicht gebaut
+**Durchsicht aus Brauer-Sicht (17.11.2026), Antwort des Nutzers:** vielleicht später **Startseite „Haut“** (große Knöpfe Verkafen /
+Bezuelt kritt / Geliwwert, „Du hues fräi“, nächste Termine, „Nach op bei dir“) und **Reiter unten** mit Symbolen — Entwürfe als Bild
+gezeigt, noch nicht entschieden. Später vielleicht: +6/+24-Knöpfe, Packs/Sonderpreise. **Abgelehnt** (vom Nutzer): Stand-Verkauf ohne
+Namen (Stand wird am Ende gesammelt unter Firma eingetragen), „Bargeld bei wem“, Fässer als Leihgut (sind keins), Rückgängig-Leiste,
+Reiter zusammenlegen (einzeln findet man sie eher), Afëllen-Termin → Bestand, „älteste Flaschen zuerst“.
 Allgemeine Dateien ohne Bier (Logik kann `bier: ""` schon);
 Excel-Datei, die sich ständig selbst aktualisiert (vom Nutzer gefragt 14.11.2026, Wege besprochen, noch offen);
 Ausgaben (Malz, Hopfen, Flaschen) → Gewinn; Daueraufträge (in der alten Tabelle rot); Reservierungen; Kisten-Preis; Kassensturz (Ist-Betrag
