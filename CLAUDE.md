@@ -164,7 +164,8 @@ beim Verkaufen/Livraison und „Fläsche beweegen“ an, solange jemand welche h
   Löschen einer bezahlten Bestellung fragt „Do sinn schonn … bezuelt“ → „Jo, d'Suen sinn zréckbezuelt — läschen“ / „Nee — Bestellung
   bleift“; gelöscht zählt das Geld nicht mehr. Automatische Aufgabe 💡 „X huet scho bezuelt — nach liwweren“ (sofort, für den Kontakt,
   abgehakt nach 7 Tagen wieder; Datum vorbei → rot und ersetzt „nach net als geliwwert markéiert“). Excel Bestellungen: „Jo (am Viraus)“ /
-  „Acompte 30 €“ + „bezuelt per“; Verlauf „💶 Virauszuelung …“.
+  „Acompte 30 €“ + „bezuelt per“; Verlauf „💶 Virauszuelung …“. **Umsatz pro Person zählt erst ab der Lieferung** (wie verkaufte Flaschen); Vorschlag
+  „💶 60 € am Viraus“ in Pro Persoun vom Nutzer abgelehnt („wie es ist lassen“, 17.11.2026).
   **Pro Bier** (`proSorte`): Verkäufe, Abgänge, geplante Livraisons je Sorte; Betrag eines Mehrsorten-Verkaufs nach
   Listenpreis aufgeteilt (`anteil`). In der Iwwersiicht Sorte antippen. **Excel-Export** (`exportBlaetter` → SheetJS
   0.18.5 von cdnjs, erst beim Tippen geladen): je Sorte ein Blatt wie die alte Tabelle, dazu Bestellungen, **Clienten** (alle
