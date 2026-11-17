@@ -56,6 +56,15 @@ ist("Karte Déi nächst Deeg → Kalender", await p.evaluate(() => TAB), "kalend
 // Reiter unten
 ist("Reiter unten am Bildschirm, alle Namen passen", await p.evaluate(() => { const n = document.querySelector("#nav"), r = n.getBoundingClientRect();
   return Math.abs(r.bottom - innerHeight) < 2 && getComputedStyle(n).position === "fixed" && [...n.querySelectorAll("button")].every(x => x.scrollWidth <= x.clientWidth + 1); }), true);
+// Home-Bildschirm (Fassung f, vom Nutzer am iPhone: Ränder lagen in der Bildschirmrundung): die standalone-Regel anwenden, 375 px
+await p.setViewportSize({ width: 375, height: 844 });
+ist("Home-Bildschirm: Abstand links/rechts, alle Namen passen", await p.evaluate(() => {
+  const regel = [...document.styleSheets].flatMap(s => [...s.cssRules]).find(r => r.conditionText && r.conditionText.includes("standalone"));
+  const st = document.createElement("style"); st.textContent = [...regel.cssRules].map(r => r.cssText).join("\n"); document.head.appendChild(st);
+  const k = [...document.querySelectorAll("#nav button")];
+  const ok = k[0].getBoundingClientRect().left >= 14 && innerWidth - k[5].getBoundingClientRect().right >= 14 && k.every(x => x.scrollWidth <= x.clientWidth + 1);
+  st.remove(); return ok; }), true);
+await p.setViewportSize({ width: 390, height: 844 });
 ist("Reiter mit Symbol und Namen", await p.evaluate(() => [...document.querySelectorAll("#nav button")].map(x => x.querySelector("i") && x.textContent.replace(x.querySelector("i").textContent, "").replace(/\d+$/, ""))),
   ["Stock", "Verkafen", "Bestellungen", "Ausstoend", "Iwwersiicht", "Client"]);
 await p.click('[data-tab="bestand"]');

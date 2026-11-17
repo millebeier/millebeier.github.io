@@ -77,9 +77,9 @@ header{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:3px so
 .tfolge{background:#1a261a;border:1px solid #3a5a3a;border-radius:10px;padding:10px;margin-top:14px}
 .tfz{margin-top:10px}.tfz .check{margin:0}.tfz input[type=date]{display:block;width:100%;box-sizing:border-box;margin-top:6px}
 /* Reiter unten wie bei iPhone-Apps, Symbol + kurzer Name (vom Nutzer, Fassung j) */
-nav{position:fixed;left:0;right:0;bottom:0;z-index:6;display:grid;grid-template-columns:repeat(6,1fr);gap:0;
+nav{position:fixed;left:0;right:0;bottom:0;z-index:6;display:grid;grid-template-columns:repeat(6,minmax(max-content,1fr));gap:0;
   background:#0b0b0b;border-top:1px solid var(--line);padding:4px max(2px, calc((100% - 640px) / 2)) 8px}
-@media (display-mode: standalone){nav{padding-bottom:22px}} /* Home-Balken am iPhone (kein viewport-fit=cover) */
+@media (display-mode: standalone){nav{padding-bottom:22px;padding-left:max(14px, calc((100% - 640px) / 2));padding-right:max(14px, calc((100% - 640px) / 2))}} /* Home-Balken und runde Ecken am iPhone (kein viewport-fit=cover); Fassung f: S von Stock / t von Client lagen in der Rundung */
 nav button{background:none;border:0;color:var(--muted);border-radius:10px;padding:2px 0;font-size:10px;font-weight:600;
   cursor:pointer;position:relative;white-space:nowrap;min-width:0}
 nav button i{display:block;font-style:normal;font-size:22px;line-height:30px;margin:0 7px 1px;border-radius:10px}
@@ -354,7 +354,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px}
 <script>
 /* Adresse des Cloudflare-Workers. Leer = Probe-Modus (alles nur auf diesem Handy). */
 const WORKER_URL = "https://millebeier.rjtp6r9s9h.workers.dev/";
-const FASSUNG = "17.11.2026 e";
+const FASSUNG = "17.11.2026 f";
 
 /* === Logik === (kein DOM; test/logik.mjs schneidet diesen Block aus) */
 const LAGER = "Lager";
