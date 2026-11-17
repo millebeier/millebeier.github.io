@@ -56,15 +56,20 @@ ist("Karte Déi nächst Deeg → Kalender", await p.evaluate(() => TAB), "kalend
 // Reiter unten
 ist("Reiter unten am Bildschirm, alle Namen passen", await p.evaluate(() => { const n = document.querySelector("#nav"), r = n.getBoundingClientRect();
   return Math.abs(r.bottom - innerHeight) < 2 && getComputedStyle(n).position === "fixed" && [...n.querySelectorAll("button")].every(x => x.scrollWidth <= x.clientWidth + 1); }), true);
-// Home-Bildschirm (Fassung f, vom Nutzer am iPhone: Ränder lagen in der Bildschirmrundung): die standalone-Regel anwenden, 375 px
-await p.setViewportSize({ width: 375, height: 844 });
-ist("Home-Bildschirm: Abstand links/rechts, alle Namen passen", await p.evaluate(() => {
-  const regel = [...document.styleSheets].flatMap(s => [...s.cssRules]).find(r => r.conditionText && r.conditionText.includes("standalone"));
-  const st = document.createElement("style"); st.textContent = [...regel.cssRules].map(r => r.cssText).join("\n"); document.head.appendChild(st);
-  const k = [...document.querySelectorAll("#nav button")];
-  const ok = k[0].getBoundingClientRect().left >= 14 && innerWidth - k[5].getBoundingClientRect().right >= 14 && k.every(x => x.scrollWidth <= x.clientWidth + 1);
-  st.remove(); return ok; }), true);
-await p.setViewportSize({ width: 390, height: 844 });
+// Home-Bildschirm wie am iPhone (Fassung g): navigator.standalone = true, ohne display-mode — vom Nutzer gemeldet: Ränder in der Rundung
+{
+  const q = await b.newPage({ viewport: { width: 375, height: 812 } });
+  await q.route(/workers\.dev/, r => r.abort());
+  await q.addInitScript(() => { window.OHNE_ALTIMPORT = true; Object.defineProperty(navigator, "standalone", { get: () => true }); });
+  await q.goto(new URL("../index.html", import.meta.url).href);
+  await q.evaluate(() => localStorage.setItem("millebeier_v1", JSON.stringify({ code: "x", ich: "Laurent" })));
+  await q.reload();
+  ist("iPhone-App: Abstand unten und links/rechts, alle Namen passen", await q.evaluate(() => {
+    const n = document.querySelector("#nav"), k = [...n.querySelectorAll("button")], cs = getComputedStyle(n);
+    return [document.documentElement.classList.contains("app"), cs.paddingBottom, k[0].getBoundingClientRect().left >= 14 && innerWidth - k[5].getBoundingClientRect().right >= 14,
+      k.every(x => x.scrollWidth <= x.clientWidth + 1)]; }), [true, "22px", true, true]);
+  await q.close();
+}
 ist("Reiter mit Symbol und Namen", await p.evaluate(() => [...document.querySelectorAll("#nav button")].map(x => x.querySelector("i") && x.textContent.replace(x.querySelector("i").textContent, "").replace(/\d+$/, ""))),
   ["Stock", "Verkafen", "Bestellungen", "Ausstoend", "Iwwersiicht", "Client"]);
 await p.click('[data-tab="bestand"]');

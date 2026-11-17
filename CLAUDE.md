@@ -5,7 +5,7 @@ Bestands- und Kassen-App für **Millebéier** (so geschrieben wie im Logo; Repo,
 (seit Fassung 15.11. e; der **Verlauf** liegt seitdem im Zahnrad ⚙️ → „📜 Verlaf“, mit „← Zréck an d'Astellungen“)
 („Bestellungen“ hieß bis Fassung w „Livraisons“ — vom Nutzer umbenannt, auch alle Texte und das Excel-Blatt; im Code
 heißen Reiter, Funktionen und die Eintragsart weiter `livraison(s)`). **Seit Fassung 17.11. a: Reiter unten** (fest am Bildschirmrand, Symbol + Name,
-  6 in einer Reihe, im Home-Bildschirm 22 px Abstand für den Home-Balken; seit Fassung 17.11. f dort auch 14 px links/rechts — vom Nutzer
+  6 in einer Reihe, im Home-Bildschirm 22 px Abstand für den Home-Balken; seit Fassung 17.11. f dort auch 14 px links/rechts; **seit Fassung g über die Klasse `html.app`** (gesetzt bei `navigator.standalone`) statt `@media (display-mode: standalone)` — das erkennt iOS ohne Web-Manifest nicht, darum fehlten am iPhone auch die 22 px unten — vom Nutzer
   am iPhone gemeldet: „S“ von Stock und „t“ von Client lagen in der Bildschirmrundung; Spalten `minmax(max-content,1fr)`, damit „Bestellungen“ trotzdem passt, bis 320 px geprüft) und **Startseite „Haut“** (s. u.); mit dem Nutzer und in Code/Doku Deutsch, Du-Form. Angelegt 13.11.2026.
 
 ## Arbeitsweise (vom Nutzer, 15.11.2026)

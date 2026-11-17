@@ -7,6 +7,8 @@
 <title>Millebéier</title>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Millebéier">
+<script>/* Home-Bildschirm-App erkennen: iOS meldet ohne Manifest kein display-mode standalone (Fassung g) */
+if (navigator.standalone || (window.matchMedia && matchMedia("(display-mode: standalone)").matches)) document.documentElement.classList.add("app");</script>
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#000000">
 <link rel="apple-touch-icon" sizes="180x180" href="bilder/icon-180.png">
@@ -79,7 +81,7 @@ header{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:3px so
 /* Reiter unten wie bei iPhone-Apps, Symbol + kurzer Name (vom Nutzer, Fassung j) */
 nav{position:fixed;left:0;right:0;bottom:0;z-index:6;display:grid;grid-template-columns:repeat(6,minmax(max-content,1fr));gap:0;
   background:#0b0b0b;border-top:1px solid var(--line);padding:4px max(2px, calc((100% - 640px) / 2)) 8px}
-@media (display-mode: standalone){nav{padding-bottom:22px;padding-left:max(14px, calc((100% - 640px) / 2));padding-right:max(14px, calc((100% - 640px) / 2))}} /* Home-Balken und runde Ecken am iPhone (kein viewport-fit=cover); Fassung f: S von Stock / t von Client lagen in der Rundung */
+html.app nav{padding-bottom:22px;padding-left:max(14px, calc((100% - 640px) / 2));padding-right:max(14px, calc((100% - 640px) / 2))} /* Home-Balken und runde Ecken am iPhone (kein viewport-fit=cover); Fassung f: S von Stock / t von Client lagen in der Rundung; Fassung g: über die Klasse app statt @media, die iOS ohne Manifest nicht erkennt */
 nav button{background:none;border:0;color:var(--muted);border-radius:10px;padding:2px 0;font-size:10px;font-weight:600;
   cursor:pointer;position:relative;white-space:nowrap;min-width:0}
 nav button i{display:block;font-style:normal;font-size:22px;line-height:30px;margin:0 7px 1px;border-radius:10px}
@@ -354,7 +356,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px}
 <script>
 /* Adresse des Cloudflare-Workers. Leer = Probe-Modus (alles nur auf diesem Handy). */
 const WORKER_URL = "https://millebeier.rjtp6r9s9h.workers.dev/";
-const FASSUNG = "17.11.2026 f";
+const FASSUNG = "17.11.2026 g";
 
 /* === Logik === (kein DOM; test/logik.mjs schneidet diesen Block aus) */
 const LAGER = "Lager";
