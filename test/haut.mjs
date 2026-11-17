@@ -68,6 +68,12 @@ await p.click("#sync");
 ist("Antippen zeigt den ganzen Text", await p.locator("#syncInfo").innerText(), s => s.includes("nach net geschéckt") && s.includes("soubal d'Verbindung"));
 await warte(900); await p.click("#sync");
 ist("nochmal Antippen klappt zu", await p.locator("#syncInfo").isVisible(), false);
+await p.click("#zahnrad");
+ist("Zahnrad markiert, 🏠 nicht", await p.evaluate(() => [TAB, document.querySelector("#zahnrad").classList.contains("an"), document.querySelector("#hautBtn").classList.contains("an")]), ["einst", true, false]);
+await p.click("#eVerlauf");
+ist("im Verlauf bleibt das Zahnrad markiert", await p.evaluate(() => [TAB, document.querySelector("#zahnrad").classList.contains("an")]), ["verlauf", true]);
+await p.click("#hautBtn"); await warte(900);
+ist("zurück auf der Startseite: Zahnrad nicht mehr markiert", await p.evaluate(() => document.querySelector("#zahnrad").classList.contains("an")), false);
 ist("Kopf in einer Zeile (390 px)", await p.evaluate(() => document.querySelector(".kopf").getBoundingClientRect().height < 50), true);
 
 // 5-Minuten-Regel beim Zurückkommen

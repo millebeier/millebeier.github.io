@@ -202,6 +202,7 @@ beim Verkaufen/Livraison und „Fläsche beweegen“ an, solange jemand welche h
   keiner); **Sync nur als Zeichen** ✓ / ⏳ n / ⚠️ n (`#sync`), Antippen klappt den ganzen Text darunter auf (`#syncInfo`, `SYNC_AUF`) —
   vorher brach „synchroniséiert“ auf bis zu vier Zeilen um; **länger als 5 min im Hintergrund → Startseite** (`HAUT_WEG`, `ZU_MS`),
   außer `mittenImEintrag()`. Kopf unter 360 px etwas kleiner (passt bis 320 px).
+  **Fassung 17.11. c** (vom Nutzer gemeldet): Zahnrad ⚙️ rot markiert wie 🏠/Kalender, solange Astellungen oder Verlaf offen sind.
 - **`durch` = wer eingetragen hat** (nicht `von` — das ist bei `bewegung` die Herkunft; die
   Verwechslung war der erste Fehler).
 - Bestand hängt am **Namen** — Leute nicht umbenennen, wenn sie Flaschen haben.

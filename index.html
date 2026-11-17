@@ -327,7 +327,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px}
 <script>
 /* Adresse des Cloudflare-Workers. Leer = Probe-Modus (alles nur auf diesem Handy). */
 const WORKER_URL = "https://millebeier.rjtp6r9s9h.workers.dev/";
-const FASSUNG = "17.11.2026 b";
+const FASSUNG = "17.11.2026 c";
 
 /* === Logik === (kein DOM; test/logik.mjs schneidet diesen Block aus) */
 const LAGER = "Lager";
@@ -1068,6 +1068,7 @@ function render() {
   $("#hautBtn").classList.toggle("versteckt", !bereit());
   $("#hautBtn").classList.toggle("an", tab === "haut");
   $("#kalBtn").classList.toggle("an", tab === "kalender");
+  $("#zahnrad").classList.toggle("an", tab === "einst" || tab === "verlauf");
   const nKal = kalAnzahlBald(Z);
   // Kalenderblatt mit dem heutigen Tag statt 📅 (Apples Emoji zeigt immer „17“; vom Nutzer, Fassung g)
   const [, kM, kT] = heuteLux().split("-").map(Number);
