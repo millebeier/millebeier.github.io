@@ -152,7 +152,7 @@ nav .badge.grau{background:var(--card2);border:1px solid var(--line)}
 .astand span{font-size:11.5px;border-radius:8px;padding:1px 7px;background:#262626;color:#bbb}
 .astand span.ok{background:#1f3a20;color:#bfe8c0}
 .hkopf{display:flex;align-items:center;justify-content:space-between;gap:8px}
-.hmehr{background:none;border:0;color:var(--muted);font-size:14px;cursor:pointer;padding:2px 0;font-weight:500}
+.hmehr{background:var(--card2);border:1px solid #555;color:var(--text);font-size:13px;cursor:pointer;padding:5px 12px;border-radius:14px;font-weight:700;flex:none}
 .hklick{cursor:pointer}
 .card h3{font-size:15px;margin:14px 0 6px;color:var(--akzent2)}
 .muted{color:var(--muted)} small{font-size:13px}
@@ -384,7 +384,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px}
 <script>
 /* Adresse des Cloudflare-Workers. Leer = Probe-Modus (alles nur auf diesem Handy). */
 const WORKER_URL = "https://millebeier.rjtp6r9s9h.workers.dev/";
-const FASSUNG = "18.11.2026 d";
+const FASSUNG = "18.11.2026 e";
 
 /* === Logik === (kein DOM; test/logik.mjs schneidet diesen Block aus) */
 const LAGER = "Lager";
@@ -1330,7 +1330,10 @@ function renderHaut() {
     if (n || r) zeilen.push(`<div class="hz"><span>${istFass(k) ? "🛢️ " : ""}${kopfZweizeilig(bierText(zerlege(k).bier)).replace("<br>", " ")}${istFass(k) ? ` <small class="muted">${zerlege(k).l} l</small>` : ""}</span>
       <span><b style="${n - r < 0 ? "color:var(--rot)" : ""}">${n - r}</b>${r ? `<small class="gelb"> 🚚 ${r}</small>` : ""}</span></div>`);
   }
-  const bald = kalenderPunkte(Z).filter(p => p.datum >= h && p.datum <= plusTage(h, 7)).slice(0, 5);
+  // „Deng nächst Deeg“ (vom Nutzer, 18.11.2026, Fassung e): nur was mich betrifft — Termine, bei denen ich dabei bin (ohne Namen = alle),
+  // Bestellungen, bei denen ich Kontakt bin oder die Flaschen von mir kommen
+  const fuerMich = p => p.quelle === "bestellung" ? (p.liv.kontakt === ich || p.liv.aus === ich) : !(p.wer || []).length || p.wer.includes(ich);
+  const bald = kalenderPunkte(Z).filter(p => p.datum >= h && p.datum <= plusTage(h, 7) && fuerMich(p)).slice(0, 5);
   const meineAuf = aufStand().op.filter(a => aufFuerMich(a, ich));
   const wann = p => { const [, mm, tt] = p.datum.split("-").map(Number); const tag = p.datum === h ? "Haut" : p.datum === plusTage(h, 1) ? "Muer" : `${WOCHENTAG[new Date(Date.UTC(+p.datum.slice(0, 4), mm - 1, tt)).getUTCDay()]} ${tt}.${mm}.`;
     return tag + (p.uhr ? " · " + p.uhr : ""); };
@@ -1340,11 +1343,11 @@ function renderHaut() {
       <button data-hgeh="offen" class="hg">${meineOffen.size ? `<span class="badge">${meineOffen.size}</span>` : ""}<i>💶</i>Ausstoend</button>
       <button data-hgeh="livraisons" class="hb">${meineBest ? `<span class="badge">${meineBest}</span>` : ""}<i>🚚</i>Bestellungen</button>
     </div>
-    <div class="card" id="hAuf"><h2 class="hkopf">✅ Fir dech ze maachen<button class="hmehr" data-hgeh="aufgaben">alles ›</button></h2>
+    <div class="card" id="hAuf"><h2 class="hkopf">✅ Fir dech ze maachen<button class="hmehr" data-hgeh="aufgaben">Alles ›</button></h2>
       ${meineAuf.length ? meineAuf.slice(0, 5).map(a => aufZeile(a, h, true)).join("") + (meineAuf.length > 5 ? `<div class="muted" style="font-size:14px;margin-top:6px">+ ${meineAuf.length - 5} weider</div>` : "")
         + (meineAuf.slice(0, 5).some(a => a.auto) ? AUF_LEGENDE : "") : `<div class="leer">✓ Näischt ze maachen.</div>`}</div>
-    <div class="card hklick" data-hgeh="kalender"><h2>📅 Déi nächst Deeg</h2>${bald.length ? bald.map(p => `<div class="hz"><span>${terminIc(p.quelle === "bestellung" ? "bestellung" : p.typ)} ${esc(p.titel)}${p.bier ? " · " + esc(p.bier) : ""}</span><span class="muted">${esc(wann(p))}</span></div>`).join("")
-      : `<div class="leer">Näischt an de nächste 7 Deeg.</div>`}</div>
+    <div class="card" id="hKal"><h2 class="hkopf">📅 Deng nächst Deeg<button class="hmehr" data-hgeh="kalender">Alles ›</button></h2>${bald.length ? bald.map(p => `<div class="hz"><span>${terminIc(p.quelle === "bestellung" ? "bestellung" : p.typ)} ${esc(p.titel)}${p.bier ? " · " + esc(p.bier) : ""}</span><span class="muted">${esc(wann(p))}</span></div>`).join("")
+      : `<div class="leer">Näischt fir dech an de nächste 7 Deeg.</div>`}</div>
     <div class="card hklick" data-hgeh="offen"><h2>💶 Nach op bei dir</h2>${meineOffen.size ? [...meineOffen].sort((a, b) => b[1] - a[1]).map(([n, b]) => `<div class="hz"><span>${esc(n)}</span><b class="gelb">${euro(b)}</b></div>`).join("")
       : `<div class="leer">✓ Keen ass dir eppes schëlleg.</div>`}</div>
     <div class="card"><h2>🍺 Du hues zur Verfügung</h2>${zeilen.join("") || `<div class="leer">Du hues momentan keng Fläschen.</div>`}</div>`;

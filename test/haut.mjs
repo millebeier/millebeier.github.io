@@ -16,7 +16,7 @@ ist("beim Öffnen die Startseite (nicht der letzte Reiter)", await p.evaluate(()
 ist("Begrüßung mit Namen und Datum", await p.locator(".hallo").innerText(), t => t.includes("Moien Laurent") && /\d+\. [A-ZÄË][a-zäë]+/.test(t));
 ist("kein Reiter markiert", await p.locator("#nav button.an").count(), 0);
 ist("Leer: keine Flaschen, nichts geplant, keiner schuldet", await p.locator("#t-haut").innerText(),
-  t => t.includes("keng Fläschen") && t.includes("Näischt an de nächste 7 Deeg") && t.includes("Keen ass dir eppes schëlleg"));
+  t => t.includes("keng Fläschen") && t.includes("Näischt fir dech an de nächste 7 Deeg") && t.includes("Keen ass dir eppes schëlleg"));
 
 await p.evaluate(() => {
   const h = heuteLux();
@@ -26,16 +26,18 @@ await p.evaluate(() => {
     { art: "livraison", kunde: "Fremd", kontakt: "Jeff", aus: "Jeff", datum: plusTage(h, 2), posten: [{ sorte: "White IPA", n: 1 }], betrag: 3, rechnung: false },
     { art: "termin", tid: "t-haut-01", typ: "braudag", titel: "Braudag", datum: plusTage(h, 1), uhr: "09:00", bier: "NEIPA", wer: ["Laurent"] },
     { art: "termin", tid: "t-haut-02", typ: "reunioun", titel: "Reunioun", datum: plusTage(h, 20) },
+    { art: "termin", tid: "t-haut-03", typ: "stand", titel: "Stand Jeff", datum: plusTage(h, 2), wer: ["Jeff"] },
     { art: "verkauf", verkaeufer: "Laurent", kaeufer: "Paul Weber", posten: [{ sorte: "NEIPA", n: 4 }], betrag: 12 },
     { art: "verkauf", verkaeufer: "Jeff", kaeufer: "Anne", posten: [{ sorte: "White IPA", n: 1 }], betrag: 3 }]);
   render();
 });
 const txt = await p.locator("#t-haut").innerText();
 ist("Du hues fräi: 30 − 4 verkauft − 10 reserviert = 16, 🚚 10", txt, t => /NEIPA\s+16\s*🚚 10/.test(t));
-ist("Déi nächst Deeg: Braudag morgen und Bestellungen, nichts in 20 Tagen", txt, t => t.includes("Braudag · NEIPA") && t.includes("Muer · 09:00") && t.includes("Bestellung Reimen David") && !t.includes("Reunioun"));
+ist("Deng nächst Deeg: nur meine — Braudag, meine Bestellung; nicht Jeffs Stand/Bestellung, nichts in 20 Tagen", await p.locator("#hKal").innerText(),
+  t => t.includes("Deng nächst Deeg") && t.includes("Braudag · NEIPA") && t.includes("Muer · 09:00") && t.includes("Bestellung Reimen David") && !t.includes("Stand Jeff") && !t.includes("Fremd") && !t.includes("Reunioun"));
 ist("Nach op bei dir: nur meine Käufer", txt, t => t.includes("Paul Weber") && t.includes("12 €") && !t.includes("Anne"));
 ist("Reihenfolge der Karten (vom Nutzer, Fassung e)", await p.evaluate(() => [...document.querySelectorAll("#t-haut .card h2")].map(h => h.firstChild.textContent.trim())),
-  ["✅ Fir dech ze maachen", "📅 Déi nächst Deeg", "💶 Nach op bei dir", "🍺 Du hues zur Verfügung"]);
+  ["✅ Fir dech ze maachen", "📅 Deng nächst Deeg", "💶 Nach op bei dir", "🍺 Du hues zur Verfügung"]);
 ist("Zahlen an den Knöpfen: 1 offen, 1 Bestellung von mir", await p.evaluate(() => [...document.querySelectorAll(".hgross .badge")].map(x => x.textContent)), ["1", "1"]);
 
 // Knöpfe
@@ -50,8 +52,8 @@ await p.click("#zurHaut"); await warte(900);
 await p.click('.hgross [data-hgeh="verkaufen"]');
 ist("Verkafen offen", await p.locator("#t-verkaufen").isVisible(), true);
 await p.click("#zurHaut"); await warte(900);
-await p.click('.hklick[data-hgeh="kalender"]');
-ist("Karte Déi nächst Deeg → Kalender", await p.evaluate(() => TAB), "kalender");
+await p.click('#hKal [data-hgeh="kalender"]');
+ist("„Alles ›“ bei Deng nächst Deeg → Kalender", await p.evaluate(() => [TAB, KAL_BEREICH]), ["kalender", "kalender"]);
 
 // Reiter unten
 ist("Reiter unten am Bildschirm, alle Namen passen", await p.evaluate(() => { const n = document.querySelector("#nav"), r = n.getBoundingClientRect();
