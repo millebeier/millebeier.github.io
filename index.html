@@ -386,7 +386,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px}
 <script>
 /* Adresse des Cloudflare-Workers. Leer = Probe-Modus (alles nur auf diesem Handy). */
 const WORKER_URL = "https://millebeier.rjtp6r9s9h.workers.dev/";
-const FASSUNG = "18.11.2026 k";
+const FASSUNG = "18.11.2026 l";
 
 /* === Logik === (kein DOM; test/logik.mjs schneidet diesen Block aus) */
 const LAGER = "Lager";
@@ -1345,7 +1345,7 @@ function renderHaut() {
   box.innerHTML = `<div class="hallo">Moien ${esc(ich)} 👋<small>${WOCHENTAG_LANG[new Date(Date.UTC(j, m - 1, t)).getUTCDay()]}, ${t}. ${MONATE[m - 1]}</small></div>
     <div class="hgross">
       <button data-hgeh="verkaufen"><i>🍺</i>Verkafen</button>
-      <button data-hgeh="huelen" class="hh ${H_HUELEN ? "an" : ""}"><i class="hbild">${ABS_BILD_FLASCHEN}</i>Fläschen</button>
+      <button data-hgeh="huelen" class="hh ${H_HUELEN ? "an" : ""}"><i class="hbild">${ABS_BILD_FLASCHEN}</i>Mäin Stock</button>
       <button data-hgeh="livraisons" class="hb">${meineBest ? `<span class="badge">${meineBest}</span>` : ""}<i>🚚</i>Bestellungen</button>
     </div>${H_MELD ? `<div class="meldung ok" style="margin-top:10px">${esc(H_MELD)}</div>` : ""}<div id="hHuelen"></div>
     <div class="card" id="hAuf"><h2 class="hkopf">✅ Fir dech ze maachen<button class="hmehr" data-hgeh="aufgaben">Alles ›</button></h2>

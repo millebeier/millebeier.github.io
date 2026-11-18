@@ -42,7 +42,7 @@ ist("Knöpfe oben: Verkafen · Fläschen · Bestellungen (Fassung k)", await p.e
 ist("Zahl nur an Bestellungen: 1 von mir", await p.evaluate(() => [...document.querySelectorAll(".hgross .badge")].map(x => x.textContent)), ["1"]);
 
 // „Fläschen“ direkt auf der Startseite (Fassung k): erst die vier Absichten, dann das Formular
-ist("Knopf heißt „Fläschen“, mit Bild", await p.evaluate(() => { const b = document.querySelector('.hgross [data-hgeh="huelen"]'); return [b.lastChild.textContent.trim(), !!b.querySelector("svg")]; }), ["Fläschen", true]);
+ist("Knopf heißt „Mäin Stock“ (vom Nutzer, Fassung l), mit Bild", await p.evaluate(() => { const b = document.querySelector('.hgross [data-hgeh="huelen"]'); return [b.lastChild.textContent.trim(), !!b.querySelector("svg")]; }), ["Mäin Stock", true]);
 await p.click('.hgross [data-hgeh="huelen"]');
 ist("vier Absichten auf der Startseite", await p.evaluate(() => [TAB, [...document.querySelectorAll("#hHuelen [data-abs]")].map(b => b.dataset.abs)]), ["haut", ["huelen", "zreck", "ginn", "fort"]]);
 await p.click('#hHuelen [data-abs="huelen"]');
