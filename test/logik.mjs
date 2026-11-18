@@ -4,7 +4,7 @@ const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
 const a = html.indexOf("/* === Logik ===");
 const b = html.indexOf("/* === Oberfläche ===");
 if (a < 0 || b < 0) { console.error("Marken nicht gefunden"); process.exit(1); }
-const L = new Function(html.slice(a, b) + "; return {rechne, gueltig, euro, verteile, erinnerung, csv, beschreibe, hat, LAGER, STANDARD, proSorte, exportBlaetter, anteil, dateienVon, altImport, altKorrekturen, bierText, postenText, frei, zuWenig, preisVon, fassKey, artikelVon, autoAufgaben, aufgabenStand, aidVon};")();
+const L = new Function(html.slice(a, b) + "; return {rechne, gueltig, euro, verteile, erinnerung, csv, beschreibe, hat, LAGER, STANDARD, proSorte, exportBlaetter, anteil, dateienVon, altImport, altKorrekturen, bierText, postenText, frei, zuWenig, preisVon, fassKey, artikelVon, autoAufgaben, aufgabenStand, aidVon, aufFuerMich};")();
 
 let fehler = 0, n = 0;
 const ist = (was, wert, soll) => { n++; const ok = JSON.stringify(wert) === JSON.stringify(soll); if (!ok) { fehler++; console.log(`✗ ${was}: ${JSON.stringify(wert)} statt ${JSON.stringify(soll)}`); } };
@@ -381,6 +381,31 @@ ist("CSV Zeilen", c.trim().split("\r\n").length, 4);
   ist("Gelöscht: Vorauszahlung zählt nicht mehr", Y.kasse, 72);
   const bl = L.exportBlaetter(L.rechne([ab, L1, L2, z1, z2]), t => "x", H).find(b => b.name === "Bestellungen");
   ist("Excel: vor der Lieferung bezahlt", bl.zeilen.map(r => [r[1], r[8], r[9]]), [["Barthel Steve", "Acompte 30 €", "Bar"], ["TC Smash", "Jo (am Viraus)", "WERO"]]);
+}
+
+// ---------- „Jidderee muss“ (vom Nutzer, Fassung b) ----------
+{
+  let z = 5000, i = 0;
+  const A = (art, x, durch = "Laurent") => ({ id: "jed-" + String(++i).padStart(5, "0"), zeit: (z += 1000), art, durch, ...x });
+  const a1 = A("aufgabe", { aid: "a-jeder-001", text: "Etiketten opklewen", fuer: ["Laurent", "Jeff", "Marc"], jeder: true });
+  const a2 = A("aufgabe", { aid: "a-jeder-002", text: "HACCP ënnerschreiwen", fuer: ["All"], jeder: true });
+  const a3 = A("aufgabe", { aid: "a-eener-003", text: "Malz kafen", fuer: ["Laurent", "Jeff"] });
+  let ein = [a1, a2, a3, A("aufhak", { aid: "a-jeder-001" }, "Jeff"), A("aufhak", { aid: "a-jeder-001" }, "Marc"), A("aufhak", { aid: "a-jeder-002" }, "Claude")];
+  let Y = L.rechne(ein);
+  const auf = aid => Y.aufgaben.find(a => a.aid === aid);
+  ist("Jidderee: Stand je Person", [auf("a-jeder-001").gemacht.map(g => g.wer), auf("a-jeder-001").noetig, auf("a-jeder-001").erledigt], [["Jeff", "Marc"], ["Laurent", "Jeff", "Marc"], false]);
+  ist("Jidderee bei All: alle Leute nötig", [auf("a-jeder-002").noetig.length, auf("a-jeder-002").gemacht.length], [4, 1]);
+  ist("Just meng: weg für wer schon hat, da für wer noch muss", [L.aufFuerMich(auf("a-jeder-001"), "Jeff"), L.aufFuerMich(auf("a-jeder-001"), "Laurent")], [false, true]);
+  // Gegenprobe: zurücknehmen, dann alle → erledigt
+  ein = [...ein, A("aufhak", { aid: "a-jeder-001", an: false }, "Marc")];
+  ist("Haken zurückgenommen", L.rechne(ein).aufgaben.find(a => a.aid === "a-jeder-001").gemacht.map(g => g.wer), ["Jeff"]);
+  ein = [...ein, A("aufhak", { aid: "a-jeder-001" }, "Marc"), A("aufhak", { aid: "a-jeder-001" }, "Laurent")];
+  Y = L.rechne(ein);
+  const S = L.aufgabenStand(Y, "2026-11-18", z + 1000);
+  ist("Alle haben abgehakt: erledigt, zuletzt Laurent", [auf("a-jeder-001").erledigt, auf("a-jeder-001").durch, S.erl.some(a => a.aid === "a-jeder-001"), S.op.some(a => a.aid === "a-jeder-002")], [true, "Laurent", true, true]);
+  ist("Een eleng: unverändert", [auf("a-eener-003").jeder, auf("a-eener-003").gemacht], [undefined, undefined]);
+  ist("Verlauf: Haken je Person", L.beschreibe(ein[3], Y), "☑️ Jeff huet ofgehaakt: Etiketten opklewen");
+  ist("Gültig: Haken ohne aid nein", L.gueltig({ id: "x", zeit: 1, art: "aufhak", durch: "Jeff" }), false);
 }
 
 console.log(fehler ? `${fehler} von ${n} Prüfungen fehlgeschlagen` : `Alle ${n} Prüfungen bestanden`);

@@ -112,6 +112,24 @@ ist("Startseite: Handy hat nicht geschickt", await txt("#hAuf"), t => /Däin Han
 await p.click('#hAuf .aufz:has-text("Däin Handy")');
 ist("Tipp öffnet den Sync-Text", await p.locator("#syncInfo").isVisible(), true);
 
+// „Jidderee muss“ (Fassung b): Auswahl erst bei mehreren, jeder hakt für sich ab
+await p.evaluate(() => { SYNC_AUF = false; TAB = "kalender"; KAL_BEREICH = "aufgaben"; AUF_SICHT = "op"; render(); });
+ist("eine Person: keine Auswahl", await p.locator("#aNeu .ajed").isVisible(), false);
+await p.click('#aNeu [data-afuer="Jeff"]');
+ist("zwei Personen: Auswahl da, Vorgabe „Een eleng“", [await p.locator("#aNeu .ajed").isVisible(), await p.getAttribute('#aNeu [data-ajed="0"]', "class")], v => v[0] && v[1].includes("an"));
+await p.click('#aNeu [data-ajed="1"]');
+await p.locator('#aNeu [data-af="text"]').type("Etiketten opklewen");
+await p.click('#aNeu [data-af="ok"]'); await warte(200);
+const jz = () => p.evaluate(() => { const z = [...document.querySelectorAll("#t-kalender .aufz")].find(x => x.innerText.includes("Etiketten opklewen")); return z ? z.innerText.replace(/\s+/g, " ") : ""; });
+ist("👥 und Stand 0 vu 2", await jz(), t => t.includes("👥 Etiketten opklewen") && t.includes("jidderee") && t.includes("0 vu 2"));
+await p.click('.aufz:has-text("Etiketten opklewen") [data-ahak]'); await warte(200);
+ist("ich abgehakt: 1 vu 2, bleibt in Op, mein Kästchen ✓", [await jz(), await p.locator('.aufz:has-text("Etiketten opklewen") .abox.an').count()], v => v[0].includes("1 vu 2") && v[0].includes("✓ Laurent") && v[1] === 1);
+await p.click('[data-asicht="meng"]');
+ist("Just meng: bei mir weg", await jz(), "");
+await p.evaluate(() => { EIN.ich = "Jeff"; eintragen([{ art: "aufhak", aid: Z.aufgaben.find(a => a.text === "Etiketten opklewen").aid }]); EIN.ich = "Laurent"; render(); });
+await p.click('[data-asicht="erl"]');
+ist("alle durch: unter Erleedegt", await jz(), t => t.includes("Etiketten opklewen"));
+await p.click('[data-asicht="op"]');
 // Excel-Blatt
 ist("Excel: Blatt Ze maachen", await p.evaluate(() => { const bl = exportBlaetter(Z, zeitText).find(x => x.name === "Ze maachen"); return bl.zeilen.map(r => r[0] + "|" + r[3]); }),
   z => z.includes("Hopfen kafen|op") && z.includes("Etiketten bestellen|erleedegt") && z.some(x => x.startsWith("💡 Rechnung maachen")));

@@ -237,6 +237,12 @@ beim Verkaufen/Livraison und „Fläsche beweegen“ an, solange jemand welche h
   **Haut liwweren: X** (vom Nutzer, 18.11.2026, Fassung a): am Liefertag einer geplanten Bestellung, für den Kontakt, „bis haut“; schon
   vorausbezahlt → keine eigene, dafür „huet scho bezuelt — nach liwweren“ mit „bis haut“; am Tag danach übernimmt „nach net als geliwwert
   markéiert“. Eine normale Bestellung (genug frei, nicht bezahlt) steht vorher **nicht** in den Aufgaben — nur Kalender/Startseite/Reiter.
+  **„Jidderee muss“** (vom Nutzer, 18.11.2026, Fassung b; Entwurf als Bild gezeigt): bei mehreren Personen oder All beim Anlegen zwei
+  Kästen „👤 Een eleng geet duer“ (Vorgabe, wie bisher: ein Haken für alle) / „👥 Jidderee muss“ (`jeder: true`). Dann hakt jeder nur
+  **für sich** ab: eigener Eintrag `aufhak` (aid, durch = wer, `an: false` = zurück) — so geht offline kein Haken verloren. `rechne`
+  gibt `noetig` (bei All alle Leute), `gemacht`, `erledigt` erst wenn alle. Liste: 👥 vor dem Text, „· jidderee“, Stand „2 vu 3“ mit
+  grünen ✓-Namen; wer fertig ist, hat ein grünes Kästchen (antippen = zurück), wer nicht dabei ist, keins. Bei mir abgehakt → weg aus
+  „Just meng“ und Startseite (`aufFuerMich`), in „Op“ bleibt sie bis alle durch. 💡-Aufgaben bleiben „een eleng“.
   **Startseite:** Karte „✅ Fir dech ze maachen“ (fir mech + All, auch 💡; max. 5, abhaken direkt; „alles ›“ → Aufgaben auf Just meng),
   kein Anlegen dort (vom Nutzer). Excel-Blatt „Ze maachen“ (am Ende), Verlauf kennt Aufgaben.
 - **`durch` = wer eingetragen hat** (nicht `von` — das ist bei `bewegung` die Herkunft; die
@@ -294,7 +300,7 @@ Nutzer. Rückweg: D1 Time Travel (Restore auf einen Zeitpunkt davor).
   (fest, Namen passen bei 375 px, Inhalt endet über den Reitern) (Gegenprobe gemacht).
 - `node test/aufgaben.mjs` — Aufgaben: Kästen am Kalender, anlegen (Enter/+, Fir, bis), Just meng, abhaken/zurück, „+ Aufgab“ an Bestellung
   (auch nach Ändern verlinkt) und Termin, Knöpfe in einer Zeile, 💡 Rechnung + Erklärung, nach 14 Tagen wieder, Startseite nur meine,
-  „nicht geschickt“, Excel (Gegenprobe gemacht). Automatische Aufgaben im Einzelnen in `logik.mjs` (Gegenprobe gemacht).
+  „nicht geschickt“, Excel, „Jidderee muss“ (Gegenprobe gemacht). Automatische Aufgaben im Einzelnen in `logik.mjs` (Gegenprobe gemacht).
 - `node test/biere.mjs` — Bier anlegen/ändern/archivieren/zurückholen/löschen (zwei Rückfragen, Gegenprobe gemacht),
   rotes ✕ im Verlauf, rotes Dreieck.
 

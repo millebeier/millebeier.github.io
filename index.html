@@ -128,6 +128,13 @@ nav .badge.grau{background:var(--card2);border:1px solid var(--line)}
 .knopfe.einz{flex-wrap:nowrap;gap:5px} .knopfe.einz .knopf{flex:1 1 auto;min-width:0;padding:9px 4px;font-size:13px;white-space:nowrap}
 .knopfe.einz.t .knopf{font-size:14px;padding:9px 6px}
 @media (max-width:340px){.knopfe.einz{flex-wrap:wrap}.knopfe.einz .knopf{flex:0 1 auto;padding:9px 8px}}
+.ajed{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}
+.ajed button{border:1px solid var(--line);background:none;color:#ddd;border-radius:10px;padding:8px 4px;font-size:13px;font-weight:600;cursor:pointer}
+.ajed button.an{background:#3a1012;border-color:var(--akzent);color:#fff}
+.ajed button small{display:block;font-weight:400;font-size:11px;color:var(--muted);margin-top:1px}
+.astand{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
+.astand span{font-size:11.5px;border-radius:8px;padding:1px 7px;background:#262626;color:#bbb}
+.astand span.ok{background:#1f3a20;color:#bfe8c0}
 .hkopf{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .hmehr{background:none;border:0;color:var(--muted);font-size:14px;cursor:pointer;padding:2px 0;font-weight:500}
 .hklick{cursor:pointer}
@@ -361,7 +368,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px}
 <script>
 /* Adresse des Cloudflare-Workers. Leer = Probe-Modus (alles nur auf diesem Handy). */
 const WORKER_URL = "https://millebeier.rjtp6r9s9h.workers.dev/";
-const FASSUNG = "18.11.2026 a";
+const FASSUNG = "18.11.2026 b";
 
 /* === Logik === (kein DOM; test/logik.mjs schneidet diesen Block aus) */
 const LAGER = "Lager";
@@ -370,7 +377,7 @@ const STANDARD = {
   leute: ["Jeff", "Marc", "Claude", "Laurent"],
 };
 const GRUENDE = { getrunken: "selwer gedronk", verschenkt: "verschenkt / Prouf", kaputt: "futti", sonst: "soss eppes" };
-const ARTEN = ["abfuellung", "bewegung", "abgang", "verkauf", "zahlung", "einstellungen", "storno", "livraison", "rechnung", "bier", "bierstatus", "datei", "kunde", "termin", "aufgabe"];
+const ARTEN = ["abfuellung", "bewegung", "abgang", "verkauf", "zahlung", "einstellungen", "storno", "livraison", "rechnung", "bier", "bierstatus", "datei", "kunde", "termin", "aufgabe", "aufhak"];
 /* Kalender (vom Nutzer, 16.11.2026): feste Arten; Akafen bewusst nicht (vom Nutzer). Reihenfolge = Knöpfe im Formular. */
 const TERMIN_ARTEN = {
   braudag: { ic: "🍺", txt: "Braudag" }, umschlauchen: { ic: "🔄", txt: "Ëmschlauchen" }, hopfen: { ic: "🌿", txt: "Hopfestopfen" },
@@ -443,7 +450,10 @@ function gueltig(e) {
       return typeof e.aid === "string" && /^[A-Za-z0-9_:-]{6,100}$/.test(e.aid) && (e.weg === true || (text(e.text, 200) &&
         Array.isArray(e.fuer) && e.fuer.length >= 1 && e.fuer.length <= 12 && e.fuer.every(w => text(w, 30)))) &&
         optDatum(e.bis) && (e.erledigt === undefined || typeof e.erledigt === "boolean") && (e.auto === undefined || typeof e.auto === "boolean") &&
+        (e.jeder === undefined || typeof e.jeder === "boolean") &&
         (e.ref === undefined || (e.ref && ["liv", "termin"].includes(e.ref.typ) && typeof e.ref.id === "string" && e.ref.id.length <= 80));
+    case "aufhak": // „Jidderee muss“ (vom Nutzer, Fassung b): jeder Haken einzeln, wer = durch; an:false nimmt ihn zurück
+      return typeof e.aid === "string" && /^[A-Za-z0-9_:-]{6,100}$/.test(e.aid) && typeof e.durch === "string" && (e.an === undefined || typeof e.an === "boolean");
     case "kunde":
       return typeof e.kid === "string" && /^[A-Za-z0-9_-]{6,64}$/.test(e.kid) && (e.weg === true || text(e.firma, 80) || text(e.name, 80) || text(e.vorname, 60)) &&
         (e.alias === undefined || (Array.isArray(e.alias) && e.alias.length <= 20 && e.alias.every(a => text(a, 120)))) &&
@@ -632,7 +642,16 @@ function rechne(eintraege) {
       return [...m.values()].filter(t => !t.weg).sort((a, b) => a.datum.localeCompare(b.datum) || (a.uhr || "").localeCompare(b.uhr || "")); })(),
     // Aufgaben: je aid der neueste Eintrag; erstDurch/erstZeit = wer sie angelegt hat
     aufgaben: (() => { const m = new Map(), erst = new Map(); for (const e of aktiv) if (e.art === "aufgabe") { m.set(e.aid, e); if (!erst.has(e.aid)) erst.set(e.aid, e); }
-      return [...m.values()].filter(a => !a.weg).map(a => ({ ...a, erstDurch: erst.get(a.aid).durch, erstZeit: erst.get(a.aid).zeit })); })(),
+      // „Jidderee muss“: Haken je Person aus `aufhak`; erledigt erst, wenn alle Nötigen (bei All: alle Leute) abgehakt haben
+      const haken = new Map(); for (const e of aktiv) if (e.art === "aufhak") { const h = haken.get(e.aid) || new Map(); if (e.an === false) h.delete(e.durch); else h.set(e.durch, e.zeit); haken.set(e.aid, h); }
+      return [...m.values()].filter(a => !a.weg).map(a => {
+        const A = { ...a, erstDurch: erst.get(a.aid).durch, erstZeit: erst.get(a.aid).zeit };
+        if (!a.jeder) return A;
+        const noetig = a.fuer.includes("All") ? [...cfg.leute] : [...a.fuer], h = haken.get(a.aid) || new Map();
+        const gemacht = noetig.filter(p => h.has(p)).map(p => ({ wer: p, zeit: h.get(p) }));
+        const fertig = gemacht.length === noetig.length, letzt = gemacht.reduce((x, g) => !x || g.zeit > x.zeit ? g : x, null);
+        return { ...A, noetig, gemacht, erledigt: fertig, ...(fertig && letzt ? { durch: letzt.wer, zeit: letzt.zeit } : {}) };
+      }); })(),
     kaeufer: [...kaeufer.values()].sort((a, b) => b.offen - a.offen || a.name.localeCompare(b.name, "de")),
     kasse, offen,
     umsatz: runde([...vk.values()].reduce((a, v) => a + v.betrag, 0)),
@@ -695,6 +714,8 @@ function beschreibe(e, Z) {
     case "termin": return e.weg ? `📅 Termin geläscht` : `📅 ${(TERMIN_ARTEN[e.typ] || {}).ic || ""} ${e.titel}${e.bier ? " · " + e.bier : ""}, ${datumKurz(e.datum)}${e.uhr ? " " + e.uhr : ""}`;
     case "aufgabe": return e.weg ? `✅ Aufgab geläscht` : e.erledigt ? `☑️ Ofgehaakt: ${e.auto ? "💡 " : ""}${e.text}` : e.erledigt === false ? `↩️ Erëm op: ${e.text}`
       : `✅ Aufgab: ${e.text} · fir ${e.fuer.join(", ")}${e.bis ? " · bis " + datumKurz(e.bis) : ""}`;
+    case "aufhak": { const a = Z && Z.aufgaben && Z.aufgaben.find(x => x.aid === e.aid); const t = a ? a.text : "Aufgab";
+      return e.an === false ? `↩️ ${e.durch}: erëm op — ${t}` : `☑️ ${e.durch} huet ofgehaakt: ${t}`; }
     case "kunde": return e.weg ? `📇 Client geläscht` : `📇 Client: ${e.v ? kundeLabel(e) : e.name}${e.ort ? " · " + e.ort : ""}`;
     case "datei": return `📎 ${FELDER[e.feld]}${e.bier ? " · " + e.bier : ""}: ${e.name}`;
     case "einstellungen": return `⚙️ Zorten/Präisser/Leit geännert: ${e.sorten.filter(s => !s.aus).map(s => `${s.name} ${euro(s.preis)}`).join(", ")}`;
@@ -898,8 +919,9 @@ function exportBlaetter(Z, zeitFmt, heute = tagVon(Date.now())) {
     summe: ["Total", ...alleK.map(k => Z.sorten[k].da), Z.flaschen.da] });
   blaetter.push({ name: "Ze maachen", titel: "Ze maachen", info: ["💡 = Virschlag vun der App"],
     kopf: ["Aufgab", "Fir", "Bis", "Status", "Erleedegt vum", "Erleedegt den", "Ugeluecht vum", "Ugeluecht den", "Bezuch"],
-    zeilen: [...AS.op.map(a => [(a.auto ? "💡 " : "") + a.text, a.fuer.join(", "), a.bis ? datumKurz(a.bis) : "", "op", "", "", a.auto ? "App" : a.erstDurch || "", a.auto ? "" : zeitFmt(a.erstZeit), bezug(a)]),
-      ...Z.aufgaben.filter(a => a.erledigt).map(a => [(a.auto ? "💡 " : "") + a.text, a.fuer.join(", "), a.bis ? datumKurz(a.bis) : "", "erleedegt", a.durch || "", zeitFmt(a.zeit), a.auto ? "App" : a.erstDurch || "", a.auto ? "" : zeitFmt(a.erstZeit), bezug(a)])],
+    zeilen: [...AS.op.map(a => [(a.auto ? "💡 " : "") + a.text, a.fuer.join(", ") + (a.jeder ? " (jidderee)" : ""), a.bis ? datumKurz(a.bis) : "",
+      a.jeder ? `op (${a.gemacht.length} vu ${a.noetig.length})` : "op", a.jeder ? a.gemacht.map(g => g.wer).join(", ") : "", "", a.auto ? "App" : a.erstDurch || "", a.auto ? "" : zeitFmt(a.erstZeit), bezug(a)]),
+      ...Z.aufgaben.filter(a => a.erledigt).map(a => [(a.auto ? "💡 " : "") + a.text, a.fuer.join(", "), a.bis ? datumKurz(a.bis) : "", "erleedegt", a.jeder ? a.gemacht.map(g => g.wer).join(", ") : a.durch || "", zeitFmt(a.zeit), a.auto ? "App" : a.erstDurch || "", a.auto ? "" : zeitFmt(a.erstZeit), bezug(a)])],
     summe: null });
   return blaetter;
 }
@@ -1093,7 +1115,7 @@ function aufgabenStand(Z, heute, jetzt, extra = []) {
   erl.sort((a, b) => b.zeit - a.zeit);
   return { op, erl: erl.filter(a => jetzt - a.zeit < 30 * 86400000) };
 }
-const aufFuerMich = (a, ich) => a.fuer.includes(ich) || a.fuer.includes("All");
+const aufFuerMich = (a, ich) => (a.fuer.includes(ich) || a.fuer.includes("All")) && !(a.jeder && a.gemacht.some(g => g.wer === ich));
 /* === Oberfläche === */
 
 const SP = "millebeier_v1";              // {code, ich, tab}
@@ -1876,7 +1898,8 @@ function renderKalForm(box, egal) {
    Hinter dem Kalender-Knopf: zwei große Kästen „📅 Kalenner“ (Vorgabe) und „✅ Aufgaben“ — kein neuer Reiter. Anlegen nur dort
    und per „+ Aufgab“ an Bestellung/Termin (Link dorthin); die Startseite zeigt nur, was mich betrifft. Keine Zahl irgendwo. */
 let KAL_BEREICH = "kalender", AUF_SICHT = "op", AFORM = null, A_INLINE = null, A_MELD = "";
-const leereAufgabe = ref => ({ text: "", fuer: [EIN.ich], bisAuf: false, bis: "", ref: ref || null });
+const leereAufgabe = ref => ({ text: "", fuer: [EIN.ich], bisAuf: false, bis: "", ref: ref || null, jeder: false });
+const mehrere = F => F.fuer.includes("All") || F.fuer.length > 1;
 // „Däin Handy huet n Agaben nach net geschéckt“: kennt nur dieses Handy, darum nicht in autoAufgaben
 function aufExtra() {
   if (!AUSGANG.length) return [];
@@ -1907,17 +1930,24 @@ function aufZeile(a, h, start) {
     if (a.rot && !a.sub && !a.bis) teile.push(`<span class="rot">⚠️ iwwerfälleg</span>`);
     if (a.nochmal) teile.push("nach eng Kéier");
   }
-  if (!start || a.fuer.includes("All")) teile.push(esc(fuerText(a.fuer)));
+  if (!start || a.fuer.includes("All")) teile.push(esc(fuerText(a.fuer)) + (a.jeder ? " · jidderee" : ""));
   const l = !a.erledigt ? aufLink(a) : ""; if (l) teile.push(l);
-  const box = a.ohneHaken ? `<span class="abox leer">⏳</span>` : a.erledigt
-    ? `<button class="abox an" data-azrk="${esc(a.aid)}" aria-label="Erëm op">✓</button>` : `<button class="abox" data-ahak="${esc(a.aid)}" aria-label="Ofhaken"></button>`;
-  return `<div class="aufz ${a.erledigt ? "erl" : ""}" ${a.ohneHaken ? `data-alink="sync:"` : ""}>${box}<div class="atx">${a.auto ? "💡 " : ""}${esc(a.text)}${teile.length ? `<small>${teile.join(" · ")}</small>` : ""}</div></div>`;
+  // „Jidderee muss“: jeder hakt für sich ab; wer nicht dabei ist, hat kein Kästchen
+  const ich = EIN.ich, binDabei = a.jeder && a.noetig.includes(ich), habGemacht = a.jeder && a.gemacht.some(g => g.wer === ich);
+  const box = a.ohneHaken ? `<span class="abox leer">⏳</span>`
+    : a.jeder ? (habGemacht ? `<button class="abox an" data-azrk="${esc(a.aid)}" aria-label="Erëm op">✓</button>`
+        : binDabei ? `<button class="abox" data-ahak="${esc(a.aid)}" aria-label="Ofhaken"></button>` : `<span class="abox leer"></span>`)
+    : a.erledigt ? `<button class="abox an" data-azrk="${esc(a.aid)}" aria-label="Erëm op">✓</button>` : `<button class="abox" data-ahak="${esc(a.aid)}" aria-label="Ofhaken"></button>`;
+  const stand = a.jeder ? `<div class="astand"><span>${a.gemacht.length} vu ${a.noetig.length}</span>${a.noetig.map(p => a.gemacht.some(g => g.wer === p)
+    ? `<span class="ok">✓ ${esc(p)}</span>` : `<span>${esc(p)}</span>`).join("")}</div>` : "";
+  return `<div class="aufz ${a.erledigt ? "erl" : ""}" ${a.ohneHaken ? `data-alink="sync:"` : ""}>${box}<div class="atx">${a.auto ? "💡 " : ""}${a.jeder ? "👥 " : ""}${esc(a.text)}${teile.length ? `<small>${teile.join(" · ")}</small>` : ""}${stand}</div></div>`;
 }
 const AUF_LEGENDE = `<div class="aleg">💡 = Virschlag vun der App. Si verschwënnt vu selwer, soubal et erleedegt ass. Ofhaken heescht „ech hunn et am A“.</div>`;
 // Abhaken / zurückholen: derselbe Inhalt neu, mit erledigt (gilt für alle)
 function aufHaken(aid, erledigt) {
   const S = aufStand();
   const a = [...S.op, ...S.erl].find(x => x.aid === aid) || Z.aufgaben.find(x => x.aid === aid); if (!a || a.ohneHaken) return;
+  if (a.jeder) { eintragen([{ art: "aufhak", aid, ...(erledigt ? {} : { an: false }) }]); return; } // nur mein eigener Haken
   eintragen([{ art: "aufgabe", aid, text: a.text, fuer: [...a.fuer], ...(a.bis ? { bis: a.bis } : {}), ...(a.ref ? { ref: { ...a.ref } } : {}), ...(a.auto ? { auto: true } : {}), erledigt }]);
 }
 function aufGehe(z) {
@@ -1945,6 +1975,8 @@ function aufFormHtml(F, titel) {
     <div class="aneu"><input data-af="text" value="${esc(F.text)}" placeholder="Nei Aufgab …" autocapitalize="sentences" enterkeyhint="done" maxlength="200">${titel ? "" : `<button class="aplus" data-af="ok" aria-label="Aufgab dobäisetzen">+</button>`}</div>
     <div class="afuer">Fir: ${wer.map(p => `<button data-afuer="${esc(p)}" class="${F.fuer.includes(p) ? "an" : ""}">${esc(p === EIN.ich ? "Ech" : p)}</button>`).join("")}
       <button data-af="bisauf" class="${F.bisAuf ? "an" : ""}">📅 bis …</button></div>
+    <div class="ajed ${mehrere(F) ? "" : "versteckt"}"><button data-ajed="0" class="${F.jeder ? "" : "an"}">👤 Een eleng geet duer<small>een hakt of → fäerdeg</small></button>
+      <button data-ajed="1" class="${F.jeder ? "an" : ""}">👥 Jidderee muss<small>jidderee hakt fir sech of</small></button></div>
     ${F.bisAuf ? `<input type="date" data-af="bis" value="${esc(F.bis)}" style="margin-top:6px">` : ""}
     ${titel ? `<div class="knopfe"><button class="knopf gruen" data-af="ok">Späicheren</button><button class="knopf" data-af="zu">Ofbriechen</button></div>` : ""}
     <div data-af="meld"></div></div>`;
@@ -1961,6 +1993,10 @@ function aufFormBinden(root, F, neuBauen, fertig, zu) {
     else { F.fuer = F.fuer.filter(x => x !== "All"); F.fuer = F.fuer.includes(p) ? F.fuer.filter(x => x !== p) : [...F.fuer, p]; }
     if (!F.fuer.length) F.fuer = [EIN.ich];
     root.querySelectorAll("[data-afuer]").forEach(x => x.classList.toggle("an", F.fuer.includes(x.dataset.afuer)));
+    root.querySelector(".ajed").classList.toggle("versteckt", !mehrere(F));
+  });
+  root.querySelectorAll("[data-ajed]").forEach(b => b.onclick = () => {
+    F.jeder = b.dataset.ajed === "1"; root.querySelectorAll("[data-ajed]").forEach(x => x.classList.toggle("an", (x.dataset.ajed === "1") === F.jeder));
   });
   const z = q("zu"); if (z) z.onclick = zu;
   q("ok").onclick = speichern;
@@ -1970,7 +2006,7 @@ function aufFormBinden(root, F, neuBauen, fertig, zu) {
     if (!text) return meld("Wat ass ze maachen?");
     if (F.bisAuf && F.bis && !/^\d{4}-\d{2}-\d{2}$/.test(F.bis)) return meld("Datum stëmmt net.");
     const e = { art: "aufgabe", aid: "a-" + neueId().replace(/[^A-Za-z0-9-]/g, "").slice(0, 40), text, fuer: [...F.fuer],
-      ...(F.bisAuf && F.bis ? { bis: F.bis } : {}), ...(F.ref ? { ref: { ...F.ref } } : {}) };
+      ...(F.bisAuf && F.bis ? { bis: F.bis } : {}), ...(F.ref ? { ref: { ...F.ref } } : {}), ...(F.jeder && mehrere(F) ? { jeder: true } : {}) };
     if (!gueltig({ ...e, id: "x", zeit: 0 })) return meld("Eppes ass ze laang oder net richteg.");
     if (document.activeElement) document.activeElement.blur();
     if (!eintragen([e]).length) return;
