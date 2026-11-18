@@ -218,7 +218,7 @@ beim Verkaufen/Livraison und „Fläsche beweegen“ an, solange jemand welche h
   **Fassung 17.11. d:** Karte heißt „Du hues zur Verfügung“ (vom Nutzer, statt „Du hues fräi“).
   **Fassung 18.11. e** (vom Nutzer): „Déi nächst Deeg“ heißt **„Deng nächst Deeg“** und zeigt **nur, was mich betrifft** (Termine, bei
   denen ich in „Wien ass dobäi?“ stehe — ohne Namen = alle; Bestellungen mit mir als Kontakt oder „Huelen aus“). Knopf **„Alles ›“** →
-  Kalender (ganze Karte nicht mehr antippbar); „Alles ›“ bei den Aufgaben ebenso, beide deutlicher als Knopf (`.hmehr`).
+  Kalender (ganze Karte nicht mehr antippbar); „Alles ›“ bei den Aufgaben ebenso, beide deutlicher als Knopf (`.hmehr`); seit Fassung f rot mit schwarzer Schrift (vom Nutzer).
 - **Aufgaben „Ze maachen“** (vom Nutzer, 17.11.2026, Fassung d; Entwürfe als Bild gezeigt und abgesprochen — Notizen/Chat vorher
   verworfen, WhatsApp reicht): **hinter dem Kalender-Knopf**, kein neuer Reiter: oben zwei große Kästen „📅 Kalenner“ (Vorgabe, darunter
   wie bisher) und „✅ Aufgaben“ (`KAL_BEREICH`, `kalKaesten`), klein darunter „n dës Woch“ / „n op · m iwwerfälleg“. **Keine Zahl**
