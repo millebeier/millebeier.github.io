@@ -384,7 +384,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px}
 <script>
 /* Adresse des Cloudflare-Workers. Leer = Probe-Modus (alles nur auf diesem Handy). */
 const WORKER_URL = "https://millebeier.rjtp6r9s9h.workers.dev/";
-const FASSUNG = "18.11.2026 g";
+const FASSUNG = "18.11.2026 h";
 
 /* === Logik === (kein DOM; test/logik.mjs schneidet diesen Block aus) */
 const LAGER = "Lager";
@@ -1356,7 +1356,7 @@ function renderHaut() {
     const z = el.dataset.hgeh;
     if (z === "offen") NUR_MEINE = true;
     if (z === "livraisons") L_NUR_MEINE = true;
-    if (z === "kalender" || z === "aufgaben") { KALFORM = null; KAL_MELD = ""; A_MELD = ""; A_INLINE = null; KAL_BEREICH = z; if (z === "aufgaben") AUF_SICHT = "op"; // „Alles ›“ = alle offenen (vom Nutzer, Fassung g; vorher Just meng) TAB = "kalender"; render(); window.scrollTo(0, 0); return; }
+    if (z === "kalender" || z === "aufgaben") { KALFORM = null; KAL_MELD = ""; A_MELD = ""; A_INLINE = null; KAL_BEREICH = z; if (z === "aufgaben") AUF_SICHT = "op"; /* „Alles ›“ = alle offenen (vom Nutzer, Fassung g; vorher Just meng) */ TAB = "kalender"; render(); window.scrollTo(0, 0); return; }
     else { EIN.tab = z; merke(SP, EIN); }
     if (z === "verkaufen" && FORM) FORM.meldung = null;
     TAB = z; render(); window.scrollTo(0, 0);
