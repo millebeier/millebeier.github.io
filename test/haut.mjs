@@ -38,18 +38,27 @@ ist("Deng nächst Deeg: nur meine — Braudag, meine Bestellung; nicht Jeffs Sta
 ist("Nach op bei dir: nur meine Käufer", txt, t => t.includes("Paul Weber") && t.includes("12 €") && !t.includes("Anne"));
 ist("Reihenfolge der Karten (vom Nutzer, Fassung e)", await p.evaluate(() => [...document.querySelectorAll("#t-haut .card h2")].map(h => h.firstChild.textContent.trim())),
   ["✅ Fir dech ze maachen", "📅 Deng nächst Deeg", "💶 Nach op bei dir", "🍺 Du hues zur Verfügung"]);
-ist("Knöpfe oben: Verkafen · Fläschen huelen · Bestellungen (Fassung i)", await p.evaluate(() => [...document.querySelectorAll(".hgross button")].map(x => x.dataset.hgeh)), ["verkaufen", "huelen", "livraisons"]);
+ist("Knöpfe oben: Verkafen · Fläschen · Bestellungen (Fassung k)", await p.evaluate(() => [...document.querySelectorAll(".hgross button")].map(x => x.dataset.hgeh)), ["verkaufen", "huelen", "livraisons"]);
 ist("Zahl nur an Bestellungen: 1 von mir", await p.evaluate(() => [...document.querySelectorAll(".hgross .badge")].map(x => x.textContent)), ["1"]);
 
-// Fläschen huelen direkt auf der Startseite (Fassung i)
+// „Fläschen“ direkt auf der Startseite (Fassung k): erst die vier Absichten, dann das Formular
+ist("Knopf heißt „Fläschen“, mit Bild", await p.evaluate(() => { const b = document.querySelector('.hgross [data-hgeh="huelen"]'); return [b.lastChild.textContent.trim(), !!b.querySelector("svg")]; }), ["Fläschen", true]);
 await p.click('.hgross [data-hgeh="huelen"]');
+ist("vier Absichten auf der Startseite", await p.evaluate(() => [TAB, [...document.querySelectorAll("#hHuelen [data-abs]")].map(b => b.dataset.abs)]), ["haut", ["huelen", "zreck", "ginn", "fort"]]);
+await p.click('#hHuelen [data-abs="huelen"]');
 ist("Kasten auf der Startseite: Lager ➜ ich, Seite bleibt", await p.evaluate(() => [TAB, [...document.querySelectorAll("#hHuelen .pk b")].map(x => x.textContent)]), ["haut", ["📦 Lager", "👤 Laurent"]]);
 await p.selectOption("#hSorte", "NEIPA"); await p.fill("#hN", "4");
 ist("Vorschau auf der Startseite", await p.locator("#hVor").innerText(), t => t.includes("Laurent 30") && t.includes("Lager 66"));
 await p.click("#hOk"); await warte(200);
 ist("gebucht, Kasten zu, Meldung, noch auf der Startseite", await p.evaluate(() => [TAB, hat(Z, "Laurent", "NEIPA"), !!document.querySelector("#hHuelen .pk"), document.querySelector("#t-haut .meldung").textContent.includes("Lager → Laurent")]), ["haut", 30, false, true]);
-await warte(900); await p.click('.hgross [data-hgeh="huelen"]'); await p.click("#hZreck");
-ist("Zoumaachen", await p.locator("#hHuelen .pk").count(), 0);
+// Net verkaaft direkt auf der Startseite (Anlass: 3 selbst getrunken)
+await warte(900); await p.click('.hgross [data-hgeh="huelen"]'); await p.click('#hHuelen [data-abs="fort"]');
+await p.selectOption("#hSorte", "NEIPA"); await p.fill("#hN", "3"); await p.click("#hOk"); await warte(200);
+ist("Net verkaaft auf der Startseite: 3 gedronk, bleibt auf der Startseite", await p.evaluate(() => [TAB, hat(Z, "Laurent", "NEIPA"), Z.aktiv.filter(e => e.art === "abgang").map(e => e.grund)]), ["haut", 27, ["getrunken"]]);
+await warte(900); await p.click('.hgross [data-hgeh="huelen"]'); await p.click('#hHuelen [data-abs="zreck"]'); await p.click("#hZreck");
+ist("‹ aner Saach → wieder die vier Absichten", await p.locator("#hHuelen [data-abs]").count(), 4);
+await p.click("#hZu");
+ist("Zoumaachen", await p.locator("#hHuelen .card").count(), 0);
 // „Alles ›“ bei Nach op bei dir → Ausstoend auf All; bei Du hues zur Verfügung → Stock
 await p.click('#hOp [data-hgeh="offen"]');
 ist("Nach op bei dir „Alles ›“ → Ausstoend All", await p.evaluate(() => [TAB, NUR_MEINE]), ["offen", false]);
@@ -120,7 +129,7 @@ await p.click('[data-tab="verkaufen"]'); await p.fill("#vVorname", "Halb ausgef�
 ist("6 min weg mitten im Eintrag: bleibt", await zurueck(6), "verkaufen");
 // 5-Minuten-Regel auch für die Fläschen-Kästen (vom Nutzer gefragt, 18.11.)
 await p.evaluate(() => { document.activeElement && document.activeElement.blur(); FORM = null; TAB = "haut"; render(); });
-await warte(900); await p.click('.hgross [data-hgeh="huelen"]');
+await warte(900); await p.click('.hgross [data-hgeh="huelen"]'); await p.click('#hHuelen [data-abs="huelen"]');
 ist("Startseite: Fläschen-huelen-Kasten offen", await p.locator("#hHuelen .pk").count(), 2);
 await zurueck(2);
 ist("2 min weg: Kasten bleibt offen", await p.locator("#hHuelen .pk").count(), 2);

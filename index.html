@@ -151,7 +151,7 @@ nav .badge.grau{background:var(--card2);border:1px solid var(--line)}
 .astand{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
 .astand span{font-size:11.5px;border-radius:8px;padding:1px 7px;background:#262626;color:#bbb}
 .astand span.ok{background:#1f3a20;color:#bfe8c0}
-.hgross button i.hbild{height:40px;display:flex;justify-content:center} .hgross button i.hbild svg{width:46px;height:40px}
+.hgross button i.hbild{height:44px;display:flex;justify-content:center;margin-top:-4px} .hgross button i.hbild svg{width:60px;height:52px;margin-top:-6px}
 .hgross button.hh{background:var(--card2);border:1px solid var(--line)} .hgross button.hh.an{border-color:#fff;background:#2c2c2c}
 .hkopf{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .hmehr{background:var(--akzent);border:1px solid var(--akzent);color:#000;font-size:13px;cursor:pointer;padding:5px 12px;border-radius:14px;font-weight:700;flex:none}
@@ -386,7 +386,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px}
 <script>
 /* Adresse des Cloudflare-Workers. Leer = Probe-Modus (alles nur auf diesem Handy). */
 const WORKER_URL = "https://millebeier.rjtp6r9s9h.workers.dev/";
-const FASSUNG = "18.11.2026 j";
+const FASSUNG = "18.11.2026 k";
 
 /* === Logik === (kein DOM; test/logik.mjs schneidet diesen Block aus) */
 const LAGER = "Lager";
@@ -1345,7 +1345,7 @@ function renderHaut() {
   box.innerHTML = `<div class="hallo">Moien ${esc(ich)} 👋<small>${WOCHENTAG_LANG[new Date(Date.UTC(j, m - 1, t)).getUTCDay()]}, ${t}. ${MONATE[m - 1]}</small></div>
     <div class="hgross">
       <button data-hgeh="verkaufen"><i>🍺</i>Verkafen</button>
-      <button data-hgeh="huelen" class="hh ${H_HUELEN ? "an" : ""}"><i class="hbild">${ABS_BILD.huelen}</i>Fläschen huelen</button>
+      <button data-hgeh="huelen" class="hh ${H_HUELEN ? "an" : ""}"><i class="hbild">${ABS_BILD_FLASCHEN}</i>Fläschen</button>
       <button data-hgeh="livraisons" class="hb">${meineBest ? `<span class="badge">${meineBest}</span>` : ""}<i>🚚</i>Bestellungen</button>
     </div>${H_MELD ? `<div class="meldung ok" style="margin-top:10px">${esc(H_MELD)}</div>` : ""}<div id="hHuelen"></div>
     <div class="card" id="hAuf"><h2 class="hkopf">✅ Fir dech ze maachen<button class="hmehr" data-hgeh="aufgaben">Alles ›</button></h2>
@@ -1357,16 +1357,18 @@ function renderHaut() {
       : `<div class="leer">✓ Keen ass dir eppes schëlleg.</div>`}</div>
     <div class="card" id="hStock"><h2 class="hkopf">🍺 Du hues zur Verfügung<button class="hmehr" data-hgeh="bestand">Alles ›</button></h2>${zeilen.join("") || `<div class="leer">Du hues momentan keng Fläschen.</div>`}</div>`;
   aufListeBinden($("#hAuf"));
-  if (H_HUELEN) flaschenForm($("#hHuelen"), H_HUELEN, "h", renderHaut, {
-    kopf: `<button class="zurueck" id="hZreck">✕ Zoumaachen</button>`,
-    zu: () => { H_HUELEN = null; renderHaut(); },
+  // „Fläschen“ auf der Startseite (vom Nutzer, Fassung k): erst die vier Absichten, dann das Formular — alles ohne Seitenwechsel
+  const hZu = `<button class="zurueck" id="hZu">✕ Zoumaachen</button>`;
+  if (H_HUELEN && !H_HUELEN.absicht) { absichtMenu($("#hHuelen"), H_HUELEN, renderHaut, hZu); $("#hZu").onclick = () => { H_HUELEN = null; renderHaut(); }; }
+  else if (H_HUELEN) flaschenForm($("#hHuelen"), H_HUELEN, "h", renderHaut, {
+    zu: () => { H_HUELEN.absicht = null; renderHaut(); },
     fertig: text => { H_HUELEN = null; H_MELD = text; },
     zurueck: () => { H_MELD = ""; renderHaut(); } });
   box.querySelectorAll("[data-hgeh]").forEach(el => el.onclick = () => {
     const z = el.dataset.hgeh;
     if (z === "huelen") { // bleibt auf der Startseite: Kasten auf/zu (vom Nutzer, Fassung i)
       H_MELD = "";
-      H_HUELEN = H_HUELEN ? null : { absicht: "huelen", sorte: "", n: "", von: LAGER, an: ich, wer: ich, aendVon: false, aendAn: false, grund: "getrunken", notiz: "" };
+      H_HUELEN = H_HUELEN ? null : { absicht: null, sorte: "", n: "" };
       renderHaut(); return;
     }
     if (z === "offen") NUR_MEINE = false; /* „Alles ›“ bei Nach op bei dir → All (vom Nutzer, Fassung i) */
@@ -2950,6 +2952,12 @@ const ABS_BILD = {
     <path d="M47 49l2-2.4 0.9 2.6zM49.5 51l2.2-1.2-0.2 2zM44.5 50.6l1.2-1.8 0.7 1.9z" fill="#b8742c"/>
     <path d="M40 38l1.2-2.4M45 37.5l0.6-2.6M50 38.5l1.6-2" stroke="#e8c547" stroke-width="1.3" stroke-linecap="round"/>`),
 };
+/* Knopf „Fläschen“ auf der Startseite (vom Nutzer, Fassung k): drei Flaschen, ein 20-l- und ein 30-l-Fass */
+const ABS_FASS = (x, y, h, txt) => `<g transform="translate(${x} ${y})"><rect x="-${h * 0.38}" y="-${h}" width="${h * 0.76}" height="${h}" rx="${h * 0.12}" fill="#b9bec4" stroke="#7d848c" stroke-width="0.8"/>
+  <rect x="-${h * 0.38}" y="-${h * 0.82}" width="${h * 0.76}" height="${h * 0.07}" fill="#7d848c"/><rect x="-${h * 0.38}" y="-${h * 0.25}" width="${h * 0.76}" height="${h * 0.07}" fill="#7d848c"/>
+  <rect x="-${h * 0.1}" y="-${h + 2}" width="${h * 0.2}" height="2.4" rx="0.8" fill="#4a4f55"/>
+  <text x="0" y="-${h * 0.42}" font-size="${h * 0.26}" font-weight="900" text-anchor="middle" fill="#2a2d31" font-family="Arial">${txt}</text></g>`;
+const ABS_BILD_FLASCHEN = ABS_SVG(`${ABS_FASS(52, 54, 32, "30 l")}${ABS_FASS(36, 54, 25, "20 l")}${ABS_FL(7, 37, 0.7, -5)}${ABS_FL(15, 38, 0.7, 0)}${ABS_FL(23, 39, 0.7, 5, "")}`);
 const ABSICHTEN = {
   huelen: { ic: "📥", txt: "Ech huele mer Fläschen", klein: "aus dem Lager" },
   zreck: { ic: "📤", txt: "Zréck an d'Lager", klein: "déi ech net brauch" },
@@ -2965,23 +2973,25 @@ function renderBForm() {
   if (!BFORM) BFORM = { absicht: null, sorte: sorten[0] || "", n: "" };
   const B = BFORM;
   if (!sorten.includes(B.sorte)) B.sorte = sorten[0] || "";
-  if (!B.absicht) {
-    box.innerHTML = `<div class="card"><h2>Fläschen</h2>${B.meld ? `<div class="meldung ok">${esc(B.meld)}</div>` : ""}
-      <div class="hinweis" style="margin:4px 0 0">Wat wëlls de maachen?</div>
-      <div class="absicht">${Object.entries(ABSICHTEN).map(([k, a]) => `<button data-abs="${k}"><i>${ABS_BILD[k] || a.ic}</i>${esc(a.txt)}<small>${esc(a.klein)}</small></button>`).join("")}</div>
-      <div class="hinweis" style="margin-top:10px">Nei ofgefëllt? Bei <b>Eis Béieren am Stock</b> beim Béier op <b>✎ Änneren</b>.</div></div>`;
-    box.querySelectorAll("[data-abs]").forEach(b => b.onclick = () => {
-      const k = b.dataset.abs, ich = EIN.ich, aner = Z.cfg.leute.find(p => p !== ich) || LAGER;
-      Object.assign(B, { absicht: k, meld: "", n: "", aendVon: false, aendAn: false, grund: "getrunken", notiz: "",
-        von: k === "huelen" ? LAGER : ich, an: k === "huelen" ? ich : k === "zreck" ? LAGER : aner, wer: ich });
-      renderBForm();
-    });
-    return;
-  }
+  if (!B.absicht) return absichtMenu(box, B, renderBForm, "");
   flaschenForm(box, B, "b", renderBForm, {
     zu: () => { B.absicht = null; renderBForm(); },
     fertig: text => Object.assign(B, { absicht: null, n: "", meld: text }), // danach wieder die vier Knöpfe (vom Nutzer)
     zurueck: () => { B.meld = ""; renderBForm(); } });
+}
+
+/* Die vier Absichten (Stock und Startseite, Fassung k). kopf = z. B. „✕ Zoumaachen“ auf der Startseite. */
+function absichtMenu(box, B, neu, kopf) {
+  box.innerHTML = `<div class="card"><h2>Fläschen</h2>${kopf}${B.meld ? `<div class="meldung ok">${esc(B.meld)}</div>` : ""}
+    <div class="hinweis" style="margin:4px 0 0">Wat wëlls de maachen?</div>
+    <div class="absicht">${Object.entries(ABSICHTEN).map(([k, a]) => `<button data-abs="${k}"><i>${ABS_BILD[k] || a.ic}</i>${esc(a.txt)}<small>${esc(a.klein)}</small></button>`).join("")}</div>
+    <div class="hinweis" style="margin-top:10px">Nei ofgefëllt? Bei <b>Eis Béieren am Stock</b> beim Béier op <b>✎ Änneren</b>.</div></div>`;
+  box.querySelectorAll("[data-abs]").forEach(b => b.onclick = () => {
+    const k = b.dataset.abs, ich = EIN.ich, aner = Z.cfg.leute.find(p => p !== ich) || LAGER;
+    Object.assign(B, { absicht: k, meld: "", n: "", aendVon: false, aendAn: false, grund: "getrunken", notiz: "",
+      von: k === "huelen" ? LAGER : ich, an: k === "huelen" ? ich : k === "zreck" ? LAGER : aner, wer: ich });
+    neu();
+  });
 }
 
 /* Formular einer Absicht (Pfeil, Bier, Anzahl, Vorschau). Läuft im Stock (Präfix „b“) und auf der Startseite (Präfix „h“, nur „huelen“,
