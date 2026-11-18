@@ -50,13 +50,14 @@ ist("nach der Anmeldung die Startseite", [await A.locator("#t-haut").isVisible()
 ist("Fußzeile mit Artikel", await txt(A, "#fuss"), s => s.includes("Du bass de Laurent"));
 // Bestand: abfüllen und zuteilen
 await A.click('[data-tab="bestand"]');
-await A.click('[data-m="abfuellung"]');
-await A.selectOption("#bSorte", "NEIPA"); await A.fill("#bN", "48"); await A.click("#bOk");
-await A.click('[data-m="bewegung"]');
-await A.selectOption("#bVon", "Lager"); await A.selectOption("#bAn", "Laurent"); await A.selectOption("#bSorte", "NEIPA");
-await A.fill("#bN", "12"); await A.click("#bOk");
+// Abfüllen beim Bier (Fassung c): Eis Béieren am Stock → ✎ Änneren → Ofgefëllt
+await A.click('[data-bed="NEIPA"]'); await A.fill("#biFl", "48"); await A.click("#biOk"); await warte(200);
+// Fläschen: Absicht wählen, Pfeil-Bild (Fassung c)
+await A.click('[data-abs="huelen"]');
+await A.selectOption("#bSorte", "NEIPA"); await A.fill("#bN", "12"); await A.click("#bOk");
 await warte(900); // ein Mensch braucht länger als die 800-ms-Sperre für denselben Knopf
-await A.selectOption("#bAn", "Jeff"); await A.fill("#bN", "12"); await A.click("#bOk");
+await A.click('[data-abs="huelen"]'); await A.click('[data-aend="An"]'); await A.selectOption('[data-hw="An"]', "Jeff");
+await A.selectOption("#bSorte", "NEIPA"); await A.fill("#bN", "12"); await A.click("#bOk");
 await warte(300);
 ist("Tabelle zeigt Lager 24", await txt(A, "#bTabelle"), s => /Lager\s+24/.test(s));
 
@@ -135,16 +136,16 @@ await warte(300);
 ist("Doppeltipp: ein Verkauf", await A.evaluate(() => Z.verkaeufe.length - 0), vorher + 1);
 ist("Doppeltipp: keine Fehlermeldung", await txt(A, "#vMeldung"), s => s.includes("Agedroen"));
 await A.click('[data-tab="bestand"]');
-await A.click('[data-m="abfuellung"]');
-const abf = await A.evaluate(() => Z.flaschen.abgefuellt);
-await A.fill("#bN", "5"); await A.dblclick("#bOk"); await warte(300);
-ist("Doppeltipp: einmal abgefüllt", await A.evaluate(() => Z.flaschen.abgefuellt), abf + 5);
+const abf = await A.evaluate(() => hat(Z, "Laurent", "NEIPA"));
+const huelen5 = async () => { await A.click('[data-abs="huelen"]'); await A.selectOption("#bSorte", "NEIPA"); await A.fill("#bN", "5"); };
+await huelen5(); await A.dblclick("#bOk"); await warte(300);
+ist("Doppeltipp: einmal geholt", await A.evaluate(() => hat(Z, "Laurent", "NEIPA")), abf + 5);
 await warte(900);
-await A.fill("#bN", "5"); await A.click("#bOk"); await warte(300);
-ist("gleicher Inhalt nach 1 s: Sicherheitsnetz hält", await A.evaluate(() => Z.flaschen.abgefuellt), abf + 5);
+await huelen5(); await A.click("#bOk"); await warte(300);
+ist("gleicher Inhalt nach 1 s: Sicherheitsnetz hält", await A.evaluate(() => hat(Z, "Laurent", "NEIPA")), abf + 5);
 await warte(3100);
-await A.fill("#bN", "5"); await A.click("#bOk"); await warte(300);
-ist("gleicher Inhalt nach 4 s: zählt (gewollt zweimal)", await A.evaluate(() => Z.flaschen.abgefuellt), abf + 10);
+await huelen5(); await A.click("#bOk"); await warte(300);
+ist("gleicher Inhalt nach 4 s: zählt (gewollt zweimal)", await A.evaluate(() => hat(Z, "Laurent", "NEIPA")), abf + 10);
 // Neue Fassung: ohne laufenden Eintrag lädt die App selbst neu, mitten im Eintrag nur ein Knopf.
 html = html.replace(/const FASSUNG = "[^"]+";/, 'const FASSUNG = "TEST-NEU";');
 await A.click('#zahnrad'); await A.click('#eVerlauf');

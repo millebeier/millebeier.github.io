@@ -115,6 +115,56 @@ ist("Karte zeigt neues Datum", await p.locator("#bBiere").innerText(), t => t.in
 await warte(900);
 await p.click('[data-barch="NEIPA (28.07.2026)"]'); await warte(200);
 ist("Rückfrage mit neuem Datum", fragen[fragen.length - 1], t => t.startsWith("NEIPA (29.07.2026) kann nach net archivéiert"));
+// ---------- Fläschen (Fassung c, vom Nutzer): Absicht, Pfeil, ⇄, Vorschau, Gründe; Abfüllen beim Bier ändern ----------
+{
+  const q = await b.newPage({ viewport: { width: 390, height: 844 } });
+  const qf = []; q.on("pageerror", e => qf.push(e.message)); q.on("dialog", d => d.accept());
+  await q.route(/workers\.dev/, r => r.abort());
+  await q.addInitScript(() => { window.OHNE_ALTIMPORT = true; });
+  await q.goto(new URL("../index.html", import.meta.url).href);
+  await q.evaluate(() => { localStorage.clear(); localStorage.setItem("millebeier_v1", JSON.stringify({ code: "x", ich: "Laurent" })); });
+  await q.reload();
+  await q.evaluate(() => { eintragen([{ art: "bier", name: "IPA (01.11.2026)", preis: 3, braudatum: "2026-11-01" }, { art: "abfuellung", sorte: "IPA (01.11.2026)", n: 48 }]); TAB = "bestand"; render(); });
+  const IPA = "IPA (01.11.2026)";
+  ist("Überschrift „Eis Béieren am Stock“", await q.locator("#bBiere h2").first().innerText(), "Eis Béieren am Stock");
+  ist("vier Absichten, kein Ofgefëllt mehr", await q.evaluate(() => [...document.querySelectorAll("[data-abs]")].map(b => b.dataset.abs)), ["huelen", "zreck", "ginn", "fort"]);
+  await q.click('[data-abs="huelen"]');
+  ist("Ech huele mer: Lager ➜ ich, Stand im Kasten", await q.evaluate(() => [...document.querySelectorAll("#bForm .pk b")].map(x => x.textContent)), ["📦 Lager", "👤 Laurent"]);
+  await q.selectOption("#bSorte", IPA); await q.fill("#bN", "12");
+  ist("Vorschau", await q.locator("#bVor").innerText(), t => t.includes("Lager 36") && t.includes("Laurent 12"));
+  await q.click("#bOk"); await warte(200);
+  ist("gebucht, danach wieder die vier Knöpfe mit Meldung", [await q.evaluate(() => hat(Z, "Laurent", "IPA (01.11.2026)")), await q.locator("[data-abs]").count(), await q.locator("#bForm .meldung").innerText()], v => v[0] === 12 && v[1] === 4 && v[2].includes("Lager → Laurent"));
+  // Zréck an d'Lager + ⇄
+  await q.click('[data-abs="zreck"]');
+  ist("Zréck: ich ➜ Lager", await q.evaluate(() => [...document.querySelectorAll("#bForm .pk b")].map(x => x.textContent)), ["👤 Laurent", "📦 Lager"]);
+  await q.click("#bTausch");
+  ist("⇄ dreht um", await q.evaluate(() => [...document.querySelectorAll("#bForm .pk b")].map(x => x.textContent)), ["📦 Lager", "👤 Laurent"]);
+  await q.click("#bZreck");
+  // Engem anere ginn: ich ➜ jemand anderes, änneren
+  await q.click('[data-abs="ginn"]'); await q.click('[data-aend="An"]'); await q.selectOption('[data-hw="An"]', "Marc");
+  await q.selectOption("#bSorte", IPA); await q.fill("#bN", "2"); await q.click("#bOk"); await warte(200);
+  ist("Engem anere ginn: Laurent → Marc", await q.evaluate(() => [hat(Z, "Laurent", "IPA (01.11.2026)"), hat(Z, "Marc", "IPA (01.11.2026)")]), [10, 2]);
+  // Net verkaaft: Gründe als Knöpfe, Soss eppes mit Text
+  await warte(900); await q.click('[data-abs="fort"]');
+  ist("Net verkaaft: vu mengen", await q.locator("#bForm .pk b").innerText(), "👤 vu mengen: Laurent");
+  await q.click('[data-grund="sonst"]'); await q.fill("#bNotiz", "fir den Tombola");
+  await q.selectOption("#bSorte", IPA); await q.fill("#bN", "1");
+  ist("Vorschau bei Fort", await q.locator("#bVor").innerText(), t => t.includes("Laurent 9"));
+  await q.click("#bOk"); await warte(200);
+  ist("Abgang mit Grund und Text", await q.evaluate(() => Z.aktiv.filter(e => e.art === "abgang").map(e => [e.grund, e.notiz, e.n])), [["sonst", "fir den Tombola", 1]]);
+  // Abfüllen ändern beim Bier: 48 → 60 (+12), dann 60 → 50; Verlauf
+  await q.click(`[data-bed="${IPA}"]`);
+  ist("Ofgefëllt vorbelegt mit Total", await q.inputValue("#biFl"), "48");
+  await q.fill("#biFl", "60");
+  ist("Vorschau am Lager", await q.locator("#biVor").innerText(), t => t.includes("48") && t.includes("(+12)"));
+  await q.click("#biOk"); await warte(200);
+  ist("abgefüllt 60, Lager +12", await q.evaluate(() => [Z.sorten["IPA (01.11.2026)"].abgefuellt, hat(Z, "Lager", "IPA (01.11.2026)")]), [60, 48]);
+  ist("Verlauf: Ofgefëllt geännert 48 → 60", await q.evaluate(() => Z.aktiv.filter(e => e.art === "abfuellung").map(e => beschreibe(e, Z))), v => v.length === 1 && v[0].includes("48 → 60"));
+  await warte(900); await q.click(`[data-bed="${IPA}"]`); await q.fill("#biFl", "50"); await q.click("#biOk"); await warte(200);
+  ist("weniger: Lager −10", await q.evaluate(() => [Z.sorten["IPA (01.11.2026)"].abgefuellt, hat(Z, "Lager", "IPA (01.11.2026)")]), [50, 38]);
+  ist("Fläschen: keine Seitenfehler", qf, []);
+  await q.close();
+}
 ist("keine Seitenfehler", seitenfehler, []);
 await b.close();
 console.log(fehler ? `${fehler} Fehler` : "Biere: alles bestanden");

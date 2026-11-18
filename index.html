@@ -128,6 +128,22 @@ nav .badge.grau{background:var(--card2);border:1px solid var(--line)}
 .knopfe.einz{flex-wrap:nowrap;gap:5px} .knopfe.einz .knopf{flex:1 1 auto;min-width:0;padding:9px 4px;font-size:13px;white-space:nowrap}
 .knopfe.einz.t .knopf{font-size:14px;padding:9px 6px}
 @media (max-width:340px){.knopfe.einz{flex-wrap:wrap}.knopfe.einz .knopf{flex:0 1 auto;padding:9px 8px}}
+/* Fläschen (Fassung c) */
+.absicht{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.absicht button{background:var(--card2);border:1px solid var(--line);color:var(--text);border-radius:14px;padding:12px 8px;text-align:left;font-size:15px;font-weight:700;line-height:1.25;cursor:pointer}
+.absicht button i{display:block;font-style:normal;font-size:24px;margin-bottom:4px}
+.absicht button small{display:block;font-weight:400;font-size:12px;color:var(--muted);margin-top:2px}
+.pfeil{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;margin-top:10px} .pfeil.eins{grid-template-columns:1fr}
+.pk{background:#0b0b0b;border:1px solid var(--line);border-radius:12px;padding:10px;text-align:center;min-width:0}
+.pk b{display:block;font-size:16px;overflow-wrap:anywhere} .pk small{color:var(--muted);font-size:12px}
+.pk .aend{display:block;margin:3px auto 0;background:none;border:0;color:#8cb8ff;font-size:13px;cursor:pointer} .pk select{margin-top:6px}
+.pm{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:26px;color:var(--akzent)}
+.pm button{font-size:14px;border:1px solid var(--line);border-radius:8px;padding:2px 8px;background:var(--card2);color:#ddd;cursor:pointer}
+.vorschau{margin-top:10px;background:#16241a;border:1px solid #2d4a33;border-radius:10px;padding:8px 10px;font-size:14px;color:#cfe9d0}
+.gruende{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px}
+.gruende button{background:var(--card2);border:1px solid var(--line);color:var(--text);border-radius:10px;padding:10px 4px;font-size:14px;font-weight:600;cursor:pointer}
+.gruende button.an{background:#3a1012;border-color:var(--akzent)}
+.zurueck{background:none;border:0;color:var(--muted);font-size:14px;padding:4px 0;cursor:pointer}
 .ajed{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}
 .ajed button{border:1px solid var(--line);background:none;color:#ddd;border-radius:10px;padding:8px 4px;font-size:13px;font-weight:600;cursor:pointer}
 .ajed button.an{background:#3a1012;border-color:var(--akzent);color:#fff}
@@ -368,7 +384,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px}
 <script>
 /* Adresse des Cloudflare-Workers. Leer = Probe-Modus (alles nur auf diesem Handy). */
 const WORKER_URL = "https://millebeier.rjtp6r9s9h.workers.dev/";
-const FASSUNG = "18.11.2026 b";
+const FASSUNG = "18.11.2026 c";
 
 /* === Logik === (kein DOM; test/logik.mjs schneidet diesen Block aus) */
 const LAGER = "Lager";
@@ -694,7 +710,7 @@ const postenText = posten => posten.map(p => `${p.n} × ${artikelText(p.sorte)}`
 
 function beschreibe(e, Z) {
   switch (e.art) {
-    case "abfuellung": return `🍺 ${e.n} × ${artikelText(e.sorte)} ofgefëllt (an d'Lager)`;
+    case "abfuellung": return e.vorher != null ? `🍺 Ofgefëllt geännert: ${artikelText(e.sorte)} ${e.vorher} → ${e.n}` : `🍺 ${e.n} × ${artikelText(e.sorte)} ofgefëllt (an d'Lager)`;
     case "bewegung": return `➡️ ${e.n} × ${artikelText(e.sorte)}: ${e.von} → ${e.an}`;
     case "abgang": return `🗑️ ${e.n} × ${artikelText(e.sorte)} ${beim(e.wer)}: ${GRUENDE[e.grund]}`;
     case "verkauf": return `${e.alt ? "📜 Al Tabell:" : e.liv ? "🚚 Geliwwert" : "💶"} ${e.verkaeufer} → ${((Z && Z.vkNachId && Z.vkNachId.get(e.id)) || e).kaeufer}: ${postenText(e.posten)} · ${euro(e.betrag)}`;
@@ -1242,7 +1258,7 @@ const K_AUF = new Set(), K_AKEEF = new Set();
 const ZU_MS = 5 * 60 * 1000;
 const ZUKLAPPEN = {
   kunden: () => { K_AUF.clear(); K_AKEEF.clear(); },
-  bestand: () => { ARCHIV_AUF = false; },
+  bestand: () => { ARCHIV_AUF = false; if (BFORM) { BFORM.absicht = null; BFORM.meld = ""; } },
   uebersicht: () => { ARCHIV_UEB = false; OFFEN_SORTE = ""; },
   kalender: () => { KAL_AUF.clear(); KAL_FILTER.clear(); KAL_MELD = ""; A_MELD = ""; A_INLINE = null; AUF_SICHT = "op"; },
 };
@@ -2468,7 +2484,7 @@ function renderBiere() {
       <div class="knopfe"><button class="knopf" data-bed="${esc(c.name)}">✎ Änneren</button>
         ${c.archiv ? `<button class="knopf" data-bzr="${esc(c.name)}">↩️ Zréckhuelen</button>` : `<button class="knopf" data-barch="${esc(c.name)}">📦 Archiv</button>`}
         <button class="knopf rot" data-bweg="${esc(c.name)}">✕ Läschen</button></div></div>`;
-  box.innerHTML = `<div class="card"><h2>Eis Béieren</h2>
+  box.innerHTML = `<div class="card"><h2>Eis Béieren am Stock</h2>
     ${aktivB.length ? aktivB.map(zeile).join("") : `<div class="leer">Nach keen Béier.</div>`}
     <button class="haupt" id="bierNeu">+ Neien Béier</button>
     ${archiv.length ? `<button class="knopf" id="archivAuf" style="width:100%;margin-top:12px">📦 Archiv (${archiv.length}) ${ARCHIV_AUF ? "▴" : "▾"}</button>
@@ -2481,7 +2497,7 @@ function renderBiere() {
   box.querySelectorAll("[data-bed]").forEach(b => b.onclick = () => { BIER_MELD = "";
     const c = finde(b.dataset.bed); if (!c) return; const m = c.meta || {};
     BIERFORM = { neu: false, name: c.name, stil: m.stil || "", braudatum: m.braudatum || "", alk: zahlText(m.alk), liter: zahlText(m.liter), preis: zahlText(c.preis),
-      preis20: zahlText(c.preis20), preis30: zahlText(c.preis30), mhd: m.mhd || "", notiz: m.notiz || "", flaschen: "", f20: "", f30: "" };
+      preis20: zahlText(c.preis20), preis30: zahlText(c.preis30), mhd: m.mhd || "", notiz: m.notiz || "", ...abgefuelltFelder(c.name) };
     renderBiere();
   });
   box.querySelectorAll("[data-barch]").forEach(b => b.onclick = () => {
@@ -2726,6 +2742,22 @@ function renderDok(bier) {
   });
 }
 
+/* Abgefüllt je Bier (vom Nutzer, Fassung c): im Bearbeiten steht die Gesamtzahl; ändern = Unterschied am Lager ausgleichen.
+   Technisch: alle bisherigen Abfüllungen dieses Artikels storno + eine neue mit der neuen Gesamtzahl (`vorher` = alte). */
+const abgefuelltVon = key => (Z.sorten[key] || {}).abgefuellt || 0;
+function abgefuelltFelder(name) {
+  const fl = abgefuelltVon(name), f20 = abgefuelltVon(fassKey(name, 20)), f30 = abgefuelltVon(fassKey(name, 30));
+  return { flaschen: String(fl || ""), f20: String(f20 || ""), f30: String(f30 || ""), ab0: { flaschen: fl, f20, f30 } };
+}
+function abfuellKorrektur(name, alt, neu) { // gibt Einträge zurück
+  const out = [];
+  for (const [feld, key] of [["flaschen", name], ["f20", fassKey(name, 20)], ["f30", fassKey(name, 30)]]) {
+    if (neu[feld] === alt[feld]) continue;
+    for (const e of Z.aktiv) if (e.art === "abfuellung" && e.sorte === key) out.push({ art: "storno", ref: e.id });
+    if (neu[feld] > 0) out.push({ art: "abfuellung", sorte: key, n: neu[feld], ...(alt[feld] ? { vorher: alt[feld] } : {}) });
+  }
+  return out;
+}
 function renderBierForm(box) {
   const F = BIERFORM;
   box.innerHTML = `<div class="card"><h2>${F.neu ? "Neien Béier" : esc(bierText(F.name)) + " änneren"}</h2>
@@ -2739,10 +2771,12 @@ function renderBierForm(box) {
     <div class="zeile"><div><label for="biP20">Präis Fass 20 l (€)</label><input id="biP20" inputmode="decimal" value="${esc(F.preis20)}"></div>
       <div><label for="biP30">Präis Fass 30 l (€)</label><input id="biP30" inputmode="decimal" value="${esc(F.preis30)}"></div></div>
     <label for="biMhd">Haltbar bis (fräiwëlleg)</label><input id="biMhd" type="date" value="${esc(F.mhd)}">
-    ${F.neu ? `<h3>Ofgefëllt an d'Lager (fräiwëlleg)</h3>
+    <h3>Ofgefëllt an d'Lager${F.neu ? " (fräiwëlleg)" : ""}</h3>
+      ${F.neu ? "" : `<div class="hinweis" style="margin:0 0 4px">Total bis elo. Méi oder manner androen — den Ënnerscheed gëtt am Lager ausgeglach.</div>`}
       <div class="zeile"><div><label for="biFl">Fläschen</label><input id="biFl" inputmode="numeric" pattern="[0-9]*" value="${esc(F.flaschen)}" placeholder="288"></div>
         <div><label for="biF20">Fässer 20 l</label><input id="biF20" inputmode="numeric" pattern="[0-9]*" value="${esc(F.f20)}" placeholder="0"></div>
-        <div><label for="biF30">Fässer 30 l</label><input id="biF30" inputmode="numeric" pattern="[0-9]*" value="${esc(F.f30)}" placeholder="0"></div></div>` : `<div class="hinweis">Méi ofgefëllt? Ënner <b>Fläsche beweegen → Ofgefëllt</b> (och Fässer).</div>`}
+        <div><label for="biF30">Fässer 30 l</label><input id="biF30" inputmode="numeric" pattern="[0-9]*" value="${esc(F.f30)}" placeholder="0"></div></div>
+      ${F.neu ? "" : `<div class="vorschau versteckt" id="biVor"></div>`}
     <label for="biNotiz">Beschreiwung (fräiwëlleg)</label><input id="biNotiz" value="${esc(F.notiz)}" placeholder="z. B. Hopfen, Geschmaach">
     <button class="haupt" id="biOk">${F.neu ? "Béier uleeën" : "Späicheren"}</button>
     <button class="haupt" id="biZu" style="background:var(--card2);color:var(--text)">Ofbriechen</button>
@@ -2753,6 +2787,14 @@ function renderBierForm(box) {
   bind("#biName", "name"); bind("#biStil", "stil"); bind("#biBrau", "braudatum"); bind("#biAlk", "alk"); bind("#biLiter", "liter");
   bind("#biPreis", "preis"); bind("#biMhd", "mhd"); bind("#biFl", "flaschen"); bind("#biNotiz", "notiz");
   bind("#biP20", "preis20"); bind("#biP30", "preis30"); bind("#biF20", "f20"); bind("#biF30", "f30");
+  // Vorschau: was sich am Lager ändert (nur beim Bearbeiten)
+  const vor = () => { const el = $("#biVor"); if (!el || !F.ab0) return;
+    const anz = t => String(t || "").trim() ? parseInt(t, 10) : 0, teile = [];
+    for (const [feld, key, txt] of [["flaschen", F.name, "Fläschen"], ["f20", fassKey(F.name, 20), "× Fass 20 l"], ["f30", fassKey(F.name, 30), "× Fass 30 l"]]) {
+      const d = anz(F[feld]) - F.ab0[feld]; if (d && !isNaN(d)) teile.push(`<b>${hat(Z, LAGER, key) + d}</b> ${txt} (${d > 0 ? "+" : ""}${d})`); }
+    el.classList.toggle("versteckt", !teile.length); el.innerHTML = "Duerno am 📦 Lager: " + teile.join(" · "); };
+  for (const id of ["#biFl", "#biF20", "#biF30"]) { const el = $(id); if (el) el.addEventListener("input", vor); }
+  vor();
   $("#biZu").onclick = () => { BIERFORM = null; renderBiere(); };
   $("#biOk").onclick = () => {
     const meld = t => $("#biMeld").innerHTML = `<div class="meldung fehler">${esc(t)}</div>`;
@@ -2785,6 +2827,12 @@ function renderBierForm(box) {
     if (F.neu && f20) teile.push({ art: "abfuellung", sorte: fassKey(name, 20), n: f20 });
     if (F.neu && f30) teile.push({ art: "abfuellung", sorte: fassKey(name, 30), n: f30 });
     if (document.activeElement) document.activeElement.blur();
+    if (!F.neu && F.ab0) { // Abgefüllt geändert → am Lager ausgleichen; weniger als im Lager liegt → nachfragen
+      const neu = { flaschen: fl || 0, f20, f30 }, korr = abfuellKorrektur(name, F.ab0, neu);
+      const zuViel = [["flaschen", name], ["f20", fassKey(name, 20)], ["f30", fassKey(name, 30)]].filter(([f, k]) => F.ab0[f] - neu[f] > hat(Z, LAGER, k));
+      if (zuViel.length && !confirm(`Am Lager leien net genuch, fir sou vill erofzehuelen (${zuViel.map(([f, k]) => `${artikelText(k)}: am Lager ${hat(Z, LAGER, k)}`).join(", ")}). De Stock am Lager geet an de Minus.\n\nTrotzdeem?`)) return;
+      teile.push(...korr);
+    }
     if (!eintragen(teile).length) return;
     FORM = null; BFORM = null; LFORM = null;
     if (F.neu) {
@@ -2827,53 +2875,90 @@ function renderBestand() {
   renderBForm();
 }
 
+/* „Fläschen“ (vom Nutzer, 18.11.2026, Fassung c; Entwurf als Bild gezeigt): erst fragen, was man vorhat (vier Knöpfe), dann ein Bild
+   mit Pfeil (📦 Lager ➜ 👤 Laurent, ⇄ dreht um, „änneren“ wählt jemand anderen), Bier + Anzahl und eine Vorschau „Duerno: …“.
+   Fort: Gründe als Knöpfe. Abfüllen steht nicht mehr hier, sondern beim Bier (Eis Béieren am Stock → ✎ Änneren). Nach dem
+   Speichern wieder die vier Knöpfe (vom Nutzer). */
+const ABSICHTEN = {
+  huelen: { ic: "📥", txt: "Ech huele mer Fläschen", klein: "aus dem Lager" },
+  zreck: { ic: "📤", txt: "Zréck an d'Lager", klein: "déi ech net brauch" },
+  ginn: { ic: "🤝", txt: "Engem anere ginn", klein: "oder vun him kréien" },
+  fort: { ic: "🍻", txt: "Net verkaaft", klein: "gedronk, verschenkt, futti" },
+};
+const GRUND_IC = { getrunken: "🍻 Selwer gedronk", verschenkt: "🎁 Verschenkt / Prouf", kaputt: "💥 Futti", sonst: "✏️ Soss eppes" };
 function renderBForm() {
   const box = $("#bForm");
   if (tipptIn(box)) return;
-  if (!BFORM) BFORM = { modus: "bewegung", sorte: (vSorten()[0] || Z.cfg.sorten[0]).name, n: "", von: LAGER, an: EIN.ich, wer: EIN.ich, grund: "getrunken" };
-  const B = BFORM;
-  const halter = [LAGER, ...Z.cfg.leute];
-  const opt = (liste, wert, txt = x => x) => liste.map(x => `<option value="${esc(x)}" ${x === wert ? "selected" : ""}>${esc(txt(x))}</option>`).join("");
-  const nameH = h => h === LAGER ? "📦 Lager" : h;
-  // Zur Auswahl: je Bier Flaschen und beide Fassgrößen
   const sorten = [...vSorten().flatMap(s => [s.name, ...FAESSER.map(F => fassKey(s.name, F.l))]),
     ...Z.cfg.sorten.filter(s => s.archiv).flatMap(s => FAESSER.map(F => fassKey(s.name, F.l)).filter(k => Z.halter.some(h => hat(Z, h, k) > 0)))];
-  box.innerHTML = `<div class="card"><h2>Fläsche beweegen</h2>
-    <div class="seg drei">
-      <button data-m="abfuellung" class="${B.modus === "abfuellung" ? "an" : ""}">Ofgefëllt</button>
-      <button data-m="bewegung" class="${B.modus === "bewegung" ? "an" : ""}">Weiderginn</button>
-      <button data-m="abgang" class="${B.modus === "abgang" ? "an" : ""}">Fort</button>
-    </div>
-    <div class="hinweis">${{ abfuellung: "Nei Fläsche kommen an d'Lager.", bewegung: "Vum Lager un een, tëscht zwee Leit oder zréck an d'Lager.", abgang: "Selwer gedronk, verschenkt, futti — zielt net als Verkaf." }[B.modus]}</div>
-    ${B.modus === "bewegung" ? `<div class="zeile"><div><label>Vun</label><select id="bVon">${opt(halter, B.von, nameH)}</select></div>
-      <div><label>Un</label><select id="bAn">${opt(halter, B.an, nameH)}</select></div></div>` : ""}
-    ${B.modus === "abgang" ? `<div class="zeile"><div><label>Bei wiem?</label><select id="bWer">${opt(halter, B.wer, nameH)}</select></div>
-      <div><label>Wat ass geschitt?</label><select id="bGrund">${opt(Object.keys(GRUENDE), B.grund, g => GRUENDE[g])}</select></div></div>` : ""}
-    <div class="zeile"><div><label>Béier</label><select id="bSorte">${opt(sorten, B.sorte, k => istFass(k) ? `${bierText(zerlege(k).bier)} · Fass ${zerlege(k).l} l` : bierText(k))}</select></div>
-      <div><label>Unzuel</label><input id="bN" inputmode="numeric" pattern="[0-9]*" value="${esc(B.n)}" placeholder="0"></div></div>
+  if (!BFORM) BFORM = { absicht: null, sorte: sorten[0] || "", n: "" };
+  const B = BFORM;
+  if (!sorten.includes(B.sorte)) B.sorte = sorten[0] || "";
+  if (!B.absicht) {
+    box.innerHTML = `<div class="card"><h2>Fläschen</h2>${B.meld ? `<div class="meldung ok">${esc(B.meld)}</div>` : ""}
+      <div class="hinweis" style="margin:4px 0 0">Wat wëlls de maachen?</div>
+      <div class="absicht">${Object.entries(ABSICHTEN).map(([k, a]) => `<button data-abs="${k}"><i>${a.ic}</i>${esc(a.txt)}<small>${esc(a.klein)}</small></button>`).join("")}</div>
+      <div class="hinweis" style="margin-top:10px">Nei ofgefëllt? Bei <b>Eis Béieren am Stock</b> beim Béier op <b>✎ Änneren</b>.</div></div>`;
+    box.querySelectorAll("[data-abs]").forEach(b => b.onclick = () => {
+      const k = b.dataset.abs, ich = EIN.ich, aner = Z.cfg.leute.find(p => p !== ich) || LAGER;
+      Object.assign(B, { absicht: k, meld: "", n: "", aendVon: false, aendAn: false, grund: "getrunken", notiz: "",
+        von: k === "huelen" ? LAGER : ich, an: k === "huelen" ? ich : k === "zreck" ? LAGER : aner, wer: ich });
+      renderBForm();
+    });
+    return;
+  }
+  const A = ABSICHTEN[B.absicht], halter = [LAGER, ...Z.cfg.leute];
+  const nameH = h => h === LAGER ? "📦 Lager" : "👤 " + h;
+  const opt = (liste, wert, txt = x => x) => liste.map(x => `<option value="${esc(x)}" ${x === wert ? "selected" : ""}>${esc(txt(x))}</option>`).join("");
+  const sorteTxt = k => istFass(k) ? `${bierText(zerlege(k).bier)} · Fass ${zerlege(k).l} l` : bierText(k);
+  const standTxt = h => { const n = hat(Z, h, B.sorte), r = reserviertBei(Z, h, B.sorte); return r ? `${n - r} fräi · ${n} do` : `huet ${n}`; };
+  const kasten = (seite, h, titel = nameH(h)) => `<div class="pk"><b>${esc(titel)}</b><small>${esc(standTxt(h))}</small>
+    ${B["aend" + seite] ? `<select data-hw="${seite}">${opt(halter, h, nameH)}</select>` : `<button class="aend" data-aend="${seite}">änneren</button>`}</div>`;
+  const fort = B.absicht === "fort";
+  box.innerHTML = `<div class="card"><h2>${A.ic} ${esc(A.txt)}</h2><button class="zurueck" id="bZreck">‹ aner Saach</button>
+    ${fort ? `<label>Wat ass geschitt?</label><div class="gruende">${Object.keys(GRUENDE).map(g => `<button data-grund="${g}" class="${B.grund === g ? "an" : ""}">${GRUND_IC[g]}</button>`).join("")}</div>
+      ${B.grund === "sonst" ? `<input id="bNotiz" value="${esc(B.notiz)}" placeholder="Wat?" style="margin-top:6px" maxlength="300">` : ""}
+      <div class="pfeil eins">${kasten("Wer", B.wer, B.wer === LAGER ? "📦 vum Lager" : B.wer === EIN.ich ? "👤 vu mengen: " + B.wer : "👤 vum " + B.wer)}</div>`
+    : `<div class="pfeil">${kasten("Von", B.von)}<div class="pm">➜<button id="bTausch" aria-label="ëmdréinen">⇄</button></div>${kasten("An", B.an)}</div>`}
+    <div class="zeile" style="margin-top:6px"><div><label for="bSorte">Béier</label><select id="bSorte">${opt(sorten, B.sorte, sorteTxt)}</select></div>
+      <div><label for="bN">Unzuel</label><input id="bN" inputmode="numeric" pattern="[0-9]*" value="${esc(B.n)}" placeholder="0"></div></div>
+    <div class="vorschau" id="bVor"></div>
     <button class="haupt" id="bOk">Androen</button>
     <div id="bMeld"></div></div>`;
-  box.querySelectorAll("[data-m]").forEach(b => b.onclick = () => { B.modus = b.dataset.m; renderBForm(); });
-  const bind = (id, k) => { const el = $(id); if (el) el.oninput = el.onchange = () => { B[k] = el.value; }; };
-  bind("#bVon", "von"); bind("#bAn", "an"); bind("#bWer", "wer"); bind("#bGrund", "grund"); bind("#bSorte", "sorte"); bind("#bN", "n");
+  const vorschau = () => {
+    const n = parseInt(B.n, 10), el = $("#bVor"); if (!el) return;
+    if (!ganz(n)) { el.classList.add("versteckt"); return; }
+    el.classList.remove("versteckt");
+    const k = istFass(B.sorte) ? ` ${sorteTxt(B.sorte)}` : ` ${bierText(B.sorte).replace(/ \(.*\)$/, "")}`;
+    el.innerHTML = fort ? `Duerno: ${esc(nameH(B.wer))} <b>${hat(Z, B.wer, B.sorte) - n}</b>${esc(k)}`
+      : `Duerno: ${esc(nameH(B.von))} <b>${hat(Z, B.von, B.sorte) - n}</b> · ${esc(nameH(B.an))} <b>${hat(Z, B.an, B.sorte) + n}</b>${esc(k)}`;
+  };
+  vorschau();
+  $("#bZreck").onclick = () => { B.absicht = null; renderBForm(); };
+  const t = $("#bTausch"); if (t) t.onclick = () => { [B.von, B.an] = [B.an, B.von]; renderBForm(); };
+  box.querySelectorAll("[data-aend]").forEach(b => b.onclick = () => { B["aend" + b.dataset.aend] = true; renderBForm(); });
+  box.querySelectorAll("[data-hw]").forEach(sel => sel.onchange = () => { const s = sel.dataset.hw; B[s === "Von" ? "von" : s === "An" ? "an" : "wer"] = sel.value; B["aend" + s] = false; sel.blur(); renderBForm(); });
+  box.querySelectorAll("[data-grund]").forEach(b => b.onclick = () => { B.grund = b.dataset.grund; renderBForm(); });
+  const nt = $("#bNotiz"); if (nt) nt.oninput = () => { B.notiz = nt.value; };
+  $("#bSorte").onchange = e => { B.sorte = e.target.value; e.target.blur(); renderBForm(); };
+  $("#bN").oninput = e => { B.n = e.target.value; vorschau(); };
   $("#bOk").onclick = () => {
-    const meld = (art, t) => $("#bMeld").innerHTML = `<div class="meldung ${art}">${esc(t)}</div>`;
+    const meld = t => $("#bMeld").innerHTML = `<div class="meldung fehler">${esc(t)}</div>`;
     const n = parseInt(B.n, 10);
-    if (!ganz(n)) return meld("fehler", "Wéi vill Fläschen?");
+    if (!ganz(n)) return meld("Wéi vill Fläschen?");
     let e;
-    if (B.modus === "abfuellung") e = { art: "abfuellung", sorte: B.sorte, n };
-    else if (B.modus === "bewegung") {
-      if (B.von === B.an) return meld("fehler", "Vun an Un sinn d'selwecht.");
+    if (!fort) {
+      if (B.von === B.an) return meld("Vun an Un sinn d'selwecht.");
       { const f = zuWenig(Z, B.von, [{ sorte: B.sorte, n }]); if (f.length && !confirm(`Net genuch fräi:\n\n${fehltText(B.von, f)}\n\nTrotzdeem?`)) return; }
       e = { art: "bewegung", sorte: B.sorte, n, von: B.von, an: B.an };
     } else {
       { const f = zuWenig(Z, B.wer, [{ sorte: B.sorte, n }]); if (f.length && !confirm(`Net genuch fräi:\n\n${fehltText(B.wer, f)}\n\nTrotzdeem?`)) return; }
-      e = { art: "abgang", sorte: B.sorte, n, wer: B.wer, grund: B.grund };
+      e = { art: "abgang", sorte: B.sorte, n, wer: B.wer, grund: B.grund, ...(B.grund === "sonst" && B.notiz.trim() ? { notiz: B.notiz.trim() } : {}) };
     }
-    B.n = "";
     if (document.activeElement) document.activeElement.blur();
-    eintragen([e]);
-    meld("ok", "✓ " + beschreibe(e, Z));
+    const text = "✓ " + beschreibe(e, Z);
+    Object.assign(B, { absicht: null, n: "", meld: text }); // danach wieder die vier Knöpfe (vom Nutzer)
+    if (!eintragen([e]).length) { B.meld = ""; renderBForm(); }
   };
 }
 
@@ -2934,7 +3019,7 @@ function renderEinst() {
     <select id="eIch">${Z.cfg.leute.map(p => `<option ${p === EIN.ich ? "selected" : ""}>${esc(p)}</option>`).join("")}</select>
   </div>
   <div class="card"><h2>Wien verkeeft?</h2>
-    <div class="hinweis" style="margin:0 0 8px">Béieren a Präisser: ënner <b>Stock → Eis Béieren</b>.</div>
+    <div class="hinweis" style="margin:0 0 8px">Béieren a Präisser: ënner <b>Stock → Eis Béieren am Stock</b>.</div>
     ${E.leute.map((p, i) => `<div class="person-ed"><input data-pn="${i}" value="${esc(p)}"><button data-px="${i}" aria-label="ewechhuelen">✕</button></div>`).join("")}
     <button class="knopf" id="ePersonNeu">+ Persoun</button>
     <div class="hinweis">Nimm net ëmbenennen, wann een scho Fläschen huet — de Stock hänkt um Numm.</div>

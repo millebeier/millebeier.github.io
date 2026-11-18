@@ -245,6 +245,16 @@ beim Verkaufen/Livraison und „Fläsche beweegen“ an, solange jemand welche h
   „Just meng“ und Startseite (`aufFuerMich`), in „Op“ bleibt sie bis alle durch. 💡-Aufgaben bleiben „een eleng“.
   **Startseite:** Karte „✅ Fir dech ze maachen“ (fir mech + All, auch 💡; max. 5, abhaken direkt; „alles ›“ → Aufgaben auf Just meng),
   kein Anlegen dort (vom Nutzer). Excel-Blatt „Ze maachen“ (am Ende), Verlauf kennt Aufgaben.
+- **Kasten „Fläschen“ im Stock** (vom Nutzer, 18.11.2026, Fassung c; Entwürfe als Bild gezeigt; vorher „Fläsche beweegen“ mit Reitern
+  Ofgefëllt/Weiderginn/Fort und Vun/Un — zu abstrakt): erst **vier Absichten** (`ABSICHTEN`): 📥 Ech huele mer Fläschen (Lager ➜ ich) ·
+  📤 Zréck an d'Lager (ich ➜ Lager) · 🤝 Engem anere ginn (ich ➜ erster anderer) · 🍻 Net verkaaft. Dann **Pfeil-Bild** (`.pfeil`, zwei
+  Kästen mit Stand „huet n“ bzw. „n fräi · m do“, „änneren“ = Auswahl, ⇄ dreht um), Bier + Anzahl, grüne **Vorschau** „Duerno: …“
+  (`#bVor`, beim Tippen ohne Neuaufbau). Net verkaaft: **Gründe als Knöpfe** (`GRUND_IC`; Soss eppes mit Textfeld → `notiz`), „vu mengen“.
+  Nach dem Speichern **wieder die vier Knöpfe** mit Meldung (vom Nutzer); nach 5 min weg ebenso (`ZUKLAPPEN.bestand`).
+  **Abfüllen nicht mehr hier**, sondern beim Bier (vom Nutzer: kein eigener Knopf): Anlegen wie bisher mit Flaschen/Fässern; **✎ Änneren**
+  zeigt „Ofgefëllt an d'Lager“ mit der **Gesamtzahl** (`abgefuelltFelder`), ändern gleicht am Lager aus (`abfuellKorrektur`: alle
+  Abfüllungen des Artikels storno + eine neue mit `vorher`; Verlauf „🍺 Ofgefëllt geännert: … 48 → 60“), Vorschau „Duerno am Lager“,
+  Nachfrage, wenn weniger als im Lager liegt. Überschrift **„Eis Béieren am Stock“** (vom Nutzer).
 - **`durch` = wer eingetragen hat** (nicht `von` — das ist bei `bewegung` die Herkunft; die
   Verwechslung war der erste Fehler).
 - Bestand hängt am **Namen** — Leute nicht umbenennen, wenn sie Flaschen haben.
@@ -302,7 +312,8 @@ Nutzer. Rückweg: D1 Time Travel (Restore auf einen Zeitpunkt davor).
   (auch nach Ändern verlinkt) und Termin, Knöpfe in einer Zeile, 💡 Rechnung + Erklärung, nach 14 Tagen wieder, Startseite nur meine,
   „nicht geschickt“, Excel, „Jidderee muss“ (Gegenprobe gemacht). Automatische Aufgaben im Einzelnen in `logik.mjs` (Gegenprobe gemacht).
 - `node test/biere.mjs` — Bier anlegen/ändern/archivieren/zurückholen/löschen (zwei Rückfragen, Gegenprobe gemacht),
-  rotes ✕ im Verlauf, rotes Dreieck.
+  rotes ✕ im Verlauf, rotes Dreieck; Kasten „Fläschen“ (vier Absichten, Pfeil, ⇄, änneren, Vorschau, Gründe) und Abfüllen ändern beim Bier
+  (48 → 60 → 50, Verlauf; Gegenprobe gemacht).
 
 ## Ideen, nicht gebaut
 **Durchsicht aus Brauer-Sicht (17.11.2026), Antwort des Nutzers:** **Startseite und Reiter unten gebaut** (Fassung 17.11. a, siehe

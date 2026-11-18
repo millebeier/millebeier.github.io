@@ -22,7 +22,8 @@ await p.click("#biZu"); await warte(100);
 ist("kein eigenes Fass-Bier", await p.evaluate(() => Z.cfg.sorten.map(c => c.name).filter(n => n.includes("Hopfen"))), ["Hopfenkönig (01.10.2026)"]);
 ist("Bier-Karte zeigt Fässer", await p.locator("#bBiere").innerText(), s => s.includes("120 Fl. · 3 × 20 l · 2 × 30 l do") && s.includes("140 €/Fass 20 l") && s.includes("180 €/Fass 30 l"));
 ist("Stock: Fass-Tabelle", await p.locator("#bTabelle").innerText(), s => s.includes("🛢️ Fässer") && s.includes("Hopfenkönig\n01.10.26\n20 l"));
-ist("Abfüllen: Fass wählbar", await p.evaluate(() => [...document.querySelectorAll("#bSorte option")].map(o => o.textContent).filter(t => t.startsWith("Hopfenkönig (01.10.2026)"))), ["Hopfenkönig (01.10.2026)", "Hopfenkönig (01.10.2026) · Fass 20 l", "Hopfenkönig (01.10.2026) · Fass 30 l"]);
+await p.click('[data-abs="huelen"]');
+ist("Fläschen: Fass wählbar", await p.evaluate(() => [...document.querySelectorAll("#bSorte option")].map(o => o.textContent).filter(t => t.startsWith("Hopfenkönig (01.10.2026)"))), ["Hopfenkönig (01.10.2026)", "Hopfenkönig (01.10.2026) · Fass 20 l", "Hopfenkönig (01.10.2026) · Fass 30 l"]);
 
 // Livraison mit Fass planen → reserviert
 await p.click('[data-tab="livraisons"]');
