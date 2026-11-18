@@ -127,6 +127,7 @@ ist("Rückfrage mit neuem Datum", fragen[fragen.length - 1], t => t.startsWith("
   await q.evaluate(() => { eintragen([{ art: "bier", name: "IPA (01.11.2026)", preis: 3, braudatum: "2026-11-01" }, { art: "abfuellung", sorte: "IPA (01.11.2026)", n: 48 }]); TAB = "bestand"; render(); });
   const IPA = "IPA (01.11.2026)";
   ist("Überschrift „Eis Béieren am Stock“", await q.locator("#bBiere h2").first().innerText(), "Eis Béieren am Stock");
+  ist("jede Absicht mit eigenem Bild (Fassung d)", await q.evaluate(() => [...document.querySelectorAll("[data-abs] i svg")].length), 4);
   ist("vier Absichten, kein Ofgefëllt mehr", await q.evaluate(() => [...document.querySelectorAll("[data-abs]")].map(b => b.dataset.abs)), ["huelen", "zreck", "ginn", "fort"]);
   await q.click('[data-abs="huelen"]');
   ist("Ech huele mer: Lager ➜ ich, Stand im Kasten", await q.evaluate(() => [...document.querySelectorAll("#bForm .pk b")].map(x => x.textContent)), ["📦 Lager", "👤 Laurent"]);

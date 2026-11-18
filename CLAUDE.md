@@ -255,6 +255,10 @@ beim Verkaufen/Livraison und „Fläsche beweegen“ an, solange jemand welche h
   zeigt „Ofgefëllt an d'Lager“ mit der **Gesamtzahl** (`abgefuelltFelder`), ändern gleicht am Lager aus (`abfuellKorrektur`: alle
   Abfüllungen des Artikels storno + eine neue mit `vorher`; Verlauf „🍺 Ofgefëllt geännert: … 48 → 60“), Vorschau „Duerno am Lager“,
   Nachfrage, wenn weniger als im Lager liegt. Überschrift **„Eis Béieren am Stock“** (vom Nutzer).
+  **Bilder auf den vier Knöpfen** (vom Nutzer, Fassung d, „nur als Gimmick“, mehrere Entwürfe gezeigt): `ABS_BILD`, eigene SVGs mit der
+  App-Flasche (`ABS_FL`, `ABS_KISCHT`): Hand zieht eine von zwei Flaschen aus der LAGER-Kiste · Flasche schläft in der Kiste „Zz“ · Hand
+  hält die Flasche **von hinten** (Finger verdecken sie nicht, vom Nutzer) und reicht sie einer offenen Hand (andere Ärmelfarbe) · eine
+  Flasche mit roter Geschenkschleife + eine zerbrochen am Boden (Pfütze, ×-Augen).
 - **`durch` = wer eingetragen hat** (nicht `von` — das ist bei `bewegung` die Herkunft; die
   Verwechslung war der erste Fehler).
 - Bestand hängt am **Namen** — Leute nicht umbenennen, wenn sie Flaschen haben.

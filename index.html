@@ -131,7 +131,7 @@ nav .badge.grau{background:var(--card2);border:1px solid var(--line)}
 /* Fläschen (Fassung c) */
 .absicht{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
 .absicht button{background:var(--card2);border:1px solid var(--line);color:var(--text);border-radius:14px;padding:12px 8px;text-align:left;font-size:15px;font-weight:700;line-height:1.25;cursor:pointer}
-.absicht button i{display:block;font-style:normal;font-size:24px;margin-bottom:4px}
+.absicht button i{display:block;font-style:normal;font-size:24px;margin-bottom:4px;height:56px} .absicht button i svg{display:block}
 .absicht button small{display:block;font-weight:400;font-size:12px;color:var(--muted);margin-top:2px}
 .pfeil{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;margin-top:10px} .pfeil.eins{grid-template-columns:1fr}
 .pk{background:#0b0b0b;border:1px solid var(--line);border-radius:12px;padding:10px;text-align:center;min-width:0}
@@ -384,7 +384,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px}
 <script>
 /* Adresse des Cloudflare-Workers. Leer = Probe-Modus (alles nur auf diesem Handy). */
 const WORKER_URL = "https://millebeier.rjtp6r9s9h.workers.dev/";
-const FASSUNG = "18.11.2026 c";
+const FASSUNG = "18.11.2026 d";
 
 /* === Logik === (kein DOM; test/logik.mjs schneidet diesen Block aus) */
 const LAGER = "Lager";
@@ -2879,6 +2879,59 @@ function renderBestand() {
    mit Pfeil (📦 Lager ➜ 👤 Laurent, ⇄ dreht um, „änneren“ wählt jemand anderen), Bier + Anzahl und eine Vorschau „Duerno: …“.
    Fort: Gründe als Knöpfe. Abfüllen steht nicht mehr hier, sondern beim Bier (Eis Béieren am Stock → ✎ Änneren). Nach dem
    Speichern wieder die vier Knöpfe (vom Nutzer). */
+// Kleine Bilder für die vier Absichten (vom Nutzer gewünscht, „nur als Gimmick“, Fassung d; Entwürfe gezeigt). Flasche wie FLASCHE_SVG.
+const ABS_FL = (x, y, s = 1, rot = 0, gesicht = "froh") => `<g transform="translate(${x} ${y}) rotate(${rot}) scale(${s})">
+  <rect x="-3" y="-23" width="6" height="3" rx="1" fill="#c9c9c9"/>
+  <path d="M-2.5 -20h5v8c0 2 1 3 2.5 5s3 4 3 7.5V20a3 3 0 0 1-3 3H-5a3 3 0 0 1-3-3V0.5c0-3.5 1.5-5.5 3-7.5S-2.5 -10 -2.5 -12z" fill="#8a4b14"/>
+  <rect x="-7" y="2" width="14" height="10" rx="1.5" fill="#f3ece2"/><rect x="-4.5" y="5.5" width="9" height="3" rx="1" fill="#e3141b"/>
+  ${gesicht === "froh" ? `<circle cx="-2.6" cy="-2.5" r="1.1" fill="#fff"/><circle cx="2.6" cy="-2.5" r="1.1" fill="#fff"/><path d="M-2.4 0.2q2.4 2 4.8 0" stroke="#fff" stroke-width="0.9" fill="none" stroke-linecap="round"/>`
+  : gesicht === "schlof" ? `<path d="M-3.8 -2.5h2.4M1.4 -2.5h2.4" stroke="#fff" stroke-width="0.9" stroke-linecap="round"/><path d="M-1.2 0.4h2.4" stroke="#fff" stroke-width="0.9" stroke-linecap="round"/>`
+  : gesicht === "beschwipst" ? `<path d="M-3.8 -3.4l2.4 1.6M-3.8 -1.8l2.4-1.6M1.4 -3.4l2.4 1.6M1.4 -1.8l2.4-1.6" stroke="#fff" stroke-width="0.8" stroke-linecap="round"/><path d="M-2.4 0q1.2 2.2 2.4 0.6q1.2-1.4 2.4 0.6" stroke="#fff" stroke-width="0.9" fill="none" stroke-linecap="round"/>` : ""}
+</g>`;
+// Holzkiste mit „LAGER“
+const ABS_KISCHT = (x, y) => `<g transform="translate(${x} ${y})"><rect x="-17" y="-8" width="34" height="18" rx="2" fill="#b07a3c"/>
+  <rect x="-17" y="-8" width="34" height="4" fill="#c99252"/><path d="M-17 2h34" stroke="#8a5a26" stroke-width="1"/>
+  <rect x="-9" y="-1" width="18" height="6" rx="1" fill="#f3ece2"/><text x="0" y="3.6" font-size="4.6" font-weight="900" text-anchor="middle" fill="#8a5a26" font-family="Arial">LAGER</text></g>`;
+const ABS_SVG = inner => `<svg viewBox="0 0 64 56" width="64" height="56" aria-hidden="true">${inner}</svg>`;
+const ABS_BILD = {
+  // 📥 Ech huele mer Fläschen: eine Hand zieht eine der zwei Flaschen am Hals aus der Kiste
+  huelen: ABS_SVG(`${ABS_FL(19, 34, 0.62, -4, "")}${ABS_FL(34, 21, 0.7, 6)}${ABS_KISCHT(26, 46)}
+    <path d="M44 6L63 -4" stroke="#3a6ea5" stroke-width="8" stroke-linecap="round"/>
+    <rect x="31.5" y="1" width="12" height="10.5" rx="3.4" fill="#f0c39b" stroke="#c48a5e" stroke-width="0.8"/>
+    <path d="M34 4.2h7M34 6.8h7M34 9.3h7" stroke="#c48a5e" stroke-width="0.8" stroke-linecap="round"/>
+    <ellipse cx="33" cy="2.6" rx="3.2" ry="2" fill="#f0c39b" stroke="#c48a5e" stroke-width="0.8"/>
+    <path d="M48 16l5 1M47 21l4 3" stroke="#e8c547" stroke-width="1.5" stroke-linecap="round"/>`),
+  // 📤 Zréck an d'Lager: Flasche schläft in der Kiste, „Zz“
+  zreck: ABS_SVG(`${ABS_FL(26, 26, 0.72, -70, "schlof")}${ABS_KISCHT(28, 44)}
+    <text x="44" y="18" font-size="9" font-weight="900" fill="#8cb8ff" font-family="Arial">Z</text><text x="51" y="10" font-size="6.5" font-weight="900" fill="#8cb8ff" font-family="Arial">z</text>`),
+  // 🤝 Engem anere ginn: linke Hand umgreift die Flasche, rechte Hand offen (Handfläche nach oben) zum Nehmen, Pfeil dazwischen
+  ginn: ABS_SVG(`
+    <path d="M-3 42L18 34.5" stroke="#3a6ea5" stroke-width="8.5" stroke-linecap="round"/>
+    ${[30.2, 33, 35.8, 38.4].map((y, k) => `<path d="M20 ${y}H${32.2 - (k === 3 ? 1.2 : 0)}" stroke="#c48a5e" stroke-width="3.5" stroke-linecap="round"/><path d="M20 ${y}H${32.2 - (k === 3 ? 1.2 : 0)}" stroke="#f0c39b" stroke-width="2.5" stroke-linecap="round"/>`).join("")}
+    <path d="M21 31.5L17.6 27.6" stroke="#c48a5e" stroke-width="3.8" stroke-linecap="round"/><path d="M21 31.5L17.6 27.6" stroke="#f0c39b" stroke-width="2.8" stroke-linecap="round"/>
+    ${ABS_FL(25, 26, 0.66, 0)}
+    <path d="M67 48L55 43.5" stroke="#2f8f5b" stroke-width="8.5" stroke-linecap="round"/>
+    ${[[45.5, 39.6, 38.6, 37.6], [45.2, 41.6, 37.6, 40.9], [45.5, 43.6, 38.4, 44.1], [46.2, 45.5, 40.6, 47]].map(([a, b, c, d]) => `<path d="M${a} ${b}L${c} ${d}" stroke="#b4774f" stroke-width="3.6" stroke-linecap="round"/>`).join("")}
+    <path d="M49.6 38.6L47.4 33.4" stroke="#b4774f" stroke-width="3.8" stroke-linecap="round"/>
+    <ellipse cx="50.5" cy="42.5" rx="6" ry="4.8" fill="#e3ab84" stroke="#b4774f" stroke-width="0.8"/>
+    ${[[45.5, 39.6, 38.6, 37.6], [45.2, 41.6, 37.6, 40.9], [45.5, 43.6, 38.4, 44.1], [46.2, 45.5, 40.6, 47]].map(([a, b, c, d]) => `<path d="M${a} ${b}L${c} ${d}" stroke="#e3ab84" stroke-width="2.6" stroke-linecap="round"/>`).join("")}
+    <path d="M49.6 38.6L47.4 33.4" stroke="#e3ab84" stroke-width="2.8" stroke-linecap="round"/>
+    <path d="M33 11q10-1 12 13" fill="none" stroke="#e8c547" stroke-width="1.8" stroke-linecap="round"/><path d="M42 21.5l3 3.4 2-4" fill="none" stroke="#e8c547" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>`),
+  // 🍻 Net verkaaft: eine Flasche mit roter Geschenkschleife, die andere liegt kaputt am Boden
+  fort: ABS_SVG(`${ABS_FL(17, 29, 0.72, -4)}
+    <path d="M17 16.5l-6.5-3.8c-1.6-0.9-3 0.6-2 2.1l2.6 3.6z" fill="#e3141b" stroke="#a30d12" stroke-width="0.7"/>
+    <path d="M17 16.5l6.5-3.8c1.6-0.9 3 0.6 2 2.1l-2.6 3.6z" fill="#e3141b" stroke="#a30d12" stroke-width="0.7"/>
+    <path d="M16.2 17.4l-3.2 4.2 2.2-0.2 1.2 1.4zM17.8 17.4l3.2 4.2-2.2-0.2-1.2 1.4z" fill="#c50f15"/>
+    <circle cx="17" cy="16.8" r="2" fill="#ff3b41" stroke="#a30d12" stroke-width="0.7"/>
+    <ellipse cx="46" cy="52.5" rx="15" ry="2.6" fill="#c88a1e" opacity="0.75"/>
+    <circle cx="38" cy="51.5" r="1.1" fill="#fff" opacity="0.9"/><circle cx="52" cy="52" r="0.9" fill="#fff" opacity="0.9"/><circle cx="56" cy="51.2" r="0.7" fill="#fff" opacity="0.9"/>
+    <path d="M33 42.5h11l1.6 2-1.4 1.4 1.8 1.6-1.6 1.6 1.2 1.9H33a3 3 0 0 1-3-3v-2.5a3 3 0 0 1 3-3z" fill="#8a4b14"/>
+    <rect x="36.6" y="44" width="7" height="5.5" rx="1" fill="#f3ece2"/><rect x="38" y="45.9" width="4.2" height="1.6" rx="0.6" fill="#e3141b"/>
+    <path d="M31.4 44l1.4 1.3M31.4 45.3l1.4-1.3M33.6 44l1.4 1.3M33.6 45.3l1.4-1.3M32 48.4q1.5 -1 3 0" stroke="#fff" stroke-width="0.6" fill="none" stroke-linecap="round"/>
+    <g transform="translate(55 45) rotate(-28)"><path d="M-4 -2.5l1.4 1.2-1.2 1.4 1.4 1.4-1.4 1.6H3l2.5-1.2h3.5v-2.8H5.5L3-2.5z" fill="#8a4b14"/><rect x="8.6" y="-1.8" width="2" height="3.6" rx="0.6" fill="#c9c9c9"/></g>
+    <path d="M47 49l2-2.4 0.9 2.6zM49.5 51l2.2-1.2-0.2 2zM44.5 50.6l1.2-1.8 0.7 1.9z" fill="#b8742c"/>
+    <path d="M40 38l1.2-2.4M45 37.5l0.6-2.6M50 38.5l1.6-2" stroke="#e8c547" stroke-width="1.3" stroke-linecap="round"/>`),
+};
 const ABSICHTEN = {
   huelen: { ic: "📥", txt: "Ech huele mer Fläschen", klein: "aus dem Lager" },
   zreck: { ic: "📤", txt: "Zréck an d'Lager", klein: "déi ech net brauch" },
@@ -2897,7 +2950,7 @@ function renderBForm() {
   if (!B.absicht) {
     box.innerHTML = `<div class="card"><h2>Fläschen</h2>${B.meld ? `<div class="meldung ok">${esc(B.meld)}</div>` : ""}
       <div class="hinweis" style="margin:4px 0 0">Wat wëlls de maachen?</div>
-      <div class="absicht">${Object.entries(ABSICHTEN).map(([k, a]) => `<button data-abs="${k}"><i>${a.ic}</i>${esc(a.txt)}<small>${esc(a.klein)}</small></button>`).join("")}</div>
+      <div class="absicht">${Object.entries(ABSICHTEN).map(([k, a]) => `<button data-abs="${k}"><i>${ABS_BILD[k] || a.ic}</i>${esc(a.txt)}<small>${esc(a.klein)}</small></button>`).join("")}</div>
       <div class="hinweis" style="margin-top:10px">Nei ofgefëllt? Bei <b>Eis Béieren am Stock</b> beim Béier op <b>✎ Änneren</b>.</div></div>`;
     box.querySelectorAll("[data-abs]").forEach(b => b.onclick = () => {
       const k = b.dataset.abs, ich = EIN.ich, aner = Z.cfg.leute.find(p => p !== ich) || LAGER;
