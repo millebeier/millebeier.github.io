@@ -246,7 +246,7 @@ beim Verkaufen/Livraison und „Fläsche beweegen“ an, solange jemand welche h
   gibt `noetig` (bei All alle Leute), `gemacht`, `erledigt` erst wenn alle. Liste: 👥 vor dem Text, „· jidderee“, Stand „2 vu 3“ mit
   grünen ✓-Namen; wer fertig ist, hat ein grünes Kästchen (antippen = zurück), wer nicht dabei ist, keins. Bei mir abgehakt → weg aus
   „Just meng“ und Startseite (`aufFuerMich`), in „Op“ bleibt sie bis alle durch. 💡-Aufgaben bleiben „een eleng“.
-  **Startseite:** Karte „✅ Fir dech ze maachen“ (fir mech + All, auch 💡; max. 5, abhaken direkt; „alles ›“ → Aufgaben auf Just meng),
+  **Startseite:** Karte „✅ Fir dech ze maachen“ (fir mech + All, auch 💡; max. 5, abhaken direkt; „Alles ›“ → Aufgaben auf **Op** = alle offenen (vom Nutzer, 18.11. g; vorher Just meng)),
   kein Anlegen dort (vom Nutzer). Excel-Blatt „Ze maachen“ (am Ende), Verlauf kennt Aufgaben.
 - **Kasten „Fläschen“ im Stock** (vom Nutzer, 18.11.2026, Fassung c; Entwürfe als Bild gezeigt; vorher „Fläsche beweegen“ mit Reitern
   Ofgefëllt/Weiderginn/Fort und Vun/Un — zu abstrakt): erst **vier Absichten** (`ABSICHTEN`): 📥 Ech huele mer Fläschen (Lager ➜ ich) ·

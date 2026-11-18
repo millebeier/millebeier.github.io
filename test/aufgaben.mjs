@@ -102,7 +102,7 @@ ist("„Du hues zur Verfügung“", await txt("#t-haut"), t => t.includes("Du hu
 await p.click('#hAuf .aufz:has-text("Etiketten bestellen") [data-ahak]');
 ist("auf der Startseite abgehakt", await txt("#hAuf"), t => !t.includes("Etiketten bestellen"));
 await p.click('#hAuf [data-hgeh="aufgaben"]');
-ist("„alles ›“ → Aufgaben, Just meng", await p.evaluate(() => [TAB, KAL_BEREICH, AUF_SICHT]), ["kalender", "aufgaben", "meng"]);
+ist("„Alles ›“ → Aufgaben, alle offenen (Op)", await p.evaluate(() => [TAB, KAL_BEREICH, AUF_SICHT]), ["kalender", "aufgaben", "op"]);
 await warte(900); await p.click("#kalBtn");
 ist("Kalender-Knopf oben → wieder der Kalender", await p.evaluate(() => KAL_BEREICH), "kalender");
 
