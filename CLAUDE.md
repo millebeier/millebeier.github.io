@@ -295,6 +295,9 @@ geprüft (Gegenprobe gemacht). Die Datenbank ist von der Cloud-Umgebung aus nich
 Nutzer. Rückweg: D1 Time Travel (Restore auf einen Zeitpunkt davor).
 
 ## Testen — vor jedem Push alle zwölf, jeder mit eigenem Rückgabewert
+**Push nur, wenn alle zwölf 0 zurückgeben** — die Schleife gibt den Push erst danach frei (`ok`-Merker). Am 18.11.2026 (Fassung g) ging
+ein Commit trotz roter Tests raus: ein `//`-Kommentar mitten in einer einzeiligen Anweisung schnitt den Rest der Zeile ab, das ganze
+Script lief nicht, und damit auch kein automatisches Update. In Code auf einer Zeile nur `/* … */`-Kommentare.
 - `node test/logik.mjs` — schneidet `Logik`…`Oberfläche` aus der HTML (Gegenprobe gemacht).
 - `node test/worker.mjs` — Worker mit nachgebauter D1, auch Kalender-.ics (Gegenprobe gemacht).
 - `node test/oberflaeche.mjs` — Playwright, zwei Handys gegen den echten Worker-Code, offline.
