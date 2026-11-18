@@ -365,6 +365,17 @@ ist("CSV Zeilen", c.trim().split("\r\n").length, 4);
   const vk = k => Y.verkaeufe.find(x => x.kaeufer === k);
   ist("Geliefert: Vorauszahlung angerechnet", [vk("TC Smash").offen, vk("TC Smash").wie, vk("Barthel Steve").offen, Y.offen, Y.kasse], [0, ["wero"], 6, 6, 102]);
   ist("Geliefert: Erinnerung weg", L.autoAufgaben(Y, H).some(a => a.typ === "liwweren"), false);
+  // Liefertag (vom Nutzer, Fassung i): „Haut liwweren“, bei bezahlten stattdessen „nach liwweren“ mit „bis haut“
+  {
+    const L3 = A("livraison", { kunde: "Café Millen", kontakt: "Marc", aus: "Lager", datum: H, posten: [{ sorte: "NEIPA", n: 6 }], betrag: 18, rechnung: false });
+    const Yh = L.rechne([ab, L1, L2, z1, z2, L3]);
+    const ah = L.autoAufgaben(Yh, H);
+    ist("Haut liwweren: Text, für Kontakt, bis haut", ah.filter(a => a.typ === "haut").map(a => [a.text, a.sub, a.fuer[0], a.bis]), [["Haut liwweren: Café Millen", "6 × NEIPA · vum Lager", "Marc", H]]);
+    const ah20 = L.autoAufgaben(Yh, "2026-11-20");
+    ist("Liefertag einer bezahlten: keine zweite, „nach liwweren“ mit bis haut", [ah20.some(a => a.typ === "haut" && a.text.includes("TC Smash")), (ah20.find(a => a.typ === "liwweren" && a.text.startsWith("TC Smash")) || {}).bis], [false, "2026-11-20"]);
+    ist("Am Tag davor noch nicht", L.autoAufgaben(Yh, "2026-11-16").some(a => a.typ === "haut"), false);
+    ist("Am Tag danach: nach net als geliwwert markéiert statt Haut liwweren", L.autoAufgaben(Yh, "2026-11-18").filter(a => a.text.includes("Café Millen")).map(a => a.typ), ["geliwwert"]);
+  }
   // Bestellung gelöscht: Geld fällt aus der Kasse
   Y = L.rechne([...ein, A("storno", { ref: L2.id })]);
   ist("Gelöscht: Vorauszahlung zählt nicht mehr", Y.kasse, 72);

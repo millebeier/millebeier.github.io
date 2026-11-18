@@ -234,6 +234,9 @@ beim Verkaufen/Livraison und „Fläsche beweegen“ an, solange jemand welche h
   Bestellung nach net als geliwwert markéiert (Kontakt; 7 Tage) · Haltbar bis in 30 Tagen (All; nie) · Däin Handy huet n Agaben nach net
   geschéckt (> 24 h, nur dieses Handy, `aufExtra`, ohne Haken, Tipp öffnet den Sync-Text) · Afëllen fir XY plangen (Braudag > 7 Tage,
   ≤ 60, kein Afëllen-Termin mit dem Bier danach; All; nie). Grenzen in `AUF_GRENZE` (vom Nutzer bestätigt).
+  **Haut liwweren: X** (vom Nutzer, 18.11.2026, Fassung a): am Liefertag einer geplanten Bestellung, für den Kontakt, „bis haut“; schon
+  vorausbezahlt → keine eigene, dafür „huet scho bezuelt — nach liwweren“ mit „bis haut“; am Tag danach übernimmt „nach net als geliwwert
+  markéiert“. Eine normale Bestellung (genug frei, nicht bezahlt) steht vorher **nicht** in den Aufgaben — nur Kalender/Startseite/Reiter.
   **Startseite:** Karte „✅ Fir dech ze maachen“ (fir mech + All, auch 💡; max. 5, abhaken direkt; „alles ›“ → Aufgaben auf Just meng),
   kein Anlegen dort (vom Nutzer). Excel-Blatt „Ze maachen“ (am Ende), Verlauf kennt Aufgaben.
 - **`durch` = wer eingetragen hat** (nicht `von` — das ist bei `bewegung` die Herkunft; die

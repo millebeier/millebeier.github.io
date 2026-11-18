@@ -361,7 +361,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px}
 <script>
 /* Adresse des Cloudflare-Workers. Leer = Probe-Modus (alles nur auf diesem Handy). */
 const WORKER_URL = "https://millebeier.rjtp6r9s9h.workers.dev/";
-const FASSUNG = "17.11.2026 h";
+const FASSUNG = "18.11.2026 a";
 
 /* === Logik === (kein DOM; test/logik.mjs schneidet diesen Block aus) */
 const LAGER = "Lager";
@@ -1047,8 +1047,13 @@ function autoAufgaben(Z, heute) {
     const wie = L.vorWie.length ? " per " + L.vorWie.map(w => ZAHLARTEN[w]).join(", ") : "";
     out.push({ aid: aidVon("liwweren", L.lid), typ: "liwweren", text: `${L.kunde} huet scho bezuelt — nach liwweren`,
       sub: `${euro(L.vorbezahlt)}${L.vorbezahlt < L.betrag ? " Acompte" : ""}${wie} · geplangt ${tagKurz(L.datum)}`, rot: L.datum < heute,
-      fuer: [L.kontakt], ref: { typ: "liv", id: L.lid }, wieder: 7 });
+      ...(L.datum === heute ? { bis: heute } : {}), fuer: [L.kontakt], ref: { typ: "liv", id: L.lid }, wieder: 7 });
   }
+  // Haut liwweren (vom Nutzer, Fassung i): am Liefertag, für den Kontakt; schon bezahlt → steht stattdessen die obere mit „bis haut“.
+  // Am Tag danach übernimmt „nach net als geliwwert markéiert“.
+  for (const L of plan) if (L.datum === heute && !(L.vorbezahlt > 0))
+    out.push({ aid: aidVon("haut", L.lid + "|" + L.datum), typ: "haut", text: `Haut liwweren: ${L.kunde}`,
+      sub: `${postenText(L.posten)} · ${L.aus === LAGER ? "vum Lager" : "vum " + L.aus}`, bis: heute, fuer: [L.kontakt], ref: { typ: "liv", id: L.lid }, wieder: null });
   // Bestellung nach net als geliwwert markéiert: Lieferdatum vorbei
   for (const L of plan) if (L.datum < heute && !(L.vorbezahlt > 0))
     out.push({ aid: aidVon("geliwwert", L.lid + "|" + L.datum), typ: "geliwwert", text: `Bestellung ${L.kunde} (${tagKurz(L.datum)}) nach net als geliwwert markéiert`,
