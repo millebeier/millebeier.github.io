@@ -223,7 +223,7 @@ beim Verkaufen/Livraison und „Fläsche beweegen“ an, solange jemand welche h
   Bestellungen**. „Fläschen huelen“ (Bild der Hand an der Kiste, `ABS_BILD.huelen`) öffnet **auf der Startseite** einen Kasten „Ech huele
   mer Fläschen“ (Lager ➜ ich, `H_HUELEN`, gemeinsamer Code `flaschenForm` mit dem Stock, ids mit Präfix „h“ statt „b“), „✕ Zoumaachen“,
   nach dem Speichern zu + Meldung (`H_MELD`), man bleibt auf der Startseite. „Nach op bei dir“ und „Du hues zur Verfügung“ bekommen
-  ebenfalls „Alles ›“: → Ausstoend auf **All** (nicht Just meng, vom Nutzer) bzw. → Stock. Keine Karte ist mehr als Ganzes antippbar.
+  ebenfalls „Alles ›“: → Ausstoend auf **All** (nicht Just meng, vom Nutzer) bzw. → Stock. Keine Karte ist mehr als Ganzes antippbar. **Fassung j:** alle drei Knöpfe oben gleich dunkel, Verkafen nicht mehr rot (vom Nutzer).
 - **Aufgaben „Ze maachen“** (vom Nutzer, 17.11.2026, Fassung d; Entwürfe als Bild gezeigt und abgesprochen — Notizen/Chat vorher
   verworfen, WhatsApp reicht): **hinter dem Kalender-Knopf**, kein neuer Reiter: oben zwei große Kästen „📅 Kalenner“ (Vorgabe, darunter
   wie bisher) und „✅ Aufgaben“ (`KAL_BEREICH`, `kalKaesten`), klein darunter „n dës Woch“ / „n op · m iwwerfälleg“. **Keine Zahl**
