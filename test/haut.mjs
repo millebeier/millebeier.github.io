@@ -38,11 +38,24 @@ ist("Deng nächst Deeg: nur meine — Braudag, meine Bestellung; nicht Jeffs Sta
 ist("Nach op bei dir: nur meine Käufer", txt, t => t.includes("Paul Weber") && t.includes("12 €") && !t.includes("Anne"));
 ist("Reihenfolge der Karten (vom Nutzer, Fassung e)", await p.evaluate(() => [...document.querySelectorAll("#t-haut .card h2")].map(h => h.firstChild.textContent.trim())),
   ["✅ Fir dech ze maachen", "📅 Deng nächst Deeg", "💶 Nach op bei dir", "🍺 Du hues zur Verfügung"]);
-ist("Zahlen an den Knöpfen: 1 offen, 1 Bestellung von mir", await p.evaluate(() => [...document.querySelectorAll(".hgross .badge")].map(x => x.textContent)), ["1", "1"]);
+ist("Knöpfe oben: Verkafen · Fläschen huelen · Bestellungen (Fassung i)", await p.evaluate(() => [...document.querySelectorAll(".hgross button")].map(x => x.dataset.hgeh)), ["verkaufen", "huelen", "livraisons"]);
+ist("Zahl nur an Bestellungen: 1 von mir", await p.evaluate(() => [...document.querySelectorAll(".hgross .badge")].map(x => x.textContent)), ["1"]);
 
-// Knöpfe
-await p.click('.hgross [data-hgeh="offen"]');
-ist("Ausstoend auf Just meng", await p.evaluate(() => [TAB, NUR_MEINE, document.querySelector('#nav [data-tab="offen"]').classList.contains("an")]), ["offen", true, true]);
+// Fläschen huelen direkt auf der Startseite (Fassung i)
+await p.click('.hgross [data-hgeh="huelen"]');
+ist("Kasten auf der Startseite: Lager ➜ ich, Seite bleibt", await p.evaluate(() => [TAB, [...document.querySelectorAll("#hHuelen .pk b")].map(x => x.textContent)]), ["haut", ["📦 Lager", "👤 Laurent"]]);
+await p.selectOption("#hSorte", "NEIPA"); await p.fill("#hN", "4");
+ist("Vorschau auf der Startseite", await p.locator("#hVor").innerText(), t => t.includes("Laurent 30") && t.includes("Lager 66"));
+await p.click("#hOk"); await warte(200);
+ist("gebucht, Kasten zu, Meldung, noch auf der Startseite", await p.evaluate(() => [TAB, hat(Z, "Laurent", "NEIPA"), !!document.querySelector("#hHuelen .pk"), document.querySelector("#t-haut .meldung").textContent.includes("Lager → Laurent")]), ["haut", 30, false, true]);
+await warte(900); await p.click('.hgross [data-hgeh="huelen"]'); await p.click("#hZreck");
+ist("Zoumaachen", await p.locator("#hHuelen .pk").count(), 0);
+// „Alles ›“ bei Nach op bei dir → Ausstoend auf All; bei Du hues zur Verfügung → Stock
+await p.click('#hOp [data-hgeh="offen"]');
+ist("Nach op bei dir „Alles ›“ → Ausstoend All", await p.evaluate(() => [TAB, NUR_MEINE]), ["offen", false]);
+await p.click("#zurHaut"); await warte(100);
+await p.click('#hStock [data-hgeh="bestand"]');
+ist("Du hues zur Verfügung „Alles ›“ → Stock", await p.evaluate(() => TAB), "bestand");
 await p.click("#zurHaut"); await warte(100);
 ist("Logo führt zur Startseite", await p.evaluate(() => TAB), "haut");
 await p.click('.hgross [data-hgeh="livraisons"]');

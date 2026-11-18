@@ -219,6 +219,11 @@ beim Verkaufen/Livraison und „Fläsche beweegen“ an, solange jemand welche h
   **Fassung 18.11. e** (vom Nutzer): „Déi nächst Deeg“ heißt **„Deng nächst Deeg“** und zeigt **nur, was mich betrifft** (Termine, bei
   denen ich in „Wien ass dobäi?“ stehe — ohne Namen = alle; Bestellungen mit mir als Kontakt oder „Huelen aus“). Knopf **„Alles ›“** →
   Kalender (ganze Karte nicht mehr antippbar); „Alles ›“ bei den Aufgaben ebenso, beide deutlicher als Knopf (`.hmehr`); seit Fassung f rot mit schwarzer Schrift (vom Nutzer).
+  **Fassung 18.11. i** (vom Nutzer: mittlerer Knopf „Ausstoend“ war doppelt zu „Nach op bei dir“): Knöpfe oben **Verkafen · Fläschen huelen ·
+  Bestellungen**. „Fläschen huelen“ (Bild der Hand an der Kiste, `ABS_BILD.huelen`) öffnet **auf der Startseite** einen Kasten „Ech huele
+  mer Fläschen“ (Lager ➜ ich, `H_HUELEN`, gemeinsamer Code `flaschenForm` mit dem Stock, ids mit Präfix „h“ statt „b“), „✕ Zoumaachen“,
+  nach dem Speichern zu + Meldung (`H_MELD`), man bleibt auf der Startseite. „Nach op bei dir“ und „Du hues zur Verfügung“ bekommen
+  ebenfalls „Alles ›“: → Ausstoend auf **All** (nicht Just meng, vom Nutzer) bzw. → Stock. Keine Karte ist mehr als Ganzes antippbar.
 - **Aufgaben „Ze maachen“** (vom Nutzer, 17.11.2026, Fassung d; Entwürfe als Bild gezeigt und abgesprochen — Notizen/Chat vorher
   verworfen, WhatsApp reicht): **hinter dem Kalender-Knopf**, kein neuer Reiter: oben zwei große Kästen „📅 Kalenner“ (Vorgabe, darunter
   wie bisher) und „✅ Aufgaben“ (`KAL_BEREICH`, `kalKaesten`), klein darunter „n dës Woch“ / „n op · m iwwerfälleg“. **Keine Zahl**
