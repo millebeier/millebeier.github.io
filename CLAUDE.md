@@ -375,6 +375,11 @@ Script lief nicht, und damit auch kein automatisches Update. In Code auf einer Z
   (48 → 60 → 50, Verlauf; Gegenprobe gemacht).
 
 ## Ideen, nicht gebaut
+**Vorgemerkt für So 22.11.2026 (vom Nutzer, 20.11.): Buchhaltung** — eigener Teil, „alles klar und zurückverfolgbar“: pro Bier, pro
+Zahlart, Rechnungen separat auflistbar und ausdruckbar. Erst Vorschlag (Ideen dem Nutzer am 20.11. genannt: Zeitraum wählbar, Kassenbuch aller
+Zahlungen mit laufender Nummer, Summen je Zahlart + Abgleich mit Konto/SumUp, pro Bier inkl. Eigenverbrauch/Geschenke, lückenloses
+Rechnungsjournal auch mit stornierten Nummern, offene Posten zum Stichtag, Druck-PDF + Excel, Sammel-PDF der Rechnungen, Monatsabschluss,
+Ausgaben mit Belegfoto), dann auf Okay warten.
 **Durchsicht aus Brauer-Sicht (17.11.2026), Antwort des Nutzers:** **Startseite und Reiter unten gebaut** (Fassung 17.11. a, siehe
 Aufbau). Später vielleicht: +6/+24-Knöpfe, Packs/Sonderpreise. **Abgelehnt** (vom Nutzer): Stand-Verkauf ohne
 Namen (Stand wird am Ende gesammelt unter Firma eingetragen), „Bargeld bei wem“, Fässer als Leihgut (sind keins), Rückgängig-Leiste,
