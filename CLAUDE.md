@@ -380,6 +380,10 @@ Zahlart, Rechnungen separat auflistbar und ausdruckbar. Erst Vorschlag (Ideen de
 Zahlungen mit laufender Nummer, Summen je Zahlart + Abgleich mit Konto/SumUp, pro Bier inkl. Eigenverbrauch/Geschenke, lückenloses
 Rechnungsjournal auch mit stornierten Nummern, offene Posten zum Stichtag, Druck-PDF + Excel, Sammel-PDF der Rechnungen, Monatsabschluss,
 Ausgaben mit Belegfoto), dann auf Okay warten.
+Antwort des Nutzers (20.11.): **jährlich** einmal ablegen, Ziel „alles wiederfinden“; xlsx macht das schon gut. Gewünscht: filtern pro Bier
+und pro Zahlart, Papier ausdrucken mit allen Transaktionen bzw. nur SumUp / nur WERO …, alle Rechnungs-PDFs. Zweite App oder eigener Teil —
+Claudes Empfehlung: eigener Teil „📒 Buchhaltung“ im Zahnrad (gleiche Daten, am Computer im Browser druckbar); Jahr + Filter (Bier, Zahlart, Art),
+Liste mit laufender Nummer und Summe, „🖨️ PDF fir ze drécken“ der gefilterten Liste, Sammel-PDF „All Rechnungen <Jahr>“ inkl. stornierter Nummern.
 **Durchsicht aus Brauer-Sicht (17.11.2026), Antwort des Nutzers:** **Startseite und Reiter unten gebaut** (Fassung 17.11. a, siehe
 Aufbau). Später vielleicht: +6/+24-Knöpfe, Packs/Sonderpreise. **Abgelehnt** (vom Nutzer): Stand-Verkauf ohne
 Namen (Stand wird am Ende gesammelt unter Firma eingetragen), „Bargeld bei wem“, Fässer als Leihgut (sind keins), Rückgängig-Leiste,
