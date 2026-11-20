@@ -326,7 +326,7 @@ textarea{width:100%;font:16px/1.4 inherit;padding:10px;border-radius:10px;border
 .ansicht-kopf b{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #ansichtInhalt{padding:8px}
 #ansichtInfo{padding:8px 12px;background:var(--card);border-bottom:1px solid var(--line);font-size:14px}
-#ansichtInfo .muted{font-size:13px;margin-top:4px} #ansichtInfo .knopfe{margin-top:8px} #ansichtInfo .ok{color:var(--gruen)} #ansichtInfo .gelb{color:var(--gelb)}
+#ansichtInfo .muted{font-size:13px;margin-top:4px} #ansichtInfo .aikop{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px} #ansichtInfo .aikop .kop{max-width:100%;overflow:hidden;text-overflow:ellipsis} #ansichtInfo .knopfe{margin-top:8px} #ansichtInfo .ok{color:var(--gruen)} #ansichtInfo .gelb{color:var(--gelb)}
 /* Rechnung maachen (Fassung 20.11. b) */
 #rechWahl{position:fixed;inset:0;z-index:22;background:rgba(0,0,0,.8);overflow:auto;-webkit-overflow-scrolling:touch;padding:16px 12px 40px}
 #rechKarte{max-width:520px;margin:0 auto}
@@ -413,7 +413,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px}
 <script>
 /* Adresse des Cloudflare-Workers. Leer = Probe-Modus (alles nur auf diesem Handy). */
 const WORKER_URL = "https://millebeier.rjtp6r9s9h.workers.dev/";
-const FASSUNG = "20.11.2026 b";
+const FASSUNG = "20.11.2026 c";
 
 /* === Logik === (kein DOM; test/logik.mjs schneidet diesen Block aus) */
 const LAGER = "Lager";
@@ -2782,9 +2782,14 @@ function rechInfo(D) {
   if (!v) { el.innerHTML = ""; return; }
   el.innerHTML = `<div><b>Facture ${esc(v.rech ? v.rech.nr : "")}</b> · ${euro(v.betrag)}${v.offen > 0 && v.bezahlt > 0 ? ` · Rescht ${euro(v.offen)}` : v.offen <= 0 ? " · ✓ bezuelt" : ""}
     ${v.rech && v.rech.verschickt ? ` · <span class="ok">📨 verschéckt ${esc(datumText(v.rech.verschickt))}</span>` : ` · <span class="gelb">📨 nach net verschéckt</span>`}</div>
-    ${D.rech.mail ? `<div class="muted">✉️ ${esc(D.rech.mail)} gëtt beim Deelen kopéiert — an der Mail bei „An:“ just „Asetzen“.</div>` : ""}
+    ${v.rech && (v.rech.mail || v.rech.tel) ? `<div class="aikop">${v.rech.mail ? `<button class="kop" data-aikop="${esc(v.rech.mail)}">📋 ${esc(v.rech.mail)}</button>` : ""}${v.rech.tel ? `<button class="kop" data-aikop="${esc(v.rech.tel)}">📋 ${esc(v.rech.tel)}</button>` : ""}</div>` : ""}
     <div class="knopfe"><button class="knopf" id="aiAendern">✎ Nach eppes änneren</button>${v.rech && !v.rech.verschickt ? `<button class="knopf" id="aiSchonn">✓ Schonn anescht verschéckt</button>` : ""}</div>`;
   $("#aiAendern").onclick = () => { ansichtZu(); rechnungOeffnen(v.id); };
+  el.querySelectorAll("[data-aikop]").forEach(b => b.onclick = async () => {
+    const t = b.dataset.aikop;
+    try { await navigator.clipboard.writeText(t); b.textContent = "✓ Kopéiert"; b.classList.add("ok"); setTimeout(() => { b.textContent = "📋 " + t; b.classList.remove("ok"); }, 2500); }
+    catch { prompt("Fir ze kopéieren:", t); }
+  });
   const s = $("#aiSchonn"); if (s) s.onclick = () => { eintragen([{ art: "rversand", ref: v.id }]); rechInfo(D); };
 }
 // Gespeicherte Rechnung wieder als PDF (ohne neuen Eintrag)
@@ -3101,8 +3106,8 @@ $("#ansichtTeilen").onclick = async () => {
   if (!datei) { alert("D'Datei gëtt nach gelueden — e Moment, dann nach eng Kéier."); return; }
   const istApp = window.navigator.standalone || matchMedia("(display-mode: standalone)").matches;
   let letzter = null;
-  // Rechnung: Mail-Adresse in die Zwischenablage (nicht abwarten — iOS teilt nur direkt nach dem Tippen); geteilt = verschickt
-  if (D.rech && D.rech.mail && navigator.clipboard) navigator.clipboard.writeText(D.rech.mail).catch(() => {});
+  // Rechnung: geteilt = verschickt. Die Mail wird NICHT von selbst kopiert (vom Nutzer, 20.11.: wer vorher die Telefonnummer
+  // kopiert hat, will sie behalten) — dafür die Knöpfe „📋“ im Kopf
   const geteilt = () => { const v = D.rech && Z.vkNachId.get(D.rech.vid); if (v && v.rech && !v.rech.verschickt) { eintragen([{ art: "rversand", ref: v.id }]); rechInfo(D); } };
   if (navigator.share) for (const f of teilbareFassungen(datei)) {
     if (navigator.canShare && !navigator.canShare({ files: [f] })) { letzter = "canShare: nee (" + (f.type || "ouni Typ") + ")"; continue; }

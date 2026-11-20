@@ -103,12 +103,14 @@ ist("Adresse beim Client gespeichert", await A.evaluate(() => { const K = Z.kund
 ist("Bestand unverändert durch die freie Position", await A.evaluate(() => hat(Z, "Lager", "NEIPA")), 46);
 
 // Teilen: abgebrochen = nicht verschickt; geteilt = verschickt, Mail kopiert
-await A.evaluate(() => navigator.clipboard.writeText("leer"));
+await A.evaluate(() => navigator.clipboard.writeText("+352 621 000 000")); // vorher Telefon kopiert
 await A.evaluate(() => { window.TEILEN_ABBRUCH = true; }); await A.click("#ansichtTeilen"); await warte(300);
 ist("abgebrochen: nicht verschickt", await A.evaluate(() => !!Z.rechnungen[0].rech.verschickt), false);
 await A.evaluate(() => { window.TEILEN_ABBRUCH = false; }); await warte(900); await A.click("#ansichtTeilen"); await warte(400);
-ist("geteilt: Datei, verschickt, Mail kopiert", [await A.evaluate(() => GETEILT), await A.evaluate(() => !!Z.rechnungen[0].rech.verschickt), await A.evaluate(() => navigator.clipboard.readText())],
-  v => v[0].length === 1 && /^Facture_\d{4}-001_FerroForum\.pdf$/.test(v[0][0][0]) && v[1] && v[2] === "compta@ferroforum.lu");
+ist("geteilt: Datei, verschickt, Zwischenablage bleibt (Telefon)", [await A.evaluate(() => GETEILT), await A.evaluate(() => !!Z.rechnungen[0].rech.verschickt), await A.evaluate(() => navigator.clipboard.readText())],
+  v => v[0].length === 1 && /^Facture_\d{4}-001_FerroForum\.pdf$/.test(v[0][0][0]) && v[1] && v[2] === "+352 621 000 000");
+await warte(900); await A.click('#ansichtInfo [data-aikop="compta@ferroforum.lu"]'); await warte(200);
+ist("Kopf: 📋 Mail kopiert", await A.evaluate(() => navigator.clipboard.readText()), "compta@ferroforum.lu");
 ist("Kopf: verschéckt", await A.locator("#ansichtInfo").innerText(), t => t.includes("verschéckt") && !t.includes("nach net"));
 await A.click("#ansichtZu"); await warte(200);
 ist("Bestellungen: Chip mit Nummer statt „nach ze maachen“", await A.locator("#lListe").innerText(), t => t.includes("🧾 " + J + "-001") && !t.includes("Rechnung nach ze maachen"));

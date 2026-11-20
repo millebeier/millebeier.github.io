@@ -285,7 +285,8 @@ beim Verkaufen/Livraison und „Fläsche beweegen“ an, solange jemand welche h
   Bilder `bilder/rechnung-{logo,krug,qr}.png` aus den alten PDFs (Facebook-QR unverändert übernommen): Logo, Absender, Facturé à, Nummer/Datum/
   Livraison du bzw. Date de vente/Payable jusqu'au, Occasion, Positionen, Total, Déjà payé, Reste à payer, BCEE-IBAN mit Mention „Facture Nr – Kunde“,
   „Payable dans les 30 jours“ (vom Nutzer), kein Steuer-Hinweis (vom Nutzer: erstmal nicht), Merci + Krug, Fuß mit QR. Danach die Anzeige (`#ansicht`
-  mit `#ansichtInfo`, `rechInfo`): „⬆️ Deelen“ kopiert vorher die Mail (nicht abgewartet, iOS teilt nur direkt nach dem Tippen); **erfolgreich geteilt =
+  mit `#ansichtInfo`, `rechInfo`): „⬆️ Deelen“ kopiert **nichts von selbst** (vom Nutzer, Fassung c: wer vorher die Telefonnummer für WhatsApp kopiert hat, will
+  sie behalten) — im Kopf stehen „📋 Mail“ / „📋 Telefon“ zum Kopieren; **erfolgreich geteilt =
   verschickt** (Eintrag `rversand`), abgebrochen nicht; „✓ Schonn anescht verschéckt“ von Hand; „✎ Nach eppes änneren“. Wieder öffnen über den Chip
   „🧾 JJJJ-NNN ›“ (`rechnungZeigen`, rechnet das PDF neu, kein Eintrag). **Ausstoend**: oben „🧾 Rechnung nach ze maachen (n)“ mit „Maachen“ (auch
   bezahlte), darunter wie bisher, an jedem Verkauf der Chip (`rechChip`) und „Rechnung zënter n Deeg“; Reiterzahl zählt fehlende Rechnungen mit.
