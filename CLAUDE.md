@@ -269,6 +269,9 @@ beim Verkaufen/Livraison und „Fläsche beweegen“ an, solange jemand welche h
   App-Flasche (`ABS_FL`, `ABS_KISCHT`): Hand zieht eine von zwei Flaschen aus der LAGER-Kiste · Flasche schläft in der Kiste „Zz“ · Hand
   hält die Flasche **von hinten** (Finger verdecken sie nicht, vom Nutzer) und reicht sie einer offenen Hand (andere Ärmelfarbe) · eine
   Flasche mit roter Geschenkschleife + eine zerbrochen am Boden (Pfütze, ×-Augen).
+- **Aktionsknöpfe rot, nicht grün** (vom Nutzer, Fassung 20.11. a): „Geliwwert ✓“, „Bezuelt ✓“, „Alles bezuelt ✓“ und Späicheren
+  bei „+ Aufgab“ sind `.knopf.akt` (Millebéier-Rot, weiße Schrift) — grün sah aus, als wäre es schon erledigt. Grün bleibt nur
+  für Erledigtes (✓ bezuelt, gewählte Zahlungsart).
 - **`durch` = wer eingetragen hat** (nicht `von` — das ist bei `bewegung` die Herkunft; die
   Verwechslung war der erste Fehler).
 - Bestand hängt am **Namen** — Leute nicht umbenennen, wenn sie Flaschen haben.

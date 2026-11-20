@@ -210,7 +210,7 @@ select{background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),
 .haupt:disabled{opacity:.45}
 .knopf{padding:9px 12px;border-radius:10px;border:1px solid var(--line);background:var(--card2);color:var(--text);
   font-size:14px;font-weight:600;cursor:pointer}
-.knopf.gruen{background:var(--gruen);color:#10200f;border-color:var(--gruen)}
+.knopf.akt{background:var(--akzent);color:#fff;border-color:var(--akzent)}
 .knopfe{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
 .meldung{margin-top:10px;padding:10px 12px;border-radius:10px;font-size:14px}
 .meldung.ok{background:#20331f;color:#bfe8c0}
@@ -386,7 +386,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px}
 <script>
 /* Adresse des Cloudflare-Workers. Leer = Probe-Modus (alles nur auf diesem Handy). */
 const WORKER_URL = "https://millebeier.rjtp6r9s9h.workers.dev/";
-const FASSUNG = "18.11.2026 m";
+const FASSUNG = "20.11.2026 a";
 
 /* === Logik === (kein DOM; test/logik.mjs schneidet diesen Block aus) */
 const LAGER = "Lager";
@@ -2014,7 +2014,7 @@ function aufFormHtml(F, titel) {
     <div class="ajed ${mehrere(F) ? "" : "versteckt"}"><button data-ajed="0" class="${F.jeder ? "" : "an"}">👤 Een eleng geet duer<small>een hakt of → fäerdeg</small></button>
       <button data-ajed="1" class="${F.jeder ? "an" : ""}">👥 Jidderee muss<small>jidderee hakt fir sech of</small></button></div>
     ${F.bisAuf ? `<input type="date" data-af="bis" value="${esc(F.bis)}" style="margin-top:6px">` : ""}
-    ${titel ? `<div class="knopfe"><button class="knopf gruen" data-af="ok">Späicheren</button><button class="knopf" data-af="zu">Ofbriechen</button></div>` : ""}
+    ${titel ? `<div class="knopfe"><button class="knopf akt" data-af="ok">Späicheren</button><button class="knopf" data-af="zu">Ofbriechen</button></div>` : ""}
     <div data-af="meld"></div></div>`;
 }
 function aufFormBinden(root, F, neuBauen, fertig, zu) {
@@ -2106,11 +2106,11 @@ function renderLListe() {
     const status = v ? `<span class="chip ok">✓ geliwwert</span>
         ${L.rechnung ? (v.rechnungGemacht ? `<span class="chip ok">🧾 Rechnung gemaach</span>` : `<span class="chip warn">🧾 Rechnung nach ze maachen</span>`) : ""}
         ${v.offen <= 0 ? `<span class="chip ok">✓ bezuelt</span>` : `<span class="chip warn">${euro(v.offen)} op</span>`}` : "";
-    const knoepfe = !v ? `<button class="knopf gruen" data-geliwwert="${esc(L.id)}">Geliwwert ✓</button>
+    const knoepfe = !v ? `<button class="knopf akt" data-geliwwert="${esc(L.id)}">Geliwwert ✓</button>
         <button class="knopf" data-led="${esc(L.id)}">✎ Änneren</button>
         <button class="knopf" data-lweg="${esc(L.id)}">Läschen</button><button class="knopf gelbk" data-lauf="${esc(L.lid)}">+ Aufgab</button>`
       : `${L.rechnung && !v.rechnungGemacht ? `<button class="knopf" data-rechnung="${esc(v.id)}">🧾 Rechnung gemaach</button>` : ""}
-         ${v.offen > 0 ? `<button class="knopf gruen" data-lbezuelt="${esc(v.id)}">Bezuelt ✓</button>` : ""}`;
+         ${v.offen > 0 ? `<button class="knopf akt" data-lbezuelt="${esc(v.id)}">Bezuelt ✓</button>` : ""}`;
     return `<div class="liv" data-lid="${esc(L.lid)}"><div class="kopfz"><b>${esc(L.kunde)}</b><span>${euro(L.betrag)}</span></div>
       <div class="wann ${!v && L.datum <= heute ? "faellig" : ""}">${!v && L.datum < heute ? "⚠️ " : ""}${esc(datumKurz(L.datum))} · ${esc(postenText(L.posten))} · ${esc(L.kontakt)}${L.aus !== L.kontakt ? ` (${esc(L.aus === LAGER ? "vum Lager" : "vum " + L.aus)})` : ""}</div>
       ${!v ? (L.vorbezahlt >= L.betrag && L.vorbezahlt > 0 ? `<span class="chip ok">✓ ${euro(L.vorbezahlt)} bezuelt${L.vorWie.length ? " · " + esc(L.vorWie.map(w => ZAHLARTEN[w]).join(", ")) : ""}</span>`
@@ -2433,7 +2433,7 @@ function renderOffen() {
     <div class="kopfz"><h2 style="margin:0">${esc(K.name)}</h2><span class="betrag">${euro(K.sichtOffen)}</span></div>
     ${K.sicht.map(v => `<div class="vk"><span>${v.livraison ? `🚚 Bestellung ${esc(datumKurz(v.livraison.datum))}` : datumText(v.zeit)} · ${esc(postenText(v.posten))}<br><small class="muted">${esc(beim(v.verkaeufer))}${v.bezahlt ? ` · ${euro(v.bezahlt)} scho bezuelt` : ""}</small></span><span>${euro(v.offen)}</span></div>`).join("")}
     <div class="knopfe">
-      <button class="knopf gruen" data-alles="${i}">Alles bezuelt ✓</button>
+      <button class="knopf akt" data-alles="${i}">Alles bezuelt ✓</button>
       <button class="knopf" data-teil="${i}">Deelbetrag…</button>
       <button class="knopf" data-erinnern="${i}">Erënneren 💬</button>
     </div></div>`).join("") : `<div class="card leer">Alles bezuelt. 🎉</div>`}`;
