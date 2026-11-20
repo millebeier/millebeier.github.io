@@ -439,6 +439,13 @@ ist("CSV Zeilen", c.trim().split("\r\n").length, 4);
   Y = L.rechne([ab, v1, v2, r1, z1, r2, R("storno", { ref: v1.id })]);
   ist("Storno: Nummer bleibt vergeben", [Y.rechnungen.length, L.naechsteNr(Y, "2026-11-22")], [0, "2026-002"]);
   ist("Gültig: falsche Nummer nein, ohne Nummer ja", [L.gueltig({ ...r1, nr: "26-1" }), L.gueltig({ id: "x", zeit: 1, art: "rechnung", ref: "a" })], [false, true]);
+  // Eigener Stückpreis (Fassung d): genau auf der Rechnung, Anteil pro Bier danach gewichtet
+  const v3 = R("verkauf", { verkaeufer: "Laurent", kaeufer: "Weber", posten: [{ sorte: "NEIPA", n: 12, preis: 2.5 }, { sorte: "NEIPA Keg 20l", n: 1 }], betrag: 180 });
+  const Y3 = L.rechne([ab, v3]), V3 = Y3.vkNachId.get(v3.id);
+  ist("Eigener Preis: Zeilen genau", L.rechnungZeilen(Y3, V3).map(r => [r.preis, r.total]), [[2.5, 30], [150, 150]]);
+  ist("Eigener Preis: Anteil", L.anteil(Y3.cfg, v3.posten, 180, v3.posten[0]), 30);
+  ist("Gültig: Preis negativ nein", L.gueltig({ ...v3, posten: [{ sorte: "NEIPA", n: 1, preis: -1 }] }), false);
+  ist("Text mit Preis", L.postenText(v3.posten), "12 × NEIPA à 2,50 €, 1 × NEIPA (Fass 20 l)");
   ist("Verlauf", [L.beschreibe(r1, L.rechne([ab, v1, r1])), L.beschreibe(r2, L.rechne([ab, v1, r1, r2]))], ["🧾 Rechnung 2026-001 gemaach: Ferro · 250 €", "🧾 Rechnung 2026-001 geännert: Ferro · 210 €"]);
 }
 

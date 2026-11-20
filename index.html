@@ -271,6 +271,10 @@ textarea.adr{min-height:64px}
 .aus-fest b{font-size:16px}
 .chip{display:inline-block;font-size:12px;padding:3px 8px;border-radius:9px;background:var(--card2);margin:6px 4px 0 0}
 .chip.ok{background:#1f3a20;color:#bfe8c0} .chip.warn{background:#3a3115;color:#f4e2a0}
+.prk{background:none;border:1px dashed #777;border-radius:8px;padding:1px 7px;color:var(--text);font:inherit;font-weight:700;cursor:pointer}
+.prk.an{border:1px solid var(--gelb);color:var(--gelb)}
+.prfeld{width:72px!important;display:inline-block!important;padding:3px 7px!important;border:1px solid var(--gelb)!important;font-size:15px}
+.knopf.klein{padding:5px 10px;font-size:13px;margin-top:6px} .knopf.klein.kaufrech{margin:0 0 0 4px;padding:2px 8px}
 .chip.rgef{border:1px dashed #8a7a3a;background:none;padding:2px 8px;color:#f4e2a0} /* Rechnung gewünscht, Bestellung noch geplant (vom Nutzer, 20.11.) */
 button.chip.lvor{border:0;font-family:inherit;cursor:pointer;color:#f4e2a0} button.chip.lvor.nb{border:1px dashed #8a7a3a;background:none;padding:2px 8px}
 /* Dreieck links fest, Name darf umbrechen (lange Namen wie „Brown Porter 01/2026 Keg 30l“ sprengten sonst die Tabelle) */
@@ -413,7 +417,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px}
 <script>
 /* Adresse des Cloudflare-Workers. Leer = Probe-Modus (alles nur auf diesem Handy). */
 const WORKER_URL = "https://millebeier.rjtp6r9s9h.workers.dev/";
-const FASSUNG = "20.11.2026 c";
+const FASSUNG = "20.11.2026 d";
 
 /* === Logik === (kein DOM; test/logik.mjs schneidet diesen Block aus) */
 const LAGER = "Lager";
@@ -459,7 +463,7 @@ const optZahl = (x, a, b) => x === undefined || x === null || (typeof x === "num
 const kfOk = kf => kf === undefined || (kf && typeof kf === "object" && !Array.isArray(kf) &&
   Object.keys(kf).every(x => ["firma", "name", "vorname"].includes(x) && typeof kf[x] === "string" && kf[x].length <= 80));
 const optText = (t, m) => t === undefined || (typeof t === "string" && t.length <= m);
-const postenOk = p => Array.isArray(p) && p.length > 0 && p.length <= 30 && p.every(x => x && text(x.sorte) && ganz(x.n));
+const postenOk = p => Array.isArray(p) && p.length > 0 && p.length <= 30 && p.every(x => x && text(x.sorte) && ganz(x.n) && (x.preis === undefined || geld(x.preis))); // preis: eigener Stückpreis (Fassung 20.11. d)
 
 function gueltig(e) {
   if (!e || typeof e !== "object" || typeof e.id !== "string" || typeof e.zeit !== "number") return false;
@@ -752,7 +756,7 @@ const bierText = name => {
 };
 const datumLang = d => { const [j, m, t] = d.split("-"); return `${t}.${m}.${j}`; };
 const artikelText = key => istFass(key) ? `${bierText(zerlege(key).bier)} (Fass ${zerlege(key).l} l)` : bierText(key);
-const postenText = posten => posten.map(p => `${p.n} × ${artikelText(p.sorte)}`).join(", ");
+const postenText = posten => posten.map(p => `${p.n} × ${artikelText(p.sorte)}${p.preis != null ? ` à ${euro(p.preis)}` : ""}`).join(", ");
 
 function beschreibe(e, Z) {
   switch (e.art) {
@@ -861,7 +865,7 @@ function kaeufeVon(Z, K) {
   const passt = (kid, name) => kid === K.kid || namen.has(String(name || "").trim().toLowerCase());
   const z = [];
   for (const v of Z.verkaeufe) if (passt(v.kid || (v.livraison && v.livraison.kid), v.kaeufer))
-    z.push({ datum: v.livraison ? v.livraison.datum : null, zeit: v.zeit, posten: v.posten, betrag: v.betrag, offen: v.offen, wie: wieListe(v), bezahlt: v.bezahlt, geplant: false, liv: !!v.livraison });
+    z.push({ vid: v.id, datum: v.livraison ? v.livraison.datum : null, zeit: v.zeit, posten: v.posten, betrag: v.betrag, offen: v.offen, wie: wieListe(v), bezahlt: v.bezahlt, geplant: false, liv: !!v.livraison });
   for (const L of Z.livraisons) if (!L.verkauf && passt(L.kid, L.kunde))
     z.push({ datum: L.datum, zeit: L.zeit, posten: L.posten, betrag: L.betrag, geplant: true, liv: true });
   const t = r => r.datum ? Date.parse(r.datum) : r.zeit;
@@ -900,7 +904,7 @@ const stammVon = (Z, name) => { const n = String(name || "").trim().toLowerCase(
 
 /* Anteil eines Postens am Betrag (gewichtet nach Listenpreis; ohne Preise nach Flaschen). */
 function anteil(cfg, posten, betrag, p) {
-  const w = x => x.n * preisVon(cfg, x.sorte);
+  const w = x => x.n * (x.preis != null ? x.preis : preisVon(cfg, x.sorte)); // eigener Stückpreis zählt (Fassung 20.11. d)
   const summe = posten.reduce((a, x) => a + w(x), 0);
   if (summe > 0) return runde(betrag * w(p) / summe);
   const n = posten.reduce((a, x) => a + x.n, 0);
@@ -918,12 +922,16 @@ function naechsteNr(Z, datum) {
 const rechnungBier = key => zerlege(key).bier.replace(/ \(\d{1,2}\.\d{1,2}\.\d{4}\)$/, "").replace(/ \d{2}\/\d{4}$/, "").toUpperCase();
 /* Zeilen aus dem Verkauf: Preis je Stück aus dem Anteil am Betrag (Listenpreis-gewichtet), die letzte Zeile nimmt den Rundungsrest. */
 function rechnungZeilen(Z, v) {
-  let rest = runde(v.ware != null ? v.ware : v.betrag);
+  const ware = runde(v.ware != null ? v.ware : v.betrag);
+  const stueck = p => p.preis != null ? p.preis : preisVon(Z.cfg, p.sorte);
+  // Stimmt der Betrag mit den Stückpreisen (eigene oder Liste) überein, stehen genau diese auf der Rechnung
+  const genau = runde(v.posten.reduce((a, p) => a + p.n * stueck(p), 0)) === ware;
+  let rest = ware;
   return v.posten.map((p, i) => {
-    const total = i === v.posten.length - 1 ? rest : anteil(Z.cfg, v.posten, v.ware != null ? v.ware : v.betrag, p);
+    const total = genau ? runde(p.n * stueck(p)) : i === v.posten.length - 1 ? rest : anteil(Z.cfg, v.posten, ware, p);
     rest = runde(rest - total);
     const l = zerlege(p.sorte).l;
-    return { menge: l ? `${p.n} keg ${l} l` : `${p.n} ${p.n === 1 ? "btl." : "btls."}`, txt: rechnungBier(p.sorte), preis: runde(total / p.n), total, n: p.n };
+    return { menge: l ? `${p.n} keg ${l} l` : `${p.n} ${p.n === 1 ? "btl." : "btls."}`, txt: rechnungBier(p.sorte), preis: genau ? stueck(p) : runde(total / p.n), total, n: p.n };
   });
 }
 /* Alles, was aufs PDF kommt. F = {nr, datum, adresse (Text, Zeilen), anlass, frei[]} — aus dem Fenster oder der gespeicherten Rechnung. */
@@ -1754,7 +1762,11 @@ function kaeuferErgebnis(Z, k) {
 function kaufZeile(r) {
   const wann = r.datum ? datumKurz(r.datum) : datumText(r.zeit);
   const stand = r.geplant ? `<span class="chip">geplangt</span>` : r.offen > 0 ? `<span class="chip warn">${euro(r.offen)} op</span>` : `<span class="chip ok">✓ ${esc(r.wie || "bezuelt")}</span>`;
-  return `<div class="kauf">${r.liv ? "🚚 " : ""}${esc(wann)} · ${esc(postenText(r.posten))} · ${euro(r.betrag)} ${stand}</div>`;
+  // Rechnung je Kauf (vom Nutzer, 20.11.): Nummer, „Maachen“ wenn gewünscht, sonst kleines 🧾 = nachträglich
+  const v = r.vid && Z.vkNachId.get(r.vid);
+  const rech = !v ? "" : v.rech || v.rechnungGemacht ? rechChip(v) : rechFehlt(v) ? `<button class="chip warn" data-rech="${esc(v.id)}">🧾 Rechnung maachen ›</button>`
+    : `<button class="knopf klein kaufrech" data-rech="${esc(v.id)}" aria-label="Rechnung nodréiglech">🧾</button>`;
+  return `<div class="kauf">${r.liv ? "🚚 " : ""}${esc(wann)} · ${esc(postenText(r.posten))} · ${euro(r.betrag)} ${stand} ${rech}</div>`;
 }
 function renderKunden() {
   const box = $("#kListe");
@@ -1780,6 +1792,7 @@ function renderKunden() {
     <button class="haupt" id="kNeu">+ Neie Client</button></div>`;
   $("#kNeu").onclick = () => { KFORM = leererKunde(); renderKunden(); window.scrollTo(0, 0); };
   box.querySelectorAll("[data-kauf]").forEach(b => b.onclick = () => { const k = b.dataset.kauf; K_AUF.has(k) ? K_AUF.delete(k) : K_AUF.add(k); renderKunden(); });
+  rechKnoepfe(box);
   box.querySelectorAll("[data-kakeef]").forEach(b => b.onclick = () => { const k = b.dataset.kakeef; K_AKEEF.has(k) ? K_AKEEF.delete(k) : K_AKEEF.add(k); renderKunden(); });
   box.querySelectorAll("[data-ked]").forEach(b => b.onclick = () => { const K = Z.kunden.find(k => k.kid === b.dataset.ked); if (!K) return;
     KFORM = { kid: K.kid, firma: K.firma || "", name: K.name || "", vorname: K.vorname || "", adresse: K.adresse || "", ort: K.ort || "", tel: K.tel || "", mail: K.mail || "", notiz: K.notiz || "" };
@@ -2183,10 +2196,10 @@ let LFORM = null, L_NEU = false, L_NUR_MEINE = false, L_MELD_AUF = "";
 function leereLivraison() {
   const morgen = new Date(Date.now() + 86400000).toLocaleDateString("sv-SE", { timeZone: TZ });
   // „Huelen aus“: Vorgabe ist, wer einträgt (vom Nutzer, Fassung x); ändern nur über den Knopf „Änneren“
-  return { k: leererKaeufer(), kontakt: EIN.ich, aus: EIN.ich, ausAendern: false, anlass: "", datum: morgen, n: {}, betrag: null, rechnung: false, notiz: "" }; // Rechnung standardmäßig aus (vom Nutzer, 20.11.)
+  return { k: leererKaeufer(), kontakt: EIN.ich, aus: EIN.ich, ausAendern: false, anlass: "", datum: morgen, n: {}, preis: {}, betrag: null, rechnung: false, notiz: "" }; // Rechnung standardmäßig aus (vom Nutzer, 20.11.)
 }
 const lArtikel = () => artikelListe(LFORM.aus, LFORM.n);
-function lAuto() { return runde(lArtikel().reduce((a, x) => a + (LFORM.n[x.key] || 0) * x.preis, 0)); }
+function lAuto() { return runde(lArtikel().reduce((a, x) => a + (LFORM.n[x.key] || 0) * stueckPreis(LFORM, x), 0)); }
 const freiText = (wer, key) => { const r = reserviertBei(Z, wer, key), h = hat(Z, wer, key); return `fräi ${h - r}` + (r ? ` (${h} do, ${r} reservéiert)` : ""); };
 function renderLivraisons() {
   renderLListe();
@@ -2208,7 +2221,7 @@ function renderLListe() {
     const knoepfe = !v ? `<button class="knopf akt" data-geliwwert="${esc(L.id)}">Geliwwert ✓</button>
         <button class="knopf" data-led="${esc(L.id)}">✎ Änneren</button>
         <button class="knopf" data-lweg="${esc(L.id)}">Läschen</button><button class="knopf gelbk" data-lauf="${esc(L.lid)}">+ Aufgab</button>`
-      : `${v.rechnungWunsch && !v.rechnungGemacht ? `<button class="knopf akt" data-rech="${esc(v.id)}">🧾 Rechnung maachen</button>` : ""}
+      : `${v.rechnungWunsch && !v.rechnungGemacht ? `<button class="knopf akt" data-rech="${esc(v.id)}">🧾 Rechnung maachen</button>` : rechNachKnopf(v)}
          ${v.offen > 0 ? `<button class="knopf akt" data-lbezuelt="${esc(v.id)}">Bezuelt ✓</button>` : ""}`;
     return `<div class="liv" data-lid="${esc(L.lid)}"><div class="kopfz"><b>${esc(L.kunde)}</b><span>${euro(L.betrag)}</span></div>
       <div class="wann ${!v && L.datum <= heute ? "faellig" : ""}">${!v && L.datum < heute ? "⚠️ " : ""}${esc(datumKurz(L.datum))} · ${esc(postenText(L.posten))} · ${esc(L.kontakt)}${L.aus !== L.kontakt ? ` (${esc(L.aus === LAGER ? "vum Lager" : "vum " + L.aus)})` : ""}</div>
@@ -2228,11 +2241,11 @@ function renderLListe() {
   // Geplante Bestellung korrigieren (vom Nutzer, Fassung z): Formular mit allen Angaben; Späicheren = alte löschen + neue
   box.querySelectorAll("[data-led]").forEach(b => b.onclick = () => {
     const L = Z.livraisons.find(x => x.id === b.dataset.led); if (!L || L.verkauf) return;
-    const n = {}; for (const p of L.posten) n[p.sorte] = (n[p.sorte] || 0) + p.n;
-    const auto = runde(L.posten.reduce((a, p) => a + p.n * preisVon(Z.cfg, p.sorte), 0));
+    const n = {}, preis = {}; for (const p of L.posten) { n[p.sorte] = (n[p.sorte] || 0) + p.n; if (p.preis != null) preis[p.sorte] = p.preis; }
+    const auto = runde(L.posten.reduce((a, p) => a + p.n * (p.preis != null ? p.preis : preisVon(Z.cfg, p.sorte)), 0));
     const LK = L.kid && Z.kunden.find(x => x.kid === L.kid);
     LFORM = { k: LK ? { ...leererKaeufer(), firma: LK.firma || "", name: LK.name || "", vorname: LK.vorname || "", kid: LK.kid } : L.kf ? { ...leererKaeufer(), ...L.kf } : { ...leererKaeufer(), name: L.kunde },
-      kontakt: L.kontakt, aus: L.aus, ausAendern: true, anlass: L.anlass || "", datum: L.datum, n,
+      kontakt: L.kontakt, aus: L.aus, ausAendern: true, anlass: L.anlass || "", datum: L.datum, n, preis,
       betrag: L.betrag === auto ? null : L.betrag, rechnung: !!L.rechnung, notiz: L.notiz || "", ersetzt: L.id };
     L_NEU = true; renderLForm(true);
     lFormOben();
@@ -2246,7 +2259,7 @@ function renderLListe() {
     const L = Z.livraisons.find(x => x.id === b.dataset.geliwwert); if (!L) return;
     const kurz = L.posten.filter(p => p.n > hat(Z, L.aus, p.sorte));
     let frage = `Bestellung vu ${L.kunde} geliwwert?\n\n${postenText(L.posten)} · ${euro(L.betrag)}` + (L.vorbezahlt ? ` (${euro(L.vorbezahlt)} scho bezuelt)` : "");
-    if (kurz.length) frage += `\n\nAchtung: laut der App huet ${de(L.aus)} just ${kurz.map(p => `${hat(Z, L.aus, p.sorte)} × ${postenText([p]).replace(/^\d+ × /, "")}`).join(", ")}.`;
+    if (kurz.length) frage += `\n\nAchtung: laut der App huet ${de(L.aus)} just ${kurz.map(p => `${hat(Z, L.aus, p.sorte)} × ${artikelText(p.sorte)}`).join(", ")}.`;
     if (!confirm(frage)) return;
     eintragen([{ art: "verkauf", verkaeufer: L.kontakt, kaeufer: L.kunde, posten: L.posten, betrag: L.betrag, aus: L.aus, liv: L.id }]);
   });
@@ -2294,13 +2307,13 @@ function renderLForm(egal) {
       : `<div class="zeile aus-fest"><b id="lAusText">${esc(F.aus === LAGER ? "📦 Lager" : F.aus)}</b><button class="knopf" id="lAusAendern" style="flex:none">Änneren</button></div>`}
     <label for="lAnlass">Anlass (fräiwëlleg)</label><input id="lAnlass" value="${esc(F.anlass)}" placeholder="z. B. Oarbechterkiermes">
     <label>Wat?</label>
-    ${lArtikel().map((x, i) => `<div class="posten"><div class="pn"><b>${esc(x.label)}</b><small class="muted">${euro(x.preis)} · ${esc(freiText(F.aus, x.key))}</small></div>
+    ${lArtikel().map((x, i) => `<div class="posten"><div class="pn"><b>${esc(x.label)}</b><small class="muted"><span class="prw">${prChipHtml(F, x, i, "l")}</span> · ${esc(freiText(F.aus, x.key))}</small></div>
       <div class="stepper"><button data-lminus="${i}" aria-label="manner">−</button>
       <input id="lN${i}" data-li="${i}" inputmode="numeric" pattern="[0-9]*" value="${F.n[x.key] || ""}" placeholder="0">
       <button data-lplus="${i}" aria-label="méi">+</button></div></div>`).join("")}
     <label for="lBetrag">Betrag (€)</label>
     <div class="zeile"><input id="lBetrag" inputmode="decimal" value="${F.betrag != null ? String(F.betrag).replace(".", ",") : (lAuto() ? String(lAuto()).replace(".", ",") : "")}" placeholder="0">
-      <small class="muted" id="lAutoT" style="flex:1.4">anere Präis (z. B. 2,50 €/Fl)? Einfach Betrag änneren.</small></div>
+      <small class="muted" id="lAutoT" style="flex:1.4">anere Präis (z. B. 2,50 €/Fl)? Op de Präis bei der Fläsch tippen.</small></div>
     <label class="check"><input type="checkbox" id="lRechnung" ${F.rechnung ? "checked" : ""}> 🧾 Rechnung maachen</label>
     <label for="lNotiz">Remarque (fräiwëlleg)</label><input id="lNotiz" value="${esc(F.notiz)}">
     <button class="haupt" id="lOk">${F.ersetzt ? "Späicheren" : "Bestellung plangen"}</button>
@@ -2320,13 +2333,14 @@ function renderLForm(egal) {
   box.querySelectorAll("[data-lplus]").forEach(b => b.onclick = () => setzeN(+b.dataset.lplus, (F.n[la[+b.dataset.lplus].key] || 0) + 1));
   box.querySelectorAll("[data-lminus]").forEach(b => b.onclick = () => setzeN(+b.dataset.lminus, (F.n[la[+b.dataset.lminus].key] || 0) - 1));
   box.querySelectorAll("[data-li]").forEach(inp => inp.oninput = () => setzeN(+inp.dataset.li, parseInt(inp.value, 10) || 0));
+  prBinden(box, F, la, "l", betragNach);
   $("#lBetrag").oninput = e => { const v = e.target.value.trim().replace(",", "."); F.betrag = v === "" ? null : (isFinite(+v) ? runde(+v) : F.betrag); };
   // Nach Ofbriechen/Späicheren ganz nach oben (vom Nutzer, Fassung l)
   $("#lZu").onclick = () => { L_NEU = false; LFORM = null; renderLForm(); window.scrollTo(0, 0); };
   $("#lOk").onclick = () => {
     const meld = t => $("#lMeld").innerHTML = `<div class="meldung fehler">${esc(t)}</div>`;
     const KE = kaeuferErgebnis(Z, F.k);
-    const posten = la.filter(x => F.n[x.key] > 0).map(x => ({ sorte: x.key, n: F.n[x.key] }));
+    const posten = postenMitPreis(F, la);
     if (KE.fehler) return meld(KE.fehler);
     if (!/^\d{4}-\d{2}-\d{2}$/.test(F.datum)) return meld("Wéini? Datum feelt.");
     if (!posten.length) return meld("Wat gëtt geliwwert? Mindestens eng Fläsch.");
@@ -2350,7 +2364,7 @@ function renderLForm(egal) {
 
 /* ---------- Verkaufen ---------- */
 function leeresFormular() {
-  return { verkaeufer: EIN.ich, k: leererKaeufer(), n: {}, betrag: null, wie: null, rechnung: false, meldung: FORM && FORM.meldung };
+  return { verkaeufer: EIN.ich, k: leererKaeufer(), n: {}, preis: {}, betrag: null, wie: null, rechnung: false, meldung: FORM && FORM.meldung };
 }
 function vSorten() { return Z.cfg.sorten.filter(s => !s.aus); }
 /* Was man verkaufen/liefern kann: je Bier die Flaschen, Fässer nur, wenn der Halter welche hat (oder schon gewählt). */
@@ -2362,7 +2376,29 @@ function artikelListe(wer, gewaehlt) {
     ...Z.cfg.sorten.filter(s => s.archiv).flatMap(fass)];
 }
 const vArtikel = () => artikelListe(FORM.verkaeufer, FORM.n);
-function vAutoBetrag() { return runde(vArtikel().reduce((a, x) => a + (FORM.n[x.key] || 0) * x.preis, 0)); }
+/* Eigener Stückpreis (vom Nutzer, 20.11.2026, Entwurf gezeigt): Preis antippen → kleines Feld; gilt nur für diesen Verkauf / diese
+   Bestellung (F.preis[key]), der Listenpreis bleibt. Gespeichert als posten[].preis, nur wenn er abweicht. */
+const stueckPreis = (F, x) => F.preis && F.preis[x.key] != null ? F.preis[x.key] : x.preis;
+const prChipHtml = (F, x, i, pfx) => { const eig = F.preis && F.preis[x.key] != null;
+  return `<button type="button" class="prk ${eig ? "an" : ""}" data-${pfx}pr="${i}">${euro(stueckPreis(F, x))} ✎</button>${eig ? `<small class="muted"> amplaz ${euro(x.preis)}</small>` : ""}`; };
+function prBinden(box, F, art, pfx, nach) {
+  box.querySelectorAll(`[data-${pfx}pr]`).forEach(b => b.onclick = () => {
+    const i = +b.getAttribute(`data-${pfx}pr`), x = art[i], span = b.parentElement;
+    span.innerHTML = `<input class="prfeld" inputmode="decimal" value="${esc(zahlText(stueckPreis(F, x)))}" aria-label="Präis pro Stéck"> <small class="muted">€ pro ${x.fass ? "Fass" : "Fläsch"}</small>`;
+    const inp = span.querySelector("input"); inp.focus(); inp.select();
+    const fertig = () => {
+      const w = zahlAus(inp.value);
+      (F.preis ||= {});
+      if (w == null || !isFinite(w) || w < 0 || runde(w) === runde(x.preis)) delete F.preis[x.key]; else F.preis[x.key] = runde(w);
+      span.innerHTML = prChipHtml(F, x, i, pfx); prBinden(span, F, art, pfx, nach); nach();
+    };
+    inp.onblur = fertig;
+    inp.onkeydown = e => { if (e.key === "Enter") inp.blur(); };
+    inp.oninput = () => { const w = zahlAus(inp.value); (F.preis ||= {}); if (w != null && isFinite(w) && w >= 0) F.preis[x.key] = runde(w); nach(); };
+  });
+}
+const postenMitPreis = (F, art) => art.filter(x => F.n[x.key] > 0).map(x => ({ sorte: x.key, n: F.n[x.key], ...(F.preis && F.preis[x.key] != null && runde(F.preis[x.key]) !== runde(x.preis) ? { preis: runde(F.preis[x.key]) } : {}) }));
+function vAutoBetrag() { return runde(vArtikel().reduce((a, x) => a + (FORM.n[x.key] || 0) * stueckPreis(FORM, x), 0)); }
 function vFlaschen() { return vArtikel().filter(x => !x.fass).reduce((a, x) => a + (FORM.n[x.key] || 0), 0); }
 const u0 = h => h === LAGER ? "vum Lager" : "vum " + h;
 const zahlInhalt = k => `<img src="${ZAHLBILD[k]}" alt=""><span>${ZAHLARTEN[k]}</span>`;
@@ -2385,7 +2421,7 @@ function renderVerkaufen(egal) {
     <label for="vFirma">Un wien?</label>${kaeuferHtml("v", FORM.k)}
     <label>Wéi vill?</label>
     ${art.map((x, i) => `<div class="posten">
-      <div class="pn"><b>${esc(x.label)}</b><small class="muted" id="vHat${i}"></small></div>
+      <div class="pn"><b>${esc(x.label)}</b><small class="muted"><span class="prw">${prChipHtml(FORM, x, i, "v")}</span><span id="vHat${i}"></span></small></div>
       <div class="stepper"><button data-minus="${i}" aria-label="manner">−</button>
         <input id="vN${i}" data-i="${i}" inputmode="numeric" pattern="[0-9]*" value="${FORM.n[x.key] || ""}" placeholder="0">
         <button data-plus="${i}" aria-label="méi">+</button></div></div>`).join("")}
@@ -2410,6 +2446,7 @@ function renderVerkaufen(egal) {
   box.querySelectorAll("[data-plus]").forEach(b => b.onclick = () => setzeN(+b.dataset.plus, (FORM.n[art[+b.dataset.plus].key] || 0) + 1));
   box.querySelectorAll("[data-minus]").forEach(b => b.onclick = () => setzeN(+b.dataset.minus, (FORM.n[art[+b.dataset.minus].key] || 0) - 1));
   box.querySelectorAll("[data-i]").forEach(inp => inp.oninput = () => setzeN(+inp.dataset.i, parseInt(inp.value, 10) || 0));
+  prBinden(box, FORM, art, "v", vHinweise);
   $("#vBetrag").oninput = e => {
     const v = e.target.value.trim().replace(",", ".");
     FORM.betrag = v === "" ? null : (isFinite(+v) ? runde(+v) : FORM.betrag);
@@ -2432,7 +2469,7 @@ function vHinweise() {
   vArtikel().forEach((x, i) => {
     const el = $("#vHat" + i); if (!el) return;
     const n = hat(Z, FORM.verkaeufer, x.key), r = reserviertBei(Z, FORM.verkaeufer, x.key);
-    el.textContent = `${euro(x.preis)} · ${de(FORM.verkaeufer)} huet nach ${n}` + (r ? ` (${r} reservéiert)` : "");
+    el.textContent = ` · ${de(FORM.verkaeufer)} huet nach ${n}` + (r ? ` (${r} reservéiert)` : "");
     el.style.color = (FORM.n[x.key] || 0) > n - r ? "var(--gelb)" : "";
   });
   const auto = vAutoBetrag();
@@ -2440,13 +2477,13 @@ function vHinweise() {
   if (inp && FORM.betrag == null && document.activeElement !== inp) inp.value = auto ? String(auto).replace(".", ",") : "";
   const a = $("#vAuto");
   if (a) a.textContent = FORM.betrag != null && FORM.betrag !== auto
-    ? `amplaz ${euro(auto)} (${vFlaschen()} Fläschen)` : (vFlaschen() ? `${vFlaschen()} Fläschen` : "");
+    ? `amplaz ${euro(auto)} (${vFlaschen()} Fläschen)` : (vFlaschen() ? `${vFlaschen()} Fläschen` : "Präis pro Fläsch: op de Präis tippen");
 }
 
 async function vSpeichern() {
   const zeige = (art, t) => { FORM.meldung = { art, text: t }; $("#vMeldung").innerHTML = `<div class="meldung ${art}">${esc(t)}</div>`; };
   const KE = kaeuferErgebnis(Z, FORM.k);
-  const posten = vArtikel().filter(x => FORM.n[x.key] > 0).map(x => ({ sorte: x.key, n: FORM.n[x.key] }));
+  const posten = postenMitPreis(FORM, vArtikel());
   if (KE.fehler) return zeige("fehler", KE.fehler);
   if (!posten.length) return zeige("fehler", "Wéi vill? Mindestens eng Fläsch oder ee Fass.");
   if (!FORM.wie) return zeige("fehler", "Wéi bezuelt? WERO, SumUp, Iwwerweisung, Bar — oder méi spéit. Tipp w.e.g. eent un.");
@@ -2774,6 +2811,8 @@ function rechKnoepfe(root) {
   root.querySelectorAll("[data-rechz]").forEach(b => b.onclick = ev => { ev.stopPropagation(); rechnungZeigen(b.dataset.rechz); });
 }
 const rechFehlt = v => v.rechnungWunsch && !v.rechnungGemacht;
+// Nicht gewünscht, aber doch gebraucht (vom Nutzer, 20.11.2026): kleiner grauer Knopf — anders als der gelbe Hinweis
+const rechNachKnopf = v => !v.rechnungWunsch && !v.rechnungGemacht ? `<button class="knopf klein" data-rech="${esc(v.id)}">🧾 Rechnung nodréiglech</button>` : "";
 // Kopf über dem PDF: Mail wird beim Deelen kopiert; Änneren; ohne Teilen verschickt (z. B. ausgedruckt)
 function rechInfo(D) {
   const el = $("#ansichtInfo"); if (!el) return;
@@ -2824,7 +2863,7 @@ function renderOffen() {
   </div>
   ${liste.length ? liste.map((K, i) => `<div class="card kunde">
     <div class="kopfz"><h2 style="margin:0">${esc(K.name)}</h2><span class="betrag">${euro(K.sichtOffen)}</span></div>
-    ${K.sicht.map(v => `<div class="vk"><span>${v.livraison ? `🚚 Bestellung ${esc(datumKurz(v.livraison.datum))}` : datumText(v.zeit)} · ${esc(postenText(v.posten))}${v.betrag > v.ware ? ` + ${euro(v.betrag - v.ware)} fräi Positiounen` : ""}<br><small class="muted">${esc(beim(v.verkaeufer))}${v.bezahlt ? ` · ${euro(v.bezahlt)} scho bezuelt` : ""}${v.rech ? ` · Rechnung ${tageVon(v.rech.datum, heuteLux()) ? `zënter ${tageVon(v.rech.datum, heuteLux())} Deeg` : "vun haut"}` : ""}</small>${rechChip(v) ? `<div style="margin-top:4px">${rechChip(v)}</div>` : ""}</span><span>${euro(v.offen)}</span></div>`).join("")}
+    ${K.sicht.map(v => `<div class="vk"><span>${v.livraison ? `🚚 Bestellung ${esc(datumKurz(v.livraison.datum))}` : datumText(v.zeit)} · ${esc(postenText(v.posten))}${v.betrag > v.ware ? ` + ${euro(v.betrag - v.ware)} fräi Positiounen` : ""}<br><small class="muted">${esc(beim(v.verkaeufer))}${v.bezahlt ? ` · ${euro(v.bezahlt)} scho bezuelt` : ""}${v.rech ? ` · Rechnung ${tageVon(v.rech.datum, heuteLux()) ? `zënter ${tageVon(v.rech.datum, heuteLux())} Deeg` : "vun haut"}` : ""}</small>${rechChip(v) ? `<div style="margin-top:4px">${rechChip(v)}</div>` : ""}${rechNachKnopf(v) ? `<div>${rechNachKnopf(v)}</div>` : ""}</span><span>${euro(v.offen)}</span></div>`).join("")}
     <div class="knopfe">
       <button class="knopf akt" data-alles="${i}">Alles bezuelt ✓</button>
       <button class="knopf" data-teil="${i}">Deelbetrag…</button>

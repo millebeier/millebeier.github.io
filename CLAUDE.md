@@ -293,7 +293,14 @@ beim Verkaufen/Livraison und „Fläsche beweegen“ an, solange jemand welche h
   Startseite „Nach op bei dir“: meine fehlenden Rechnungen. Verkafen mit Haken → Meldung mit „🧾 Elo Rechnung maachen“. **💡-Aufgaben**: Rechnung
   maachen (jetzt auch Verkäufe, Link öffnet das Fenster), neu „Rechnung … nach net verschéckt“ (ab dem Tag danach, Kontakt, 7 Tage), Erënneren zählt
   bei Rechnungen ab dem Rechnungsdatum (= ab Fristende) und nennt die Nummer. Excel: Spalte Rechnung mit Nummer (`rechnungStand`), Blatt „Rechnungen“.
-  **Offen:** vergessener Haken lässt sich nachträglich nicht setzen (Verkauf nicht änderbar) — dem Nutzer gesagt.
+  **Rechnung nodréiglech** (vom Nutzer, Fassung d, Entwurf gezeigt): Verkauf ohne Haken → kleiner **grauer** Knopf „🧾 Rechnung nodréiglech“
+  (`rechNachKnopf`, `.knopf.klein`) an offenen Verkäufen unter Ausstoend und an gelieferten Bestellungen; im Reiter Client → Akeef je Kauf ein
+  kleines 🧾 (bzw. Nummer / „Rechnung maachen ›“ wenn gewünscht) — so findet man auch bezahlte Verkäufe. Gewünscht bleibt gelb + rotes „Maachen“.
+- **Eigener Stückpreis** (vom Nutzer, 20.11.2026, Fassung d, Entwurf gezeigt): in Verkafen und Bestellung ist der Preis „3 € ✎“ gestrichelt
+  antippbar (`prChipHtml`/`prBinden`, Zustand `FORM.preis`/`LFORM.preis`), wird zum kleinen Feld (`.prfeld`, ändert nur diesen Span, nie den Kasten);
+  geändert = gelb + „amplaz 3 €“, Betrag rechnet mit (`stueckPreis`). Gilt nur für diesen Verkauf/diese Bestellung, Listenpreis bleibt. Gespeichert
+  als `posten[].preis` (nur wenn abweichend, `postenMitPreis`); Bestellung ändern holt ihn zurück, „Geliwwert“ übernimmt ihn. `anteil` gewichtet mit
+  dem eigenen Preis; `rechnungZeilen` nimmt die Stückpreise **genau**, wenn der Betrag dazu passt (sonst anteilig wie bisher). `postenText` zeigt „à 2,50 €“.
 - **Aktionsknöpfe rot, nicht grün** (vom Nutzer, Fassung 20.11. a): „Geliwwert ✓“, „Bezuelt ✓“, „Alles bezuelt ✓“ und Späicheren
   bei „+ Aufgab“ sind `.knopf.akt` (Millebéier-Rot, weiße Schrift) — grün sah aus, als wäre es schon erledigt. Grün bleibt nur
   für Erledigtes (✓ bezuelt, gewählte Zahlungsart).
@@ -358,7 +365,7 @@ Script lief nicht, und damit auch kein automatisches Update. In Code auf einer Z
   „nicht geschickt“, Excel, „Jidderee muss“ (Gegenprobe gemacht). Automatische Aufgaben im Einzelnen in `logik.mjs` (Gegenprobe gemacht).
 - `JSPDF_JS=…/jspdf/dist/jspdf.umd.min.js node test/rechnungen.mjs` — Rechnungen: Haken aus, Fenster, Kopieren, freie Position, PDF-Inhalt
   (Rohtext der PDF-Datei), Deelen = verschickt / Abbruch nicht, Ändern behält Nummer, zweites Handy JJJJ-002, offline keine Nummer, Ausstoend,
-  Startseite, Hinweis an geplanter Bestellung (Gegenprobe gemacht). jsPDF per `npm install jspdf@2.5.1` in den Scratchpad; ohne wird übersprungen.
+  Startseite, Hinweis an geplanter Bestellung, eigener Stückpreis (Verkafen/Bestellung/Ändern), „Rechnung nodréiglech“, Client-Akeef (Gegenprobe gemacht). jsPDF per `npm install jspdf@2.5.1` in den Scratchpad; ohne wird übersprungen.
 - `node test/biere.mjs` — Bier anlegen/ändern/archivieren/zurückholen/löschen (zwei Rückfragen, Gegenprobe gemacht),
   rotes ✕ im Verlauf, rotes Dreieck; Kasten „Fläschen“ (vier Absichten, Pfeil, ⇄, änneren, Vorschau, Gründe) und Abfüllen ändern beim Bier
   (48 → 60 → 50, Verlauf; Gegenprobe gemacht).

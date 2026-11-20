@@ -164,6 +164,48 @@ await A.evaluate(() => eintragen([{ art: "livraison", kunde: "BTS", kontakt: "La
 await warte(300); await A.click('[data-tab="livraisons"]'); await warte(200);
 ist("geplant mit Haken: Hinweis, ohne Haken keiner", await A.evaluate(() => [...document.querySelectorAll("#lListe .liv")].filter(x => !x.querySelector(".ok")).map(x => [x.querySelector("b").textContent, !!x.querySelector(".rgef")])),
   v => JSON.stringify(v.filter(x => ["BTS", "Ouni"].includes(x[0]))) === JSON.stringify([["BTS", true], ["Ouni", false]]));
+// Eigener Flaschenpreis (vom Nutzer, 20.11.): Preis antippen, 2,50 eintippen → Betrag rechnet, auf der Rechnung genau 2,50
+await A.click('[data-tab="verkaufen"]'); await warte(200);
+const iN = await A.evaluate(() => vArtikel().findIndex(x => x.key === "NEIPA"));
+await A.fill("#vName", "Weber"); await A.fill(`#vN${iN}`, "6");
+await A.click(`[data-vpr="${iN}"]`); await warte(100);
+ist("Preis antippen: Feld mit 3", await A.inputValue(".prfeld"), "3");
+await A.fill(".prfeld", "2,5"); await A.press(".prfeld", "Enter"); await warte(200);
+ist("eigener Preis: gelb, amplaz, Betrag 15", [await A.locator(".prk.an").innerText(), await A.locator(".posten").nth(iN).innerText(), await A.inputValue("#vBetrag")],
+  v => v[0].startsWith("2,50 €") && v[1].includes("amplaz 3 €") && v[2] === "15");
+await A.click('[data-bez="spaeter"]'); await A.click("#vSpeichern"); await warte(400);
+const vW = await A.evaluate(() => { const v = Z.verkaeufe.find(x => x.kaeufer === "Weber"); return { id: v.id, posten: v.posten, betrag: v.betrag, wunsch: v.rechnungWunsch }; });
+ist("gespeichert: posten mit preis 2,5, Betrag 15, ohne Rechnungswunsch", [vW.posten, vW.betrag, vW.wunsch], [[{ sorte: "NEIPA", n: 6, preis: 2.5 }], 15, false]);
+ist("Listenpreis unverändert", await A.evaluate(() => preisVon(Z.cfg, "NEIPA")), 3);
+// Rechnung nodréiglech: grauer Knopf unter Ausstoend, Fenster mit genauem Preis
+await A.click('[data-tab="offen"]'); await warte(200);
+ist("Ausstoend: „Rechnung nodréiglech“ beim Verkauf ohne Haken", await A.locator(`#t-offen .knopf.klein[data-rech="${vW.id}"]`).innerText(), "🧾 Rechnung nodréiglech");
+await A.click(`#t-offen .knopf.klein[data-rech="${vW.id}"]`); await warte(300);
+ist("Fenster: Stückpreis 2,50 genau", await A.locator("#rechKarte .rpos").innerText(), t => t.includes("6 btls.") && t.includes("2,50") && t.includes("15 €"));
+await A.click("#rOk"); await warte(2500);
+ist("nodréiglech: Nummer " + J + "-003", await A.evaluate(id => Z.vkNachId.get(id).rech && Z.vkNachId.get(id).rech.nr, vW.id), J + "-003");
+ist("PDF: 2,50 €", (await pdfText(A)).includes("2,50"), true);
+await A.click("#ansichtZu"); await warte(200);
+await A.click('[data-tab="offen"]'); await warte(200);
+ist("danach kein grauer Knopf mehr, Chip mit Nummer", [await A.locator(`#t-offen .knopf.klein[data-rech="${vW.id}"]`).count(), await A.locator("#t-offen").innerText()], v => v[0] === 0 && v[1].includes("🧾 " + J + "-003"));
+// Bestellung: Preis ändern, beim Ändern wieder da; geliefert ohne Haken → nodréiglech
+await A.click('[data-tab="livraisons"]'); await warte(900); await A.click("#lAuf"); await warte(200);
+const iL = await A.evaluate(() => lArtikel().findIndex(x => x.key === "NEIPA"));
+await A.fill("#lFirma", "Rock Solid"); await A.fill("#lDatum", "2026-11-19"); await A.fill(`#lN${iL}`, "10");
+await A.click(`[data-lpr="${iL}"]`); await A.fill(".prfeld", "2,4"); await A.press(".prfeld", "Enter"); await warte(200);
+ist("Bestellung: Betrag 24", await A.inputValue("#lBetrag"), "24");
+await A.click("#lOk"); await warte(400);
+const lRS = await A.evaluate(() => Z.livraisons.find(L => L.kunde === "Rock Solid").id);
+await warte(900); await A.click(`[data-led="${lRS}"]`); await warte(300);
+ist("Bestellung ändern: eigener Preis wieder da", await A.locator(`[data-lpr="${iL}"]`).innerText(), t => t.startsWith("2,40 €"));
+await A.click("#lZu"); await warte(900);
+await A.evaluate(id => { const L = Z.livraisons.find(x => x.id === id); eintragen([{ art: "verkauf", verkaeufer: L.kontakt, kaeufer: L.kunde, posten: L.posten, betrag: L.betrag, aus: L.aus, liv: L.id }]); }, lRS);
+await warte(400);
+ist("geliefert ohne Haken: „Rechnung nodréiglech“", await A.evaluate(id => { const L = Z.livraisons.find(x => x.id === id); const b = document.querySelector(`#lListe .knopf.klein[data-rech="${L.verkauf.id}"]`); return b && b.textContent; }, lRS), "🧾 Rechnung nodréiglech");
+// Client → Akeef: 🧾 / Nummer
+await A.click('[data-tab="kunden"]'); await warte(200);
+await A.click('[data-kauf="k-ferro1"]'); await warte(900); await A.click('[data-kakeef="k-ferro1"]'); await warte(200);
+ist("Client Akeef: Nummer an der Rechnung", await A.locator("#kListe").innerText(), t => t.includes("🧾 " + J + "-001"));
 ist("keine Seitenfehler", [...A.konsole, ...B.konsole].filter(t => !/ERR_|net::|Failed to load/.test(t)), []);
 await browser.close();
 console.log(fehler ? `${fehler} Prüfung(en) fehlgeschlagen` : "alles gut");
