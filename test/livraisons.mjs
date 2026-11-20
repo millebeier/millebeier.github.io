@@ -31,6 +31,8 @@ await p.fill("#lAnlass", "Oarbechterkiermes");
 await p.fill("#lN0", "24"); await p.fill("#lN2", "12");
 ist("Betrag automatisch 36 × 3", await p.inputValue("#lBetrag"), "108");
 await p.fill("#lBetrag", "90");
+ist("Haken Rechnung standardmäßig aus (vom Nutzer, 20.11.)", await p.isChecked("#lRechnung"), false);
+await p.check("#lRechnung");
 await p.click("#lOk"); await warte(200);
 ist("geplant angezeigt", await p.locator("#lListe").innerText(), s => s.includes("Ferro Forum") && s.includes("5.12.2026") && s.includes("Geplangt (1)"));
 ist("Reiter zeigt 1 geplante", await p.locator('[data-tab="livraisons"]').innerText(), s => s.includes("1"));
@@ -40,7 +42,8 @@ await p.click("[data-geliwwert]"); await warte(200);
 ist("geliwwert: aus dem Lager", await p.evaluate(() => [hat(Z, "Lager", "NEIPA"), hat(Z, "Lager", "Brown Porter")]), [76, 38]);
 ist("geliwwert: Rechnung offen, Betrag offen", await p.locator("#lListe").innerText(), s => s.includes("Rechnung nach ze maachen") && s.includes("90 € op"));
 ist("steht unter Ausstoend", await p.evaluate(() => Z.kaeufer.find(k => k.name === "Ferro Forum").offen), 90);
-await p.click("[data-rechnung]"); await warte(900);
+// Rechnung wie früher ohne Nummer (alter Haken) — das Fenster prüft test/rechnungen.mjs
+await p.evaluate(() => { const v = Z.verkaeufe.find(x => x.kaeufer === "Ferro Forum"); eintragen([{ art: "rechnung", ref: v.id }]); }); await warte(900);
 await p.click("[data-lbezuelt]"); await p.click("#zahlWahl [data-wie=\"bank\"]"); await warte(200);
 ist("Rechnung gemaach und bezuelt", await p.locator("#lListe").innerText(), s => s.includes("Rechnung gemaach") && s.includes("✓ bezuelt"));
 ist("Kasse", await p.evaluate(() => Z.kasse), 90);
@@ -106,7 +109,7 @@ if (XLSX_JS && existsSync(XLSX_JS)) {
   const require = createRequire(XLSX_JS);
   const X = require(XLSX_JS);
   const wb = X.read(readFileSync(pfad), { cellNF: true });
-  ist("Excel: Blätter", wb.SheetNames, ["NEIPA", "Brown Porter", "Bestellungen", "Clienten", "Stock", "Ze maachen"]);
+  ist("Excel: Blätter", wb.SheetNames, ["NEIPA", "Brown Porter", "Bestellungen", "Clienten", "Stock", "Rechnungen", "Ze maachen"]);
   const kl = X.utils.sheet_to_json(wb.Sheets.Clienten, { header: 1, defval: "" });
   const kk = kl.findIndex(r => r[0] === "Firma");
   ist("Excel Clienten: Kopf", kl[kk], ["Firma", "Numm", "Virnumm", "Adress", "Uertschaft", "Telefon", "E-Mail", "Remarque", "Akeef", "Total", "dovun op", "geplangt", "Leschten Akaf"]);
@@ -120,7 +123,7 @@ if (XLSX_JS && existsSync(XLSX_JS)) {
   ist("Excel NEIPA: Total ohne geplant", neipa[neipa.length - 1].slice(0, 7), ["Total", "", "", 24, "Fläschen", "", 60]);
   ist("Excel: Euro-Format", wb.Sheets.NEIPA[X.utils.encode_cell({ r: kopf + 1, c: 5 })].z, '#,##0.00 "€"');
   const liv = X.utils.sheet_to_json(wb.Sheets.Bestellungen, { header: 1, defval: "" });
-  ist("Excel Livraisons", liv.filter(r => r[1] === "Ferro Forum" || r[1] === "BEST").map(r => [r[1], r[6], r[7], r[8], r[9]]), [["Ferro Forum", "Jo", "gemaach", "Jo", "Iwwerweisung"], ["BEST", "geplangt", "nach ze maachen", "–", ""]]);
+  ist("Excel Livraisons", liv.filter(r => r[1] === "Ferro Forum" || r[1] === "BEST").map(r => [r[1], r[6], r[7], r[8], r[9]]), [["Ferro Forum", "Jo", "gemaach", "Jo", "Iwwerweisung"], ["BEST", "geplangt", "", "–", ""]]);
   // Altbestand mit zwei gleich aussehenden Bieren: Export klappt trotzdem, Blattnamen eindeutig
   await p.evaluate(() => eintragen([{ art: "bier", name: "NEIPA", preis: 3, braudatum: "2026-07-28" }, { art: "bier", name: "NEIPA (28.07.2026)", preis: 3, braudatum: "2026-07-28" }, { art: "abfuellung", sorte: "NEIPA (28.07.2026)", n: 5 }]));
   await warte(900);

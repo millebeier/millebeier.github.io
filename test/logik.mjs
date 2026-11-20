@@ -4,7 +4,7 @@ const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
 const a = html.indexOf("/* === Logik ===");
 const b = html.indexOf("/* === Oberfläche ===");
 if (a < 0 || b < 0) { console.error("Marken nicht gefunden"); process.exit(1); }
-const L = new Function(html.slice(a, b) + "; return {rechne, gueltig, euro, verteile, erinnerung, csv, beschreibe, hat, LAGER, STANDARD, proSorte, exportBlaetter, anteil, dateienVon, altImport, altKorrekturen, bierText, postenText, frei, zuWenig, preisVon, fassKey, artikelVon, autoAufgaben, aufgabenStand, aidVon, aufFuerMich};")();
+const L = new Function(html.slice(a, b) + "; return {rechne, gueltig, euro, verteile, erinnerung, csv, beschreibe, hat, LAGER, STANDARD, proSorte, exportBlaetter, anteil, dateienVon, altImport, altKorrekturen, bierText, postenText, frei, zuWenig, preisVon, fassKey, artikelVon, autoAufgaben, aufgabenStand, aidVon, aufFuerMich, naechsteNr, rechnungZeilen, rechnungDaten};")();
 
 let fehler = 0, n = 0;
 const ist = (was, wert, soll) => { n++; const ok = JSON.stringify(wert) === JSON.stringify(soll); if (!ok) { fehler++; console.log(`✗ ${was}: ${JSON.stringify(wert)} statt ${JSON.stringify(soll)}`); } };
@@ -121,7 +121,7 @@ ist("CSV Zeilen", c.trim().split("\r\n").length, 4);
     ["Paul", 2, 6, "Jo", "Nee"], ["verschenkt / Prouf", 1, 0, "–", "–"], ["Ferro Forum", 24, 60, "Jo", "Nee"], ["BEST", 6, 15, "geplangt 20.12.2026", "–"]]);
   ist("pro Sorte: Rechnung und Anlass", [ps[2].rechnung, ps[2].remarque], ["gemaach", "Kiermes"]);
   const bl = L.exportBlaetter(Y, t => "T");
-  ist("Export: Blätter", bl.map(b => b.name), ["NEIPA", "Brown Porter", "Bestellungen", "Clienten", "Stock", "Ze maachen"]);
+  ist("Export: Blätter", bl.map(b => b.name), ["NEIPA", "Brown Porter", "Bestellungen", "Clienten", "Stock", "Rechnungen", "Ze maachen"]);
   ist("Export: Summe NEIPA ohne geplant", bl[0].summe.slice(0, 7), ["Total", "", "", 27, "Fläschen", "", 66]);
   ist("Export: Livraisons", bl[2].zeilen.map(z => [z[1], z[6], z[7], z[8]]), [["Ferro Forum", "Jo", "gemaach", "Nee"], ["BEST", "geplangt", "", "–"]]);
   ist("Export: Stock Lager", bl[4].zeilen[0].slice(0, 3), ["Lager", 66, 0]);
@@ -288,7 +288,7 @@ ist("CSV Zeilen", c.trim().split("\r\n").length, 4);
   const typen = auto.map(a => a.typ).sort();
   ist("Auto: alle Arten", typen, ["afuellen", "erinnern", "fehlt", "geliwwert", "leer", "mhd", "rechnung"]);
   const von = t => auto.find(a => a.typ === t);
-  ist("Rechnung: Text, für Kontakt, Link zur Bestellung", [von("rechnung").text, von("rechnung").fuer, von("rechnung").ref], ["Rechnung maachen: Ferro Forum", ["Marc"], { typ: "liv", id: l1.id }]);
+  ist("Rechnung: Text, für Kontakt, öffnet das Fenster", [von("rechnung").text, von("rechnung").fuer, von("rechnung").link.typ], ["Rechnung maachen: Ferro Forum", ["Marc"], "rech"]);
   ist("Erinnern: nur ab 30 Tagen, für den Verkäufer", [von("erinnern").text, von("erinnern").sub, von("erinnern").fuer, auto.filter(a => a.typ === "erinnern").length], ["Paul erënneren · 6 €", "op zënter 35 Deeg", ["Jeff"], 1]);
   // Lager 24 (31 reserviert), Jeff 8, Laurent −2 → zusammen −1 frei
   ist("Leer: nichts mehr frei", [von("leer").text, von("leer").sub, von("leer").fuer], ["Keen NEIPA méi do", "just nach 0 fräi", ["All"]]);
@@ -406,6 +406,40 @@ ist("CSV Zeilen", c.trim().split("\r\n").length, 4);
   ist("Een eleng: unverändert", [auf("a-eener-003").jeder, auf("a-eener-003").gemacht], [undefined, undefined]);
   ist("Verlauf: Haken je Person", L.beschreibe(ein[3], Y), "☑️ Jeff huet ofgehaakt: Etiketten opklewen");
   ist("Gültig: Haken ohne aid nein", L.gueltig({ id: "x", zeit: 1, art: "aufhak", durch: "Jeff" }), false);
+}
+
+// ---------- Rechnungen (Fassung 20.11. b) ----------
+{
+  let z = Date.parse("2026-11-20T09:00:00Z"), i = 0;
+  const R = (art, x, durch = "Laurent") => ({ id: "rch-" + String(++i).padStart(5, "0"), zeit: (z += 1000), art, durch, ...x });
+  const ab = R("abfuellung", { sorte: "NEIPA", n: 100 });
+  const v1 = R("verkauf", { verkaeufer: "Laurent", kaeufer: "Ferro", posten: [{ sorte: "NEIPA", n: 20 }, { sorte: "NEIPA Keg 20l", n: 1 }], betrag: 210, rechnung: true });
+  const v2 = R("verkauf", { verkaeufer: "Jeff", kaeufer: "Café", posten: [{ sorte: "NEIPA", n: 6 }], betrag: 18 });
+  let Y = L.rechne([ab, v1, v2]);
+  ist("Wunsch: Haken beim Verkauf", [Y.vkNachId.get(v1.id).rechnungWunsch, Y.vkNachId.get(v2.id).rechnungWunsch], [true, false]);
+  ist("Erste Nummer im Jahr", L.naechsteNr(Y, "2026-11-20"), "2026-001");
+  ist("Zeilen: Preis aus dem Anteil, Fass als keg", L.rechnungZeilen(Y, Y.vkNachId.get(v1.id)).map(r => [r.menge, r.txt, r.preis, r.total]), [["20 btls.", "NEIPA", 3, 60], ["1 keg 20 l", "NEIPA", 150, 150]]);
+  const r1 = R("rechnung", { ref: v1.id, nr: "2026-001", datum: "2026-11-20", adresse: "Ferro\nRue 1", frei: [{ n: 1, txt: "Transport", preis: 40 }] });
+  const z1 = R("zahlung", { ref: v1.id, betrag: 100, wie: "bank" });
+  Y = L.rechne([ab, v1, v2, r1, z1]);
+  const V = Y.vkNachId.get(v1.id);
+  ist("Freie Position erhöht Betrag, Umsatz, Offen", [V.betrag, V.ware, V.offen, Y.umsatz, Y.personen.Laurent.umsatz, Y.offen], [250, 210, 150, 268, 250, 168]);
+  ist("Pro Bier nur der Bier-Betrag", L.proSorte(Y, "NEIPA").filter(x => x.kunde === "Ferro").reduce((a, x) => a + x.recetten, 0), 210);
+  ist("Nächste Nummer", [L.naechsteNr(Y, "2026-12-01"), L.naechsteNr(Y, "2027-01-02")], ["2026-002", "2027-001"]);
+  const D = L.rechnungDaten(Y, V, V.rech);
+  ist("PDF-Daten: Total, bezahlt, Rescht, fällig, Adresse", [D.total, D.bezahlt, D.rest, D.faelligText, D.adresse, D.bezahltText, D.lieferLabel], [250, 100, 150, "20.12.2026", ["Ferro", "Rue 1"], "Déjà payé (Iwwerweisung) — acompte", "Date de vente"]);
+  ist("💡 Rechnung maachen nur für Café nicht, für Ferro gemacht → weg", L.autoAufgaben(Y, "2026-11-20").filter(a => a.typ === "rechnung").length, 0);
+  ist("💡 nicht verschickt erst ab dem Tag danach", [L.autoAufgaben(Y, "2026-11-20").some(a => a.typ === "verschickt"), L.autoAufgaben(Y, "2026-11-21").filter(a => a.typ === "verschickt").map(a => a.text)], [false, ["Rechnung 2026-001 nach net verschéckt: Ferro"]]);
+  const Y2 = L.rechne([ab, v1, v2, r1, z1, R("rversand", { ref: v1.id })]);
+  ist("verschickt → 💡 weg", L.autoAufgaben(Y2, "2026-11-21").some(a => a.typ === "verschickt"), false);
+  ist("Erënneren mit Rechnung: ab Rechnungsdatum, mit Nummer", [L.autoAufgaben(Y2, "2026-12-19").some(a => a.typ === "erinnern" && a.text.startsWith("Ferro")), L.autoAufgaben(Y2, "2026-12-25").filter(a => a.typ === "erinnern" && a.text.startsWith("Ferro")).map(a => a.sub)],
+    [false, ["Rechnung 2026-001 · zënter 5 Deeg iwwer d'Frist"]]);
+  // Ändern behält die Nummer; gelöschter Verkauf gibt seine Nummer nicht frei
+  const r2 = R("rechnung", { ref: v1.id, nr: "2026-001", datum: "2026-11-20", adresse: "Ferro", frei: [] });
+  Y = L.rechne([ab, v1, v2, r1, z1, r2, R("storno", { ref: v1.id })]);
+  ist("Storno: Nummer bleibt vergeben", [Y.rechnungen.length, L.naechsteNr(Y, "2026-11-22")], [0, "2026-002"]);
+  ist("Gültig: falsche Nummer nein, ohne Nummer ja", [L.gueltig({ ...r1, nr: "26-1" }), L.gueltig({ id: "x", zeit: 1, art: "rechnung", ref: "a" })], [false, true]);
+  ist("Verlauf", [L.beschreibe(r1, L.rechne([ab, v1, r1])), L.beschreibe(r2, L.rechne([ab, v1, r1, r2]))], ["🧾 Rechnung 2026-001 gemaach: Ferro · 250 €", "🧾 Rechnung 2026-001 geännert: Ferro · 210 €"]);
 }
 
 console.log(fehler ? `${fehler} von ${n} Prüfungen fehlgeschlagen` : `Alle ${n} Prüfungen bestanden`);

@@ -271,6 +271,7 @@ textarea.adr{min-height:64px}
 .aus-fest b{font-size:16px}
 .chip{display:inline-block;font-size:12px;padding:3px 8px;border-radius:9px;background:var(--card2);margin:6px 4px 0 0}
 .chip.ok{background:#1f3a20;color:#bfe8c0} .chip.warn{background:#3a3115;color:#f4e2a0}
+.chip.rgef{border:1px dashed #8a7a3a;background:none;padding:2px 8px;color:#f4e2a0} /* Rechnung gewünscht, Bestellung noch geplant (vom Nutzer, 20.11.) */
 button.chip.lvor{border:0;font-family:inherit;cursor:pointer;color:#f4e2a0} button.chip.lvor.nb{border:1px dashed #8a7a3a;background:none;padding:2px 8px}
 /* Dreieck links fest, Name darf umbrechen (lange Namen wie „Brown Porter 01/2026 Keg 30l“ sprengten sonst die Tabelle) */
 tr.klick{cursor:pointer} tr.klick td:first-child{position:relative;padding-left:22px}
@@ -324,6 +325,30 @@ textarea{width:100%;font:16px/1.4 inherit;padding:10px;border-radius:10px;border
 .ansicht-kopf{position:sticky;top:0;display:flex;gap:8px;align-items:center;padding:10px 12px;background:#111;border-bottom:2px solid var(--akzent)}
 .ansicht-kopf b{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #ansichtInhalt{padding:8px}
+#ansichtInfo{padding:8px 12px;background:var(--card);border-bottom:1px solid var(--line);font-size:14px}
+#ansichtInfo .muted{font-size:13px;margin-top:4px} #ansichtInfo .knopfe{margin-top:8px} #ansichtInfo .ok{color:var(--gruen)} #ansichtInfo .gelb{color:var(--gelb)}
+/* Rechnung maachen (Fassung 20.11. b) */
+#rechWahl{position:fixed;inset:0;z-index:22;background:rgba(0,0,0,.8);overflow:auto;-webkit-overflow-scrolling:touch;padding:16px 12px 40px}
+#rechKarte{max-width:520px;margin:0 auto}
+#rechKarte .unter{color:var(--muted);font-size:13px;margin:2px 0 6px}
+#rechKarte textarea{width:100%;box-sizing:border-box;font:inherit;resize:vertical}
+#rechKarte .check.klein{font-size:13px;margin-top:6px;color:#ddd}
+.rstand{font-size:13px;color:var(--muted);margin:4px 0 6px;line-height:1.7} .rstand .ok{color:var(--gruen)} .rstand .gelb{color:var(--gelb)}
+.kont{display:flex;gap:8px;align-items:center} .kont input{flex:1;min-width:0}
+.kop{background:var(--card2);border:1px solid var(--line);color:var(--text);border-radius:9px;padding:8px 10px;font-size:13px;font-weight:700;white-space:nowrap;cursor:pointer}
+.kop.ok{border-color:var(--gruen);color:#bfe8c0}
+.rpos{border-top:1px solid #262626;padding:8px 0;display:grid;grid-template-columns:64px 1fr 56px 74px;gap:6px;align-items:center;font-size:14px}
+.rpos .z{text-align:right}
+.rfrei{display:grid;grid-template-columns:44px 1fr 66px 30px;gap:6px;align-items:center;border:1px dashed #555;border-radius:10px;padding:6px;margin-top:6px}
+.rfrei input{padding:7px 6px;font-size:15px;min-width:0} .rfrei input[data-rf="preis"]{text-align:right}
+.rfrei button{background:none;border:0;color:var(--akzent);font-size:18px;cursor:pointer}
+.rplus{width:100%;margin-top:8px;border:1px dashed #8a7a3a;color:#f4e2a0;background:none;border-radius:10px;padding:9px;font-size:14px;font-weight:700;cursor:pointer}
+.rsumme{display:flex;justify-content:space-between;font-weight:800;font-size:17px;border-top:1.5px solid var(--text);margin-top:10px;padding-top:8px}
+.rklein{display:flex;justify-content:space-between;font-size:13px;color:#ccc;margin-top:4px}
+.haupt.grau{background:var(--card2);color:var(--text)}
+button.chip{cursor:pointer;font:inherit;font-size:12px}
+.rechz{display:flex;justify-content:space-between;align-items:center;gap:8px;border-top:1px solid var(--line);padding:9px 0}
+.rechz:first-of-type{border-top:0} .rechz small{display:block;color:var(--muted)}
 #ansichtInhalt .tabelle{overflow:auto;-webkit-overflow-scrolling:touch;background:#fff;color:#111;border-radius:6px;margin-bottom:12px}
 #ansichtInhalt .tabelle table{border-collapse:collapse;font-size:12px;width:auto;min-width:100%}
 #ansichtInhalt .tabelle td{border:1px solid #ccc;padding:3px 6px;text-align:left;white-space:nowrap;color:#111}
@@ -379,14 +404,16 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px}
     <div class="hinweis" id="zahlBetragInfo" style="margin:4px 0 10px"></div></div>
   <div class="seg zahl"></div>
   <button class="haupt" id="zahlZu" style="background:var(--card2);color:var(--text)">Ofbriechen</button></div></div>
+<div id="rechWahl" class="versteckt"><div class="card" id="rechKarte"></div></div>
 <div id="ansicht" class="versteckt"><div class="ansicht-kopf"><b id="ansichtName"></b>
   <button class="knopf" id="ansichtTeilen">⬆️ Deelen</button><button class="knopf rot" id="ansichtZu" aria-label="Zoumaachen">✕</button></div>
+  <div id="ansichtInfo" class="versteckt"></div>
   <div id="ansichtInhalt"></div></div>
 
 <script>
 /* Adresse des Cloudflare-Workers. Leer = Probe-Modus (alles nur auf diesem Handy). */
 const WORKER_URL = "https://millebeier.rjtp6r9s9h.workers.dev/";
-const FASSUNG = "20.11.2026 a";
+const FASSUNG = "20.11.2026 b";
 
 /* === Logik === (kein DOM; test/logik.mjs schneidet diesen Block aus) */
 const LAGER = "Lager";
@@ -395,7 +422,7 @@ const STANDARD = {
   leute: ["Jeff", "Marc", "Claude", "Laurent"],
 };
 const GRUENDE = { getrunken: "selwer gedronk", verschenkt: "verschenkt / Prouf", kaputt: "futti", sonst: "soss eppes" };
-const ARTEN = ["abfuellung", "bewegung", "abgang", "verkauf", "zahlung", "einstellungen", "storno", "livraison", "rechnung", "bier", "bierstatus", "datei", "kunde", "termin", "aufgabe", "aufhak"];
+const ARTEN = ["abfuellung", "bewegung", "abgang", "verkauf", "zahlung", "einstellungen", "storno", "livraison", "rechnung", "bier", "bierstatus", "datei", "kunde", "termin", "aufgabe", "aufhak", "rversand"];
 /* Kalender (vom Nutzer, 16.11.2026): feste Arten; Akafen bewusst nicht (vom Nutzer). Reihenfolge = Knöpfe im Formular. */
 const TERMIN_ARTEN = {
   braudag: { ic: "🍺", txt: "Braudag" }, umschlauchen: { ic: "🔄", txt: "Ëmschlauchen" }, hopfen: { ic: "🌿", txt: "Hopfestopfen" },
@@ -444,14 +471,18 @@ function gueltig(e) {
       return text(e.verkaeufer) && text(e.kaeufer, 120) && geld(e.betrag) && postenOk(e.posten) &&
         (e.aus === undefined || text(e.aus)) && (e.liv === undefined || typeof e.liv === "string") &&
         optText(e.notiz, 300) && optDatum(e.datum) && (e.alt === undefined || typeof e.alt === "boolean") &&
-        (e.kid === undefined || typeof e.kid === "string") && kfOk(e.kf);
+        (e.kid === undefined || typeof e.kid === "string") && kfOk(e.kf) && (e.rechnung === undefined || typeof e.rechnung === "boolean");
     case "livraison":
       return text(e.kunde, 120) && text(e.kontakt, 30) && text(e.aus, 30) && geld(e.betrag) && postenOk(e.posten) &&
         typeof e.datum === "string" && /^\d{4}-\d{2}-\d{2}$/.test(e.datum) &&
         (e.anlass === undefined || e.anlass === "" || text(e.anlass, 80)) && (e.kid === undefined || typeof e.kid === "string") && kfOk(e.kf) &&
         (e.notiz === undefined || (typeof e.notiz === "string" && e.notiz.length <= 300)) &&
         (e.vorher === undefined || (typeof e.vorher === "string" && e.vorher.length <= 80));
-    case "rechnung": return typeof e.ref === "string";
+    case "rechnung": // ohne nr = alter Haken „Rechnung gemaach“; mit nr = echte Rechnung (Fassung 20.11. b), je ref gilt die neueste
+      return typeof e.ref === "string" && (e.nr === undefined || (typeof e.nr === "string" && /^\d{4}-\d{3,4}$/.test(e.nr) && optDatum(e.datum) && !!e.datum &&
+        optText(e.adresse, 400) && optText(e.anlass, 120) && optText(e.mail, 120) && optText(e.tel, 40) &&
+        (e.frei === undefined || (Array.isArray(e.frei) && e.frei.length <= 12 && e.frei.every(f => f && text(f.txt, 120) && ganz(f.n) && geld(f.preis))))));
+    case "rversand": return typeof e.ref === "string"; // Rechnung verschickt (geteilt), ref = Verkauf
     case "bier":
       return text(e.name, 30) && e.name !== LAGER && geld(e.preis) && optDatum(e.braudatum) && optDatum(e.mhd) &&
         optZahl(e.alk, 0, 30) && optZahl(e.liter, 0, 100000) && optText(e.stil, 40) && optText(e.notiz, 300) &&
@@ -603,7 +634,19 @@ function rechne(eintraege) {
     liv.set(e.id, { ...e, lid, kundeText: e.kunde, kunde: K ? K.label : e.kunde, kid: K ? K.kid : e.kid, verkauf: null }); for (const p of e.posten) st(p.sorte);
   }
   for (const v of vk.values()) if (v.liv && liv.has(v.liv)) { liv.get(v.liv).verkauf = v; v.livraison = liv.get(v.liv); }
-  for (const e of aktiv) if (e.art === "rechnung" && vk.has(e.ref)) vk.get(e.ref).rechnungGemacht = true;
+  /* Rechnungen (vom Nutzer, 20.11.2026): Wunsch = Haken beim Verkaufen oder an der Bestellung. Die neueste Fassung mit nr gilt (Ändern
+     behält die Nummer). Freie Positionen erhöhen den geschuldeten Betrag (vom Nutzer), nicht den Bestand; `ware` = Betrag der Biere. */
+  for (const v of vk.values()) { v.ware = v.betrag; v.rechnungWunsch = !!(v.rechnung || (v.livraison && v.livraison.rechnung)); v.rech = null; }
+  for (const e of aktiv) if (e.art === "rechnung" && vk.has(e.ref)) {
+    const v = vk.get(e.ref); v.rechnungGemacht = true;
+    if (e.nr) v.rech = { id: e.id, nr: e.nr, datum: e.datum, adresse: e.adresse || "", anlass: e.anlass || "", mail: e.mail || "", tel: e.tel || "",
+      frei: (e.frei || []).map(f => ({ ...f })), zeit: e.zeit, durch: e.durch, erst: v.rech ? v.rech.erst : e.zeit, erstDurch: v.rech ? v.rech.erstDurch : e.durch, verschickt: null };
+  }
+  for (const e of aktiv) if (e.art === "rversand" && vk.has(e.ref) && vk.get(e.ref).rech) { const r = vk.get(e.ref).rech; if (!r.verschickt) { r.verschickt = e.zeit; r.verschicktDurch = e.durch; } }
+  for (const v of vk.values()) if (v.rech) {
+    const extra = runde(v.rech.frei.reduce((a, f) => a + f.n * f.preis, 0));
+    if (extra) { v.betrag = runde(v.ware + extra); pe(v.verkaeufer).umsatz += extra; }
+  }
   let kasse = 0;
   const kasseNach = {};
   // Vorauszahlung (vom Nutzer, Fassung h): hängt an der Bestellung (lid, bleibt beim Ändern). Vor der Lieferung zählt sie in der
@@ -650,6 +693,7 @@ function rechne(eintraege) {
   return {
     reserviert, kasseNach, cfg, basisSorten, geloescht, liste, aktiv, storniert, nachId, bestand, halter, sorten, sortenNamen, personen,
     verkaeufe: [...vk.values()],
+    rechnungen: [...vk.values()].filter(v => v.rech).sort((a, b) => a.rech.nr.localeCompare(b.rech.nr)),
     altVerkaeufe: altVk,
     vkNachId: vk,
     livraisons: [...liv.values()].sort((a, b) => a.datum.localeCompare(b.datum) || ordnung(a, b)),
@@ -724,9 +768,14 @@ function beschreibe(e, Z) {
     }
     case "livraison": return `🚚 Bestellung geplangt: ${((Z && Z.livraisons && Z.livraisons.find(L => L.id === e.id)) || e).kunde}, ${postenText(e.posten)}, ${datumKurz(e.datum)} · ${euro(e.betrag)}`;
     case "rechnung": {
-      const v = Z && Z.nachId.get(e.ref);
-      return "🧾 Rechnung gemaach" + (v ? `: ${v.kaeufer}` : "");
+      const v = Z && ((Z.vkNachId && Z.vkNachId.get(e.ref)) || Z.nachId.get(e.ref));
+      if (!e.nr) return "🧾 Rechnung gemaach" + (v ? `: ${v.kaeufer}` : "");
+      const fr = (e.frei || []).reduce((a, f) => a + f.n * f.preis, 0);
+      const alt = Z && Z.liste && Z.liste.some(x => x.art === "rechnung" && x.nr === e.nr && x.zeit < e.zeit);
+      return `🧾 Rechnung ${e.nr} ${alt ? "geännert" : "gemaach"}` + (v ? `: ${v.kaeufer} · ${euro((v.ware != null ? v.ware : v.betrag) + fr)}` : "");
     }
+    case "rversand": { const v = Z && Z.vkNachId && Z.vkNachId.get(e.ref);
+      return `📨 Rechnung ${v && v.rech ? v.rech.nr + " " : ""}verschéckt` + (v ? `: ${v.kaeufer}` : ""); }
     case "bier": return `🍺 Béier: ${e.name}` + [e.stil, e.alk != null ? String(e.alk).replace(".", ",") + " %" : "", euro(e.preis), e.braudatum ? "gebraut " + datumKurz(e.braudatum) : ""].filter(Boolean).map(x => " · " + x).join("");
     case "bierstatus": return { archiv: "📦 Archivéiert: ", aktiv: "↩️ Aus dem Archiv zréck: ", weg: "✕ Béier geläscht: " }[e.status] + bierText(e.name);
     case "termin": return e.weg ? `📅 Termin geläscht` : `📅 ${(TERMIN_ARTEN[e.typ] || {}).ic || ""} ${e.titel}${e.bier ? " · " + e.bier : ""}, ${datumKurz(e.datum)}${e.uhr ? " " + e.uhr : ""}`;
@@ -857,8 +906,44 @@ function anteil(cfg, posten, betrag, p) {
   const n = posten.reduce((a, x) => a + x.n, 0);
   return n ? runde(betrag * p.n / n) : 0;
 }
+/* ---------- Rechnungen (vom Nutzer, 20.11.2026; Entwurf und Muster-PDF gezeigt) ----------
+   Nummer je Jahr fortlaufend ab 2026-001; gezählt wird über ALLE Rechnungs-Einträge (auch gelöschter Verkäufe) — keine Nummer doppelt. */
+function naechsteNr(Z, datum) {
+  const j = datum.slice(0, 4);
+  let max = 0;
+  for (const e of Z.liste) if (e.art === "rechnung" && e.nr && e.nr.startsWith(j + "-")) max = Math.max(max, +e.nr.slice(5));
+  return `${j}-${String(max + 1).padStart(3, "0")}`;
+}
+// Biername auf der Rechnung: ohne Braudatum, groß wie auf den bisherigen Rechnungen („RUSTY“)
+const rechnungBier = key => zerlege(key).bier.replace(/ \(\d{1,2}\.\d{1,2}\.\d{4}\)$/, "").replace(/ \d{2}\/\d{4}$/, "").toUpperCase();
+/* Zeilen aus dem Verkauf: Preis je Stück aus dem Anteil am Betrag (Listenpreis-gewichtet), die letzte Zeile nimmt den Rundungsrest. */
+function rechnungZeilen(Z, v) {
+  let rest = runde(v.ware != null ? v.ware : v.betrag);
+  return v.posten.map((p, i) => {
+    const total = i === v.posten.length - 1 ? rest : anteil(Z.cfg, v.posten, v.ware != null ? v.ware : v.betrag, p);
+    rest = runde(rest - total);
+    const l = zerlege(p.sorte).l;
+    return { menge: l ? `${p.n} keg ${l} l` : `${p.n} ${p.n === 1 ? "btl." : "btls."}`, txt: rechnungBier(p.sorte), preis: runde(total / p.n), total, n: p.n };
+  });
+}
+/* Alles, was aufs PDF kommt. F = {nr, datum, adresse (Text, Zeilen), anlass, frei[]} — aus dem Fenster oder der gespeicherten Rechnung. */
+function rechnungDaten(Z, v, F) {
+  const frei = (F.frei || []).filter(f => f.txt && f.n > 0).map(f => ({ menge: String(f.n), txt: f.txt, preis: runde(f.preis), total: runde(f.n * f.preis) }));
+  const zeilen = [...rechnungZeilen(Z, v), ...frei];
+  const total = runde(zeilen.reduce((a, z) => a + z.total, 0));
+  const bezahlt = runde(Math.min(v.bezahlt || 0, total)), rest = runde(total - bezahlt);
+  const L = v.livraison;
+  const wie = v.wie && v.wie.length ? ` (${v.wie.map(w => ZAHLARTEN[w]).join(", ")})` : "";
+  return { nr: F.nr, datum: F.datum, datumText: datumLang(F.datum), faellig: tagPlus(F.datum, 30), faelligText: datumLang(tagPlus(F.datum, 30)),
+    lieferLabel: L ? "Livraison du" : "Date de vente", lieferText: datumLang(L ? L.datum : tagVon(v.zeit)),
+    adresse: String(F.adresse || "").split("\n").map(x => x.trim()).filter(Boolean), anlass: (F.anlass || "").trim(),
+    zeilen, total, bezahlt, rest, bezahltText: `Déjà payé${wie}${rest > 0 ? " — acompte" : ""}`, kurzName: v.kaeufer };
+}
+const rechnungDateiname = (v, nr) => `Facture_${nr}_${String(v.kaeufer).normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^A-Za-z0-9]+/g, "_").replace(/^_|_$/g, "").slice(0, 40)}.pdf`;
 // Zahlungsart eigens (vom Nutzer: in Iwwersiicht und Excel muss klar stehen, wie bezahlt wurde)
 const wieListe = v => v && v.wie && v.wie.length ? v.wie.map(w => ZAHLARTEN[w]).join(", ") : "";
+// Rechnung in Tabellen: Nummer, „gemaach“ (alter Haken ohne Nummer), „nach ze maachen“ oder leer
+const rechnungStand = v => v.rech ? v.rech.nr + (v.rech.verschickt ? "" : " (nach net verschéckt)") : v.rechnungGemacht ? "gemaach" : v.rechnungWunsch ? "nach ze maachen" : "";
 const bezahltText = v => v.offen <= 0 ? "Jo" : v.bezahlt > 0 ? `Deelweis (${euro(v.offen)} op)` : "Nee";
 
 /* Alle Zeilen einer Sorte, wie ein Blatt in der alten Excel-Tabelle: wer hat was wem verkauft. */
@@ -867,11 +952,11 @@ function proSorte(Z, sorte) {
   const keys = new Set(artikelVon(Z, sorte));
   const zeilen = [];
   for (const v of Z.verkaeufe) for (const p of v.posten) if (keys.has(p.sorte)) {
-    const r = anteil(Z.cfg, v.posten, v.betrag, p);
+    const r = anteil(Z.cfg, v.posten, v.ware != null ? v.ware : v.betrag, p);
     const L = v.livraison;
     zeilen.push({ geb: gebindeText(p.sorte), zeit: v.zeit, datum: L ? L.datum : null, kunde: v.kaeufer, kontakt: v.verkaeufer, n: p.n,
       preis: runde(r / p.n), recetten: r, geliwwert: "Jo", bezuelt: bezahltText(v), wie: wieListe(v) || (v.bezahlt > 0 ? "ouni Aart" : ""),
-      rechnung: L && L.rechnung ? (v.rechnungGemacht ? "gemaach" : "nach ze maachen") : "",
+      rechnung: rechnungStand(v),
       remarque: L ? [L.anlass, L.notiz].filter(Boolean).join(" · ") : "", id: v.id });
   }
   for (const v of Z.altVerkaeufe) for (const p of v.posten) if (keys.has(p.sorte)) {
@@ -914,7 +999,7 @@ function exportBlaetter(Z, zeitFmt, heute = tagVon(Date.now())) {
   blaetter.push({ name: "Bestellungen", titel: "Bestellungen", info: [],
     kopf: ["Datum", "Client", "Kontakt", "Wat", "Betrag", "Anlass", "geliwwert?", "Rechnung", "bezuel?", "bezuelt per", "Remarquen"],
     zeilen: Z.livraisons.map(L => [datumKurz(L.datum), L.kunde, L.kontakt, postenText(L.posten), L.betrag, L.anlass || "",
-      L.verkauf ? "Jo" : "geplangt", L.rechnung ? (L.verkauf && L.verkauf.rechnungGemacht ? "gemaach" : "nach ze maachen") : "",
+      L.verkauf ? "Jo" : "geplangt", L.verkauf ? rechnungStand(L.verkauf) : L.rechnung ? "nach ze maachen" : "",
       L.verkauf ? bezahltText(L.verkauf) : L.vorbezahlt ? (L.vorbezahlt >= L.betrag ? "Jo (am Viraus)" : `Acompte ${euro(L.vorbezahlt)}`) : "–",
       L.verkauf ? wieListe(L.verkauf) : L.vorWie.map(w => ZAHLARTEN[w]).join(", "), L.notiz || ""]), summe: null });
   // Clienten mit allen Daten und ihren Käufen ab jetzt (vom Nutzer, Fassung f)
@@ -935,6 +1020,10 @@ function exportBlaetter(Z, zeitFmt, heute = tagVon(Date.now())) {
   blaetter.push({ name: "Stock", titel: "Stock", info: ["Total = Fläschen; Fässer an hiren eegene Kolonnen."], kopf: ["", ...alleK.map(artikelText), "Total Fl."],
     zeilen: Z.halter.map(h => [h, ...alleK.map(k => hat(Z, h, k)), Z.sortenNamen.reduce((a, s) => a + hat(Z, h, s), 0)]),
     summe: ["Total", ...alleK.map(k => Z.sorten[k].da), Z.flaschen.da] });
+  blaetter.push({ name: "Rechnungen", titel: "Rechnungen", info: ["Fräi Positiounen (z. B. Transport) zielen am Total mat."],
+    kopf: ["Nummer", "Datum", "Client", "Wat", "Total", "dovun fräi Positiounen", "Bezuel bis", "verschéckt den", "bezuel?", "bezuelt per", "Kontakt"],
+    zeilen: Z.rechnungen.map(v => [v.rech.nr, datumKurz(v.rech.datum), v.kaeufer, postenText(v.posten), v.betrag, runde(v.betrag - v.ware), datumKurz(tagPlus(v.rech.datum, 30)),
+      v.rech.verschickt ? zeitFmt(v.rech.verschickt) : "nach net", bezahltText(v), wieListe(v), v.verkaeufer]), summe: null });
   blaetter.push({ name: "Ze maachen", titel: "Ze maachen", info: ["💡 = Virschlag vun der App"],
     kopf: ["Aufgab", "Fir", "Bis", "Status", "Erleedegt vum", "Erleedegt den", "Ugeluecht vum", "Ugeluecht den", "Bezuch"],
     zeilen: [...AS.op.map(a => [(a.auto ? "💡 " : "") + a.text, a.fuer.join(", ") + (a.jeder ? " (jidderee)" : ""), a.bis ? datumKurz(a.bis) : "",
@@ -1044,19 +1133,25 @@ const aidVon = (typ, schluessel) => { // kurze, gültige aid aus beliebigem Text
 function autoAufgaben(Z, heute) {
   const out = [], plan = Z.livraisons.filter(L => !L.verkauf);
   const kurzBier = n => artikelText(n);
-  // Rechnung maachen: geliefert, Rechnung gewünscht, noch nicht gemacht
-  for (const L of Z.livraisons) if (L.verkauf && L.rechnung && !L.verkauf.rechnungGemacht)
-    out.push({ aid: aidVon("rechnung", L.verkauf.id), typ: "rechnung", text: `Rechnung maachen: ${L.kunde}`, sub: `geliwwert ${tagKurz(L.datum)}`,
-      fuer: [L.kontakt], ref: { typ: "liv", id: L.lid }, wieder: 14 });
-  // X erënneren: offen seit mindestens 30 Tagen, je Verkäufer und Käufer
+  // Rechnung maachen: Rechnung gewünscht (Bestellung geliefert oder Verkauf mit Haken), noch nicht gemacht → öffnet das Fenster
+  for (const v of Z.verkaeufe) if (v.rechnungWunsch && !v.rechnungGemacht)
+    out.push({ aid: aidVon("rechnung", v.id), typ: "rechnung", text: `Rechnung maachen: ${v.kaeufer}`,
+      sub: v.livraison ? `geliwwert ${tagKurz(v.livraison.datum)}` : `verkaaft ${tagKurz(tagVon(v.zeit))}`,
+      fuer: [v.verkaeufer], link: { typ: "rech", id: v.id }, wieder: 14 });
+  // Rechnung gemacht, aber nicht geteilt (vom Nutzer, 20.11.2026): ab dem Tag danach, abgehakt nach 7 Tagen wieder
+  for (const v of Z.rechnungen) if (!v.rech.verschickt && tagVon(v.rech.erst) < heute)
+    out.push({ aid: aidVon("verschickt", v.id), typ: "verschickt", text: `Rechnung ${v.rech.nr} nach net verschéckt: ${v.kaeufer}`, sub: euro(v.betrag),
+      fuer: [v.verkaeufer], link: { typ: "rech", id: v.id }, wieder: 7 });
+  // X erënneren: offen seit mindestens 30 Tagen, je Verkäufer und Käufer; mit Rechnung ab dem Rechnungsdatum, also ab Ablauf der 30 Tage
   const gr = new Map();
   for (const v of Z.verkaeufe) if (v.offen > 0) {
-    const k = v.verkaeufer + "|" + v.kaeufer.trim().toLowerCase(), tag = v.datum || tagVon(v.zeit);
-    const g = gr.get(k) || { verk: v.verkaeufer, name: v.kaeufer.trim(), summe: 0, aelteste: tag };
-    g.summe = runde(g.summe + v.offen); if (tag < g.aelteste) g.aelteste = tag; gr.set(k, g);
+    const k = v.verkaeufer + "|" + v.kaeufer.trim().toLowerCase(), tag = v.rech ? v.rech.datum : v.datum || tagVon(v.zeit);
+    const g = gr.get(k) || { verk: v.verkaeufer, name: v.kaeufer.trim(), summe: 0, aelteste: tag, nr: [] };
+    g.summe = runde(g.summe + v.offen); if (tag < g.aelteste) g.aelteste = tag; if (v.rech) g.nr.push(v.rech.nr); gr.set(k, g);
   }
   for (const [k, g] of gr) { const d = tageVon(g.aelteste, heute); if (d >= AUF_GRENZE.erinnern)
-    out.push({ aid: aidVon("erinnern", k), typ: "erinnern", text: `${g.name} erënneren · ${euro(g.summe)}`, sub: `op zënter ${d} Deeg`,
+    out.push({ aid: aidVon("erinnern", k), typ: "erinnern", text: `${g.name} erënneren · ${euro(g.summe)}`,
+      sub: g.nr.length ? `Rechnung ${g.nr.join(", ")} · ${d - 30 > 0 ? `zënter ${d - 30} Deeg iwwer d'Frist` : "Frist ofgelaf"}` : `op zënter ${d} Deeg`,
       fuer: [g.verk], link: { typ: "offen" }, wieder: 14 }); }
   // Gläich keen XY méi do: aktives Bier, weniger als 24 Flaschen frei (alle zusammen); neu nach der nächsten Abfüllung
   for (const c of Z.cfg.sorten) if (!c.aus && !c.archiv) {
@@ -1290,7 +1385,7 @@ function render() {
   const [, kM, kT] = heuteLux().split("-").map(Number);
   $("#kalBtn").innerHTML = `<span class="kalic"><i>${KAL_MON[kM - 1]}</i><b>${kT}</b></span>` + (nKal ? `<span class="badge">${nKal}</span>` : "");
   document.querySelectorAll("#nav button").forEach(b => b.classList.toggle("an", b.dataset.tab === tab));
-  const nOffen = Z.kaeufer.filter(k => k.offen > 0).length;
+  const nOffen = Z.kaeufer.filter(k => k.offen > 0).length + Z.verkaeufe.filter(rechFehlt).length; // auch fehlende Rechnungen
   $('#nav [data-tab="offen"]').innerHTML = "<i>💶</i>Ausstoend" + (nOffen ? `<span class="badge">${nOffen}</span>` : "");
   renderSync();
   const nGeplant = Z.livraisons.filter(L => !L.verkauf).length;
@@ -1329,6 +1424,7 @@ function renderHaut() {
   const meineOffen = new Map();
   for (const v of Z.verkaeufe) if (v.offen > 0 && v.verkaeufer === ich) meineOffen.set(v.kaeufer, runde((meineOffen.get(v.kaeufer) || 0) + v.offen));
   const meineBest = Z.livraisons.filter(L => !L.verkauf && (L.kontakt === ich || L.aus === ich)).length;
+  const meineRech = Z.verkaeufe.filter(v => rechFehlt(v) && v.verkaeufer === ich).sort(ordnung);
   const zeilen = [];
   for (const s of Z.sortenNamen) for (const k of artikelVon(Z, s)) {
     const n = hat(Z, ich, k), r = reserviertBei(Z, ich, k);
@@ -1353,10 +1449,11 @@ function renderHaut() {
         + (meineAuf.slice(0, 5).some(a => a.auto) ? AUF_LEGENDE : "") : `<div class="leer">✓ Näischt ze maachen.</div>`}</div>
     <div class="card" id="hKal"><h2 class="hkopf">📅 Deng nächst Deeg<button class="hmehr" data-hgeh="kalender">Alles ›</button></h2>${bald.length ? bald.map(p => `<div class="hz"><span>${terminIc(p.quelle === "bestellung" ? "bestellung" : p.typ)} ${esc(p.titel)}${p.bier ? " · " + esc(p.bier) : ""}</span><span class="muted">${esc(wann(p))}</span></div>`).join("")
       : `<div class="leer">Näischt fir dech an de nächste 7 Deeg.</div>`}</div>
-    <div class="card" id="hOp"><h2 class="hkopf">💶 Nach op bei dir<button class="hmehr" data-hgeh="offen">Alles ›</button></h2>${meineOffen.size ? [...meineOffen].sort((a, b) => b[1] - a[1]).map(([n, b]) => `<div class="hz"><span>${esc(n)}</span><b class="gelb">${euro(b)}</b></div>`).join("")
+    <div class="card" id="hOp"><h2 class="hkopf">💶 Nach op bei dir<button class="hmehr" data-hgeh="offen">Alles ›</button></h2>${meineRech.map(v => `<div class="hz"><span>🧾 Rechnung maachen: ${esc(v.kaeufer)}</span><button class="chip warn" data-rech="${esc(v.id)}">Maachen ›</button></div>`).join("")}${meineOffen.size || meineRech.length ? [...meineOffen].sort((a, b) => b[1] - a[1]).map(([n, b]) => `<div class="hz"><span>${esc(n)}</span><b class="gelb">${euro(b)}</b></div>`).join("")
       : `<div class="leer">✓ Keen ass dir eppes schëlleg.</div>`}</div>
     <div class="card" id="hStock"><h2 class="hkopf">🍺 Du hues zur Verfügung<button class="hmehr" data-hgeh="bestand">Alles ›</button></h2>${zeilen.join("") || `<div class="leer">Du hues momentan keng Fläschen.</div>`}</div>`;
   aufListeBinden($("#hAuf"));
+  rechKnoepfe($("#hOp"));
   // „Fläschen“ auf der Startseite (vom Nutzer, Fassung k): erst die vier Absichten, dann das Formular — alles ohne Seitenwechsel
   const hZu = `<button class="zurueck" id="hZu">✕ Zoumaachen</button>`;
   if (H_HUELEN && !H_HUELEN.absicht) { absichtMenu($("#hHuelen"), H_HUELEN, renderHaut, hZu); $("#hZu").onclick = () => { H_HUELEN = null; renderHaut(); }; }
@@ -1950,6 +2047,7 @@ function aufLink(a) {
   const r = a.ref || a.link; if (!r) return "";
   if (r.typ === "liv") { const L = Z.livraisons.find(x => x.lid === r.id); return L ? `<span class="alink" data-alink="liv:${esc(r.id)}">🚚 ${esc(L.kunde)} ›</span>` : ""; }
   if (r.typ === "termin") { const t = Z.termine.find(x => x.tid === r.id); return t ? `<span class="alink" data-alink="termin:${esc(r.id)}">${terminIc(t.typ)} ${esc(t.titel)} ${esc(tagKurz(t.datum))} ›</span>` : ""; }
+  if (r.typ === "rech") { const v = Z.vkNachId.get(r.id); return v ? `<span class="alink" data-alink="rech:${esc(r.id)}">🧾 ${v.rech ? esc(v.rech.nr) : "Rechnung maachen"} ›</span>` : ""; }
   return `<span class="alink" data-alink="${r.typ}:">${{ offen: "Ausstoend", bestand: "Stock", sync: "Synchronisatioun" }[r.typ] || ""} ›</span>`;
 }
 function bisText(d, h) {
@@ -1989,6 +2087,7 @@ function aufHaken(aid, erledigt) {
 function aufGehe(z) {
   const [typ, id] = z.split(/:(.*)/s);
   if (typ === "sync") { SYNC_AUF = true; render(); window.scrollTo(0, 0); return; }
+  if (typ === "rech") { const v = Z.vkNachId.get(id); if (v && v.rech) rechnungZeigen(id); else rechnungOeffnen(id); return; }
   if (typ === "termin") {
     const t = Z.termine.find(x => x.tid === id); if (!t) return;
     TAB = "kalender"; KAL_BEREICH = "kalender"; KALFORM = null; KAL_FILTER.clear(); KAL_AUF.add(id); if (t.datum < heuteLux()) KAL_SICHT = "alles";
@@ -2084,7 +2183,7 @@ let LFORM = null, L_NEU = false, L_NUR_MEINE = false, L_MELD_AUF = "";
 function leereLivraison() {
   const morgen = new Date(Date.now() + 86400000).toLocaleDateString("sv-SE", { timeZone: TZ });
   // „Huelen aus“: Vorgabe ist, wer einträgt (vom Nutzer, Fassung x); ändern nur über den Knopf „Änneren“
-  return { k: leererKaeufer(), kontakt: EIN.ich, aus: EIN.ich, ausAendern: false, anlass: "", datum: morgen, n: {}, betrag: null, rechnung: true, notiz: "" };
+  return { k: leererKaeufer(), kontakt: EIN.ich, aus: EIN.ich, ausAendern: false, anlass: "", datum: morgen, n: {}, betrag: null, rechnung: false, notiz: "" }; // Rechnung standardmäßig aus (vom Nutzer, 20.11.)
 }
 const lArtikel = () => artikelListe(LFORM.aus, LFORM.n);
 function lAuto() { return runde(lArtikel().reduce((a, x) => a + (LFORM.n[x.key] || 0) * x.preis, 0)); }
@@ -2104,18 +2203,19 @@ function renderLListe() {
   const karte = L => {
     const v = L.verkauf;
     const status = v ? `<span class="chip ok">✓ geliwwert</span>
-        ${L.rechnung ? (v.rechnungGemacht ? `<span class="chip ok">🧾 Rechnung gemaach</span>` : `<span class="chip warn">🧾 Rechnung nach ze maachen</span>`) : ""}
+        ${rechChip(v)}
         ${v.offen <= 0 ? `<span class="chip ok">✓ bezuelt</span>` : `<span class="chip warn">${euro(v.offen)} op</span>`}` : "";
     const knoepfe = !v ? `<button class="knopf akt" data-geliwwert="${esc(L.id)}">Geliwwert ✓</button>
         <button class="knopf" data-led="${esc(L.id)}">✎ Änneren</button>
         <button class="knopf" data-lweg="${esc(L.id)}">Läschen</button><button class="knopf gelbk" data-lauf="${esc(L.lid)}">+ Aufgab</button>`
-      : `${L.rechnung && !v.rechnungGemacht ? `<button class="knopf" data-rechnung="${esc(v.id)}">🧾 Rechnung gemaach</button>` : ""}
+      : `${v.rechnungWunsch && !v.rechnungGemacht ? `<button class="knopf akt" data-rech="${esc(v.id)}">🧾 Rechnung maachen</button>` : ""}
          ${v.offen > 0 ? `<button class="knopf akt" data-lbezuelt="${esc(v.id)}">Bezuelt ✓</button>` : ""}`;
     return `<div class="liv" data-lid="${esc(L.lid)}"><div class="kopfz"><b>${esc(L.kunde)}</b><span>${euro(L.betrag)}</span></div>
       <div class="wann ${!v && L.datum <= heute ? "faellig" : ""}">${!v && L.datum < heute ? "⚠️ " : ""}${esc(datumKurz(L.datum))} · ${esc(postenText(L.posten))} · ${esc(L.kontakt)}${L.aus !== L.kontakt ? ` (${esc(L.aus === LAGER ? "vum Lager" : "vum " + L.aus)})` : ""}</div>
       ${!v ? (L.vorbezahlt >= L.betrag && L.vorbezahlt > 0 ? `<span class="chip ok">✓ ${euro(L.vorbezahlt)} bezuelt${L.vorWie.length ? " · " + esc(L.vorWie.map(w => ZAHLARTEN[w]).join(", ")) : ""}</span>`
         : L.vorbezahlt > 0 ? `<button class="chip warn lvor" data-lvor="${esc(L.lid)}">${euro(L.vorbezahlt)} Acompte${L.vorWie.length ? " · " + esc(L.vorWie.map(w => ZAHLARTEN[w]).join(", ")) : ""} — ${euro(runde(L.betrag - L.vorbezahlt))} op ›</button>`
         : `<button class="chip lvor nb" data-lvor="${esc(L.lid)}">💶 Nach net bezuelt ›</button>`) : ""}
+      ${!v && L.rechnung ? `<span class="chip rgef">🧾 Rechnung nach net geschéckt</span>` : ""}
       ${L.anlass || L.notiz ? `<div class="hinweis" style="margin-top:4px">${esc([L.anlass, L.notiz].filter(Boolean).join(" · "))}</div>` : ""}
       ${status}<div class="knopfe ${!v ? "einz" : ""}">${knoepfe}</div>
       ${!v && A_INLINE && A_INLINE.wo === "liv:" + L.lid ? aufFormHtml(A_INLINE.F, `Nei Aufgab fir d'Bestellung ${L.kunde}`) : ""}</div>`;
@@ -2168,7 +2268,7 @@ function renderLListe() {
       if (r) eintragen([{ art: "zahlung", ref: L.lid, vor: true, betrag: r.betrag, wie: r.wie }]);
     });
   });
-  box.querySelectorAll("[data-rechnung]").forEach(b => b.onclick = () => eintragen([{ art: "rechnung", ref: b.dataset.rechnung }]));
+  rechKnoepfe(box);
   box.querySelectorAll("[data-lbezuelt]").forEach(b => b.onclick = () => {
     const v = Z.vkNachId.get(b.dataset.lbezuelt); if (!v) return;
     zahlartWaehlen(`${v.kaeufer}: ${euro(v.offen)} bezuelt — wéi?`).then(wie => { if (wie) eintragen([{ art: "zahlung", ref: v.id, betrag: v.offen, wie }]); });
@@ -2201,7 +2301,7 @@ function renderLForm(egal) {
     <label for="lBetrag">Betrag (€)</label>
     <div class="zeile"><input id="lBetrag" inputmode="decimal" value="${F.betrag != null ? String(F.betrag).replace(".", ",") : (lAuto() ? String(lAuto()).replace(".", ",") : "")}" placeholder="0">
       <small class="muted" id="lAutoT" style="flex:1.4">anere Präis (z. B. 2,50 €/Fl)? Einfach Betrag änneren.</small></div>
-    <label class="check"><input type="checkbox" id="lRechnung" ${F.rechnung ? "checked" : ""}> Rechnung maachen</label>
+    <label class="check"><input type="checkbox" id="lRechnung" ${F.rechnung ? "checked" : ""}> 🧾 Rechnung maachen</label>
     <label for="lNotiz">Remarque (fräiwëlleg)</label><input id="lNotiz" value="${esc(F.notiz)}">
     <button class="haupt" id="lOk">${F.ersetzt ? "Späicheren" : "Bestellung plangen"}</button>
     <button class="haupt" id="lZu" style="background:var(--card2);color:var(--text)">Ofbriechen</button>
@@ -2250,7 +2350,7 @@ function renderLForm(egal) {
 
 /* ---------- Verkaufen ---------- */
 function leeresFormular() {
-  return { verkaeufer: EIN.ich, k: leererKaeufer(), n: {}, betrag: null, wie: null, meldung: FORM && FORM.meldung };
+  return { verkaeufer: EIN.ich, k: leererKaeufer(), n: {}, betrag: null, wie: null, rechnung: false, meldung: FORM && FORM.meldung };
 }
 function vSorten() { return Z.cfg.sorten.filter(s => !s.aus); }
 /* Was man verkaufen/liefern kann: je Bier die Flaschen, Fässer nur, wenn der Halter welche hat (oder schon gewählt). */
@@ -2294,8 +2394,9 @@ function renderVerkaufen(egal) {
       <small class="muted" id="vAuto" style="flex:1.4"></small></div>
     <label>Bezuelt?</label>
     ${zahlKnoepfe(FORM.wie, true)}
+    <label class="check"><input type="checkbox" id="vRechnung" ${FORM.rechnung ? "checked" : ""}> 🧾 Rechnung maachen</label>
     <button class="haupt" id="vSpeichern">Verkaf androen</button>
-    <div id="vMeldung">${FORM.meldung ? `<div class="meldung ${FORM.meldung.art}">${esc(FORM.meldung.text)}</div>` : ""}</div>
+    <div id="vMeldung">${vMeldHtml()}</div>
   </div>`;
   vHinweise();
 
@@ -2319,8 +2420,13 @@ function renderVerkaufen(egal) {
     box.querySelectorAll("[data-bez]").forEach(x => x.classList.remove("an", "gruen", "gelb"));
     b.classList.add("an", FORM.wie === "spaeter" ? "gelb" : "gruen");
   });
+  $("#vRechnung").onchange = e => { FORM.rechnung = e.target.checked; };
   $("#vSpeichern").onclick = vSpeichern;
+  rechKnoepfe($("#vMeldung"));
 }
+// Nach dem Speichern mit Haken „Rechnung maachen“: Knopf, um sie gleich zu machen (sonst steht sie unter Ausstoend)
+const vMeldHtml = () => FORM.meldung ? `<div class="meldung ${FORM.meldung.art}">${esc(FORM.meldung.text)}${FORM.meldung.rech && Z.vkNachId.get(FORM.meldung.rech) && !Z.vkNachId.get(FORM.meldung.rech).rechnungGemacht
+  ? `<div style="margin-top:8px"><button class="knopf akt" data-rech="${esc(FORM.meldung.rech)}">🧾 Elo Rechnung maachen</button></div>` : ""}</div>` : "";
 
 function vHinweise() {
   vArtikel().forEach((x, i) => {
@@ -2347,7 +2453,7 @@ async function vSpeichern() {
   const betrag = FORM.betrag != null ? FORM.betrag : vAutoBetrag();
   const umbuchen = await fehlendesHolen(FORM.verkaeufer, posten);
   if (umbuchen == null) return;
-  const neu = eintragen([...KE.eintraege, ...umbuchen, { art: "verkauf", verkaeufer: FORM.verkaeufer, kaeufer: KE.name, ...(KE.kid ? { kid: KE.kid } : KE.kf ? { kf: KE.kf } : {}), posten, betrag }]);
+  const neu = eintragen([...KE.eintraege, ...umbuchen, { art: "verkauf", verkaeufer: FORM.verkaeufer, kaeufer: KE.name, ...(KE.kid ? { kid: KE.kid } : KE.kf ? { kf: KE.kf } : {}), posten, betrag, ...(FORM.rechnung ? { rechnung: true } : {}) }]);
   const v = neu.find(e => e.art === "verkauf");
   if (!v) return; // gerade eben schon gespeichert (Doppeltipp)
   const wie = FORM.wie;
@@ -2355,7 +2461,8 @@ async function vSpeichern() {
   const verk = FORM.verkaeufer;
   FORM = leeresFormular(); FORM.verkaeufer = verk;
   FORM.meldung = { art: "ok", text: `✓ Agedroen: ${KE.name}${KE.eintraege.length ? " (📇 neie Client)" : ""}, ${postenText(posten)}, ${euro(betrag)} — ${wie !== "spaeter" ? "bezuelt per " + ZAHLARTEN[wie] : "steet ënner „Ausstoend“"}` +
-    (umbuchen.length ? ` (${umbuchen.map(u => postenText([u])).join(", ")} ${u0(umbuchen[0].von)} ëmgebucht)` : "") };
+    (umbuchen.length ? ` (${umbuchen.map(u => postenText([u])).join(", ")} ${u0(umbuchen[0].von)} ëmgebucht)` : "") +
+    (v.rechnung ? " · 🧾 Rechnung: steet ënner „Ausstoend“" : ""), ...(v.rechnung ? { rech: v.id } : {}) };
   if (document.activeElement) document.activeElement.blur();
   renderVerkaufen();
 }
@@ -2416,6 +2523,282 @@ function zahlartWaehlen(titel, bis) {
   });
 }
 
+/* ---------- Rechnung maachen (vom Nutzer, 20.11.2026; Entwurf und Muster-PDF gezeigt) ----------
+   Fenster mit Adresse (änderbar), Mail/Telefon zum Kopieren, Positionen aus dem Verkauf + freie Positionen. „PDF maachen“ speichert
+   die Rechnung (neue Nummer nur mit Verbindung, damit keine doppelt vergeben wird) und zeigt das PDF mit „Deelen“. Geteilt = verschickt. */
+const JSPDF = "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js";
+function jspdfLaden() {
+  if (window.jspdf && window.jspdf.jsPDF) return Promise.resolve(window.jspdf.jsPDF);
+  return new Promise((ok, nok) => {
+    const sc = document.createElement("script");
+    sc.src = JSPDF; sc.onload = () => window.jspdf ? ok(window.jspdf.jsPDF) : nok(new Error("PDF-Bibliothéik net geluede"));
+    sc.onerror = () => nok(new Error("PDF-Bibliothéik net geluede (Internet?)"));
+    document.head.appendChild(sc);
+  });
+}
+const RBILDER = {};
+async function rechnungBilder() {
+  for (const f of ["logo", "krug", "qr"]) if (!(f in RBILDER)) {
+    try {
+      const b = await (await fetch(`bilder/rechnung-${f}.png`)).blob();
+      RBILDER[f] = await new Promise((ok, nok) => { const r = new FileReader(); r.onload = () => ok(r.result); r.onerror = nok; r.readAsDataURL(b); });
+    } catch { RBILDER[f] = null; }
+  }
+  return RBILDER;
+}
+/* Rechnung als PDF (jsPDF, Standardschrift Helvetica = WinAnsi: é, €, „“, – gehen). R aus rechnungDaten(), B = {logo, krug, qr} als data-URL. */
+function rechnungPdf(jsPDF, R, B) {
+  const doc = new jsPDF({ unit: "mm", format: "a4" });
+  const L = 18, Rr = 192, grau = [102, 102, 102];
+  const geldF = x => runde(x).toFixed(2).replace(".", ",") + " €";
+  doc.setProperties({ title: `Facture ${R.nr}`, author: "Millebéier" });
+  if (B.logo) doc.addImage(B.logo, "PNG", 150, 14, 42, 42);
+  doc.setFont("helvetica", "bold"); doc.setFontSize(10.5); doc.setTextColor(17);
+  const absY = 61;
+  doc.setFont("helvetica", "normal"); doc.setFontSize(9.5);
+  const wEst = doc.getTextWidth(" (est. 2017)");
+  doc.text(" (est. 2017)", Rr, absY, { align: "right" });
+  doc.setFont("helvetica", "bold"); doc.setFontSize(10.5); doc.text("MILLEBÉIER", Rr - wEst, absY, { align: "right" });
+  doc.setFont("helvetica", "normal"); doc.setFontSize(9.5);
+  doc.text("Mail: info@millebeier.lu", Rr, absY + 4.5, { align: "right" });
+  doc.text("Phone: +352 621 194 478", Rr, absY + 9, { align: "right" });
+  doc.setFont("helvetica", "bold"); doc.setFontSize(22); doc.text("FACTURE", L, 62);
+  // Adresse links, Angaben rechts
+  let y = 86;
+  doc.setFont("helvetica", "normal"); doc.setFontSize(8); doc.setTextColor(...grau); doc.text("FACTURÉ À", L, y);
+  doc.setTextColor(17); doc.setFontSize(10.5);
+  y += 5.5;
+  R.adresse.forEach((z, i) => { doc.setFont("helvetica", i === 0 ? "bold" : "normal");
+    for (const t of doc.splitTextToSize(z, 95)) { doc.text(t, L, y); y += 5; } });
+  let my = 86;
+  const meta = [["Facture N°", R.nr, true], ["Date de facture", R.datumText], [R.lieferLabel, R.lieferText], ["Payable jusqu'au", R.faelligText]].filter(m => m[1]);
+  doc.setFontSize(9.5);
+  for (const [k, w, fett] of meta) { doc.setFont("helvetica", "normal"); doc.setTextColor(...grau); doc.text(k, 128, my);
+    doc.setTextColor(17); doc.setFont("helvetica", fett ? "bold" : "normal"); doc.text(w, 160, my); my += 5; }
+  y = Math.max(y, my) + 5;
+  if (R.anlass) { doc.setFont("helvetica", "normal"); doc.setFontSize(10); for (const t of doc.splitTextToSize("Occasion : " + R.anlass, Rr - L)) { doc.text(t, L, y); y += 5; } y += 1; }
+  // Positionen
+  const kopf = () => {
+    doc.setFont("helvetica", "bold"); doc.setFontSize(9); doc.setTextColor(17);
+    doc.text("Quantité", L + 1, y); doc.text("Désignation", 50, y); doc.text("Prix unitaire", 160, y, { align: "right" }); doc.text("Total", Rr - 1, y, { align: "right" });
+    y += 2; doc.setLineWidth(0.5); doc.line(L, y, Rr, y); y += 5.5;
+  };
+  y += 4; kopf();
+  doc.setFont("helvetica", "normal"); doc.setFontSize(10);
+  for (const z of R.zeilen) {
+    const txt = doc.splitTextToSize(z.txt, 80);
+    if (y + txt.length * 4.6 > 250) { doc.addPage(); y = 22; kopf(); doc.setFont("helvetica", "normal"); doc.setFontSize(10); }
+    doc.text(z.menge, L + 1, y); doc.text(txt, 50, y);
+    doc.text(geldF(z.preis), 160, y, { align: "right" }); doc.text(geldF(z.total), Rr - 1, y, { align: "right" });
+    y += (txt.length - 1) * 4.6 + 2.6; doc.setDrawColor(200); doc.setLineWidth(0.2); doc.line(L, y, Rr, y); doc.setDrawColor(0); y += 5;
+  }
+  if (y > 225) { doc.addPage(); y = 22; }
+  y -= 2.5; doc.setLineWidth(0.5); doc.line(L, y, Rr, y); y += 6;
+  doc.setFont("helvetica", "bold"); doc.setFontSize(12); doc.text("Total", L + 1, y); doc.text(geldF(R.total), Rr - 1, y, { align: "right" });
+  if (R.bezahlt > 0) {
+    doc.setFontSize(9.5); doc.setFont("helvetica", "normal"); doc.setTextColor(51);
+    y += 5.5; doc.text(R.bezahltText, L + 1, y); doc.text("– " + geldF(R.bezahlt), Rr - 1, y, { align: "right" });
+    doc.setFont("helvetica", "bold"); y += 5; doc.text("Reste à payer", L + 1, y); doc.text(geldF(R.rest), Rr - 1, y, { align: "right" });
+    doc.setTextColor(17);
+  }
+  // Zahlung
+  y += 13; doc.setFontSize(10); doc.setFont("helvetica", "normal");
+  if (R.rest > 0) {
+    const zeile = (teile) => { let x = L; for (const [t, f] of teile) { doc.setFont("helvetica", f ? "bold" : "normal"); doc.text(t, x, y); x += doc.getTextWidth(t); } y += 5.5; };
+    zeile([["Prière de virer le montant de ", 0], [geldF(R.rest), 1], [" au BCEE : ", 0], ["LU43 0019 8055 2021 9000", 1]]);
+    zeile([["avec la mention „", 0], [`Facture ${R.nr} – ${R.kurzName}`, 1], ["“.", 0]]);
+    zeile([[`Payable dans les 30 jours (jusqu'au ${R.faelligText}).`, 0]]);
+  } else { doc.text("Montant déjà réglé — merci !", L, y); y += 5.5; }
+  // Merci mit Krug
+  y += 7; doc.setFontSize(10.5); doc.setFont("helvetica", "normal"); doc.text("MERCI pour votre commande !", L, y);
+  if (B.krug) doc.addImage(B.krug, "PNG", L + doc.getTextWidth("MERCI pour votre commande !") + 3, y - 5.5, 7, 7);
+  // Fuß auf jeder Seite
+  const n = doc.getNumberOfPages();
+  for (let s = 1; s <= n; s++) {
+    doc.setPage(s);
+    if (B.qr) doc.addImage(B.qr, "PNG", L, 259, 22, 22);
+    doc.setFont("helvetica", "normal"); doc.setFontSize(9.5); doc.setTextColor(17); doc.text("FOLLOW US ON FACEBOOK", L + 26, 271);
+    doc.setFontSize(8.5); doc.setTextColor(85); doc.text("Millebéier · info@millebeier.lu · +352 621 194 478", Rr, 271, { align: "right" });
+    if (n > 1) doc.text(`${s} / ${n}`, Rr, 284, { align: "right" });
+  }
+  return doc.output("arraybuffer");
+}
+// Adresse zurück in Client-Felder: erste Zeile = Name, „À l'attention de …“ übersprungen, letzte Zeile = Uertschaft, dazwischen Adress
+function adresseTeile(text) {
+  let z = String(text || "").split("\n").map(x => x.trim()).filter(Boolean).slice(1);
+  if (z[0] && /^à l'attention/i.test(z[0])) z = z.slice(1);
+  if (!z.length) return { adresse: "", ort: "" };
+  if (z.length === 1) return /^(L-?)?\d{4}\b/i.test(z[0]) ? { adresse: "", ort: z[0] } : { adresse: z[0], ort: "" };
+  return { adresse: z.slice(0, -1).join("\n"), ort: z[z.length - 1] };
+}
+let RFORM = null;
+function rechnungOeffnen(vid) {
+  const v = Z.vkNachId.get(vid); if (!v) return;
+  const K = v.kid ? Z.kunden.find(k => k.kid === v.kid) : null, r = v.rech;
+  RFORM = { vid, nr: r ? r.nr : "", datum: r ? r.datum : heuteLux(), kid: K ? K.kid : "",
+    adresse: r ? r.adresse : (K ? rechnungsAdresse(K) : [v.kaeufer]).join("\n"),
+    anlass: r ? r.anlass : (v.livraison && v.livraison.anlass) || "", mail: r ? r.mail : (K && K.mail) || "", tel: r ? r.tel : (K && K.tel) || "",
+    frei: r ? r.frei.map(f => ({ n: String(f.n), txt: f.txt, preis: zahlText(f.preis) })) : [], kunde: false, laeuft: false };
+  rechnungRender();
+}
+function rFreiLesen() {
+  const out = [];
+  for (const f of RFORM.frei) {
+    const txt = String(f.txt || "").trim(), p = zahlAus(f.preis), n = f.n === "" || f.n == null ? 1 : +String(f.n).replace(",", ".");
+    if (!txt && (p == null || p === 0)) continue;
+    if (!txt) return { fehler: "Fräi Positioun: wat? (Text feelt)" };
+    if (!Number.isInteger(n) || n <= 0 || n > 100000) return { fehler: `„${txt}“: d'Unzuel muss eng ganz Zuel sinn.` };
+    if (p == null || !isFinite(p) || p < 0) return { fehler: `„${txt}“: de Präis feelt.` };
+    out.push({ n, txt: txt.slice(0, 120), preis: runde(p) });
+  }
+  return { frei: out };
+}
+function rSummeHtml(v) {
+  const fr = rFreiLesen().frei || [];
+  const R = rechnungDaten(Z, v, { nr: RFORM.nr || "x", datum: RFORM.datum, adresse: "", frei: fr });
+  return `<div class="rsumme"><span>Total</span><span>${euro(R.total)}</span></div>` + (R.bezahlt > 0 ? `<div class="rklein"><span>Scho bezuelt${v.wie && v.wie.length ? " (" + esc(v.wie.map(w => ZAHLARTEN[w]).join(", ")) + ")" : ""}</span><span>− ${euro(R.bezahlt)}</span></div>
+    <div class="rklein"><b>Rescht ze bezuelen</b><b>${euro(R.rest)}</b></div>` : "");
+}
+function rFreiHtml() {
+  return RFORM.frei.map((f, i) => `<div class="rfrei"><input data-rf="n" data-i="${i}" inputmode="numeric" value="${esc(f.n)}" placeholder="1" aria-label="Unzuel">
+    <input data-rf="txt" data-i="${i}" value="${esc(f.txt)}" placeholder="z. B. Transport" maxlength="120" aria-label="Wat">
+    <input data-rf="preis" data-i="${i}" inputmode="decimal" value="${esc(f.preis)}" placeholder="€" aria-label="Präis">
+    <button data-rfweg="${i}" aria-label="ewechhuelen">✕</button></div>`).join("");
+}
+function rechnungRender() {
+  const box = $("#rechWahl"), karte = $("#rechKarte"), F = RFORM;
+  const v = F && Z.vkNachId.get(F.vid);
+  if (!v) { box.classList.add("versteckt"); RFORM = null; document.body.style.overflow = ""; return; }
+  const K = F.kid ? Z.kunden.find(k => k.kid === F.kid) : null, r = v.rech, L = v.livraison;
+  karte.innerHTML = `<h2>🧾 Rechnung · ${esc(v.kaeufer)}</h2>
+    <div class="unter">${L ? "Geliwwert " + esc(datumKurz(L.datum)) : "Verkaaft " + esc(datumText(v.zeit))} · ${F.nr ? `Facture N° <b>${esc(F.nr)}</b>` : "Nummer kënnt beim PDF"} · Datum ${esc(datumLang(F.datum))}</div>
+    ${r ? `<div class="rstand">gemaach ${esc(datumText(r.erst))} vum ${esc(r.erstDurch)} · ${r.verschickt ? `<span class="ok">📨 verschéckt ${esc(datumText(r.verschickt))}</span>` : `<span class="gelb">📨 nach net verschéckt</span> <button class="kop" id="rSchonn">✓ Schonn anescht verschéckt</button>`}</div>` : ""}
+    <label for="rAdr">Adress op der Rechnung</label>
+    <textarea id="rAdr" rows="5" autocapitalize="words">${esc(F.adresse)}</textarea>
+    <label class="check klein"><input type="checkbox" id="rKunde" ${F.kunde ? "checked" : ""}> ${K ? "Adress, Mail an Telefon och beim Client späicheren" : "Als neie Client späicheren"}</label>
+    <label for="rMail">E-Mail</label>
+    <div class="kont"><input id="rMail" type="email" inputmode="email" autocapitalize="off" value="${esc(F.mail)}" placeholder="fir d'Mail"><button class="kop" data-kop="rMail">📋 Kopéieren</button></div>
+    <label for="rTel">Telefon</label>
+    <div class="kont"><input id="rTel" type="tel" inputmode="tel" value="${esc(F.tel)}" placeholder="fir WhatsApp"><button class="kop" data-kop="rTel">📋 Kopéieren</button></div>
+    <label for="rAnlass">Anlass (fräiwëlleg)</label><input id="rAnlass" value="${esc(F.anlass)}" maxlength="120" placeholder="z. B. Journée Patrimoine">
+    <label>Positiounen</label>
+    ${rechnungZeilen(Z, v).map(z => `<div class="rpos"><span>${esc(z.menge)}</span><span>${esc(z.txt)}</span><span class="z">${esc(zahlText(z.preis.toFixed(2)))}</span><span class="z">${euro(z.total)}</span></div>`).join("")}
+    <div id="rFrei">${rFreiHtml()}</div>
+    <button class="rplus" id="rPlus">+ Fräi Positioun</button>
+    <div id="rSumme">${rSummeHtml(v)}</div>
+    <div id="rMeld"></div>
+    <button class="haupt" id="rOk">📄 PDF maachen</button>
+    <button class="haupt grau" id="rZu">Ofbriechen</button>`;
+  box.classList.remove("versteckt"); document.body.style.overflow = "hidden";
+  const feld = (id, k) => { const el = $("#" + id); el.oninput = () => { F[k] = el.value; }; };
+  feld("rAdr", "adresse"); feld("rMail", "mail"); feld("rTel", "tel"); feld("rAnlass", "anlass");
+  $("#rKunde").onchange = e => { F.kunde = e.target.checked; };
+  const freiBinden = () => {
+    karte.querySelectorAll("[data-rf]").forEach(el => el.oninput = () => { F.frei[+el.dataset.i][el.dataset.rf] = el.value; $("#rSumme").innerHTML = rSummeHtml(Z.vkNachId.get(F.vid) || v); });
+    karte.querySelectorAll("[data-rfweg]").forEach(b => b.onclick = () => { F.frei.splice(+b.dataset.rfweg, 1); $("#rFrei").innerHTML = rFreiHtml(); freiBinden(); $("#rSumme").innerHTML = rSummeHtml(v); });
+  };
+  freiBinden();
+  $("#rPlus").onclick = () => { F.frei.push({ n: "1", txt: "", preis: "" }); $("#rFrei").innerHTML = rFreiHtml(); freiBinden();
+    const ins = karte.querySelectorAll('[data-rf="txt"]'); if (ins.length) ins[ins.length - 1].focus(); };
+  karte.querySelectorAll("[data-kop]").forEach(b => b.onclick = async () => {
+    const t = $("#" + b.dataset.kop).value.trim(); if (!t) return;
+    try { await navigator.clipboard.writeText(t); b.textContent = "✓ Kopéiert"; b.classList.add("ok"); setTimeout(() => { b.textContent = "📋 Kopéieren"; b.classList.remove("ok"); }, 2500); }
+    catch { prompt("Fir ze kopéieren:", t); }
+  });
+  const schonn = $("#rSchonn"); if (schonn) schonn.onclick = () => { eintragen([{ art: "rversand", ref: v.id }]); rechnungRender(); };
+  $("#rZu").onclick = rechnungZu;
+  $("#rOk").onclick = rechnungFertig;
+}
+function rechnungZu() { RFORM = null; $("#rechWahl").classList.add("versteckt"); document.body.style.overflow = ""; if (document.activeElement) document.activeElement.blur(); render(); }
+// Wartet einen laufenden Abgleich ab und gleicht dann frisch ab (für die Rechnungsnummer)
+async function frischAbgleichen() {
+  for (let i = 0; i < 150 && LAEUFT; i++) await new Promise(ok => setTimeout(ok, 100));
+  const vorher = STATUS.zuletzt; await abgleichen();
+  return !STATUS.fehler && STATUS.zuletzt > vorher;
+}
+async function rechnungFertig() {
+  const F = RFORM; if (!F || F.laeuft) return;
+  const meld = (t, art = "fehler") => { $("#rMeld").innerHTML = t ? `<div class="meldung ${art}">${esc(t)}</div>` : ""; };
+  const fr = rFreiLesen(); if (fr.fehler) return meld(fr.fehler);
+  const adresse = String(F.adresse || "").split("\n").map(x => x.trim()).filter(Boolean).join("\n");
+  if (!adresse) return meld("Adress: mindestens den Numm.");
+  if (adresse.length > 400) return meld("D'Adress ass ze laang.");
+  const mail = String(F.mail || "").trim(), tel = String(F.tel || "").trim();
+  if (mail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(mail)) return meld("D'E-Mail-Adress gesäit net richteg aus.");
+  F.laeuft = true; const knopf = $("#rOk"); knopf.disabled = true;
+  try {
+    meld("⏳ PDF gëtt virbereet …", "ok");
+    let jsPDF, B;
+    try { [jsPDF, B] = await Promise.all([jspdfLaden(), rechnungBilder()]); }
+    catch (f) { return meld("D'PDF-Bibliothéik konnt net geluede ginn — Internet? Nach eng Kéier probéieren."); }
+    // Neue Nummer nur mit frischem Stand vom Server (sonst könnten zwei Handys dieselbe vergeben)
+    if (!F.nr && !PROBE) {
+      meld("⏳ Rechnungsnummer gëtt geholl …", "ok");
+      if (!(await frischAbgleichen())) return meld("Fir eng nei Rechnungsnummer muss den Handy online sinn (sou gëtt keng Nummer duebel vergi). Probéier et nach eng Kéier, wann d'Internet do ass.");
+    }
+    let v = Z.vkNachId.get(F.vid); if (!v) return meld("Dëse Verkaf gëtt et net méi.");
+    if (!F.nr && v.rech) F.nr = v.rech.nr; // ein anderes Handy war schneller: dieselbe Rechnung, keine zweite Nummer
+    const nr = F.nr || naechsteNr(Z, F.datum);
+    const e = { art: "rechnung", ref: v.id, nr, datum: F.datum, adresse, anlass: String(F.anlass || "").trim(), mail, tel, frei: fr.frei };
+    const r = v.rech, gleich = r && r.adresse === e.adresse && r.anlass === e.anlass && r.mail === e.mail && r.tel === e.tel && JSON.stringify(r.frei) === JSON.stringify(e.frei);
+    const neu = [];
+    if (!gleich) neu.push(e);
+    if (F.kunde) {
+      const K = F.kid ? Z.kunden.find(k => k.kid === F.kid) : null, t = adresseTeile(adresse);
+      if (K) neu.push({ art: "kunde", v: 2, kid: K.kid, firma: K.firma || "", name: K.name || "", vorname: K.vorname || "", notiz: K.notiz || "",
+        ...(K.alias && K.alias.length ? { alias: K.alias } : {}), adresse: t.adresse, ort: t.ort, mail, tel });
+      else if (!stammVon(Z, v.kaeufer)) neu.push({ art: "kunde", v: 2, kid: "k-" + neueId().replace(/[^A-Za-z0-9-]/g, "").slice(0, 40),
+        ...(v.kf && Object.keys(v.kf).length ? { firma: "", name: "", vorname: "", ...v.kf } : { firma: "", name: v.kaeufer, vorname: "" }), notiz: "", adresse: t.adresse, ort: t.ort, mail, tel });
+    }
+    if (neu.length) eintragen(neu);
+    v = Z.vkNachId.get(F.vid);
+    const R = rechnungDaten(Z, v, e);
+    const daten = rechnungPdf(jsPDF, R, B);
+    const name = rechnungDateiname(v, nr);
+    const datei = new File([daten], name, { type: "application/pdf" });
+    const fid = "rech-" + v.id;
+    DATEN.set(fid, datei);
+    RFORM = null; $("#rechWahl").classList.add("versteckt");
+    dateiZeigen({ fid, name, typ: "application/pdf", groesse: datei.size, teile: 0, rech: { vid: v.id, mail } });
+  } finally { F.laeuft = false; if (knopf) knopf.disabled = false; }
+}
+// Stand an Bestellung / Ausstoend: Nummer antippen = PDF wieder; „nach ze maachen“; alter Haken ohne Nummer
+function rechChip(v) {
+  if (v.rech) return `<button class="chip ${v.rech.verschickt ? "ok" : "warn"}" data-rechz="${esc(v.id)}">🧾 ${esc(v.rech.nr)}${v.rech.verschickt ? "" : " · 📨 nach net verschéckt"} ›</button>`;
+  if (v.rechnungGemacht) return `<span class="chip ok">🧾 Rechnung gemaach (ouni Nummer)</span>`;
+  if (v.rechnungWunsch) return `<span class="chip warn">🧾 Rechnung nach ze maachen</span>`;
+  return "";
+}
+function rechKnoepfe(root) {
+  root.querySelectorAll("[data-rech]").forEach(b => b.onclick = ev => { ev.stopPropagation(); rechnungOeffnen(b.dataset.rech); });
+  root.querySelectorAll("[data-rechz]").forEach(b => b.onclick = ev => { ev.stopPropagation(); rechnungZeigen(b.dataset.rechz); });
+}
+const rechFehlt = v => v.rechnungWunsch && !v.rechnungGemacht;
+// Kopf über dem PDF: Mail wird beim Deelen kopiert; Änneren; ohne Teilen verschickt (z. B. ausgedruckt)
+function rechInfo(D) {
+  const el = $("#ansichtInfo"); if (!el) return;
+  const v = D && D.rech && Z.vkNachId.get(D.rech.vid);
+  el.classList.toggle("versteckt", !v);
+  if (!v) { el.innerHTML = ""; return; }
+  el.innerHTML = `<div><b>Facture ${esc(v.rech ? v.rech.nr : "")}</b> · ${euro(v.betrag)}${v.offen > 0 && v.bezahlt > 0 ? ` · Rescht ${euro(v.offen)}` : v.offen <= 0 ? " · ✓ bezuelt" : ""}
+    ${v.rech && v.rech.verschickt ? ` · <span class="ok">📨 verschéckt ${esc(datumText(v.rech.verschickt))}</span>` : ` · <span class="gelb">📨 nach net verschéckt</span>`}</div>
+    ${D.rech.mail ? `<div class="muted">✉️ ${esc(D.rech.mail)} gëtt beim Deelen kopéiert — an der Mail bei „An:“ just „Asetzen“.</div>` : ""}
+    <div class="knopfe"><button class="knopf" id="aiAendern">✎ Nach eppes änneren</button>${v.rech && !v.rech.verschickt ? `<button class="knopf" id="aiSchonn">✓ Schonn anescht verschéckt</button>` : ""}</div>`;
+  $("#aiAendern").onclick = () => { ansichtZu(); rechnungOeffnen(v.id); };
+  const s = $("#aiSchonn"); if (s) s.onclick = () => { eintragen([{ art: "rversand", ref: v.id }]); rechInfo(D); };
+}
+// Gespeicherte Rechnung wieder als PDF (ohne neuen Eintrag)
+async function rechnungZeigen(vid) {
+  const v = Z.vkNachId.get(vid); if (!v || !v.rech) return rechnungOeffnen(vid);
+  try {
+    const [jsPDF, B] = await Promise.all([jspdfLaden(), rechnungBilder()]);
+    const R = rechnungDaten(Z, v, v.rech), name = rechnungDateiname(v, v.rech.nr);
+    const datei = new File([rechnungPdf(jsPDF, R, B)], name, { type: "application/pdf" });
+    DATEN.set("rech-" + v.id, datei);
+    dateiZeigen({ fid: "rech-" + v.id, name, typ: "application/pdf", groesse: datei.size, teile: 0, rech: { vid: v.id, mail: v.rech.mail } });
+  } catch { alert("D'PDF-Bibliothéik konnt net geluede ginn — Internet? Nach eng Kéier probéieren."); }
+}
+
 /* ---------- Offen ---------- */
 let NUR_MEINE = false;
 function renderOffen() {
@@ -2424,20 +2807,26 @@ function renderOffen() {
     const vs = K.verkaeufe.filter(v => v.offen > 0 && (!NUR_MEINE || v.verkaeufer === EIN.ich));
     return { ...K, sicht: vs, sichtOffen: runde(vs.reduce((a, v) => a + v.offen, 0)) };
   }).filter(K => K.sicht.length);
-  box.innerHTML = `<div class="card">
+  // Rechnungen nach ze maachen (vom Nutzer, 20.11.2026): eigener Bereich oben, auch schon bezahlte Verkäufe
+  const fehlt = Z.verkaeufe.filter(v => rechFehlt(v) && (!NUR_MEINE || v.verkaeufer === EIN.ich)).sort(ordnung);
+  box.innerHTML = `${fehlt.length ? `<div class="card" id="oRech"><h2>🧾 Rechnung nach ze maachen (${fehlt.length})</h2>
+    ${fehlt.map(v => `<div class="rechz"><span><b>${esc(v.kaeufer)}</b> · ${euro(v.betrag)}<small>${v.livraison ? `🚚 geliwwert ${esc(datumKurz(v.livraison.datum))}` : `verkaaft ${esc(datumText(v.zeit))}`} · ${esc(beim(v.verkaeufer))} · ${v.offen <= 0 ? "✓ bezuelt" : v.bezahlt > 0 ? euro(v.offen) + " op" : "nach net bezuelt"}</small></span>
+      <button class="knopf akt" data-rech="${esc(v.id)}">🧾 Maachen</button></div>`).join("")}</div>` : ""}
+  <div class="card">
     <div class="kopfz" style="display:flex;justify-content:space-between;align-items:center">
       <h2 style="margin:0">Nach net bezuelt</h2><b style="color:var(--gelb);font-size:20px">${euro(liste.reduce((a, K) => a + K.sichtOffen, 0))}</b></div>
     <div class="seg"><button data-meine="0" class="${NUR_MEINE ? "" : "an"}">All</button><button data-meine="1" class="${NUR_MEINE ? "an" : ""}">Just meng</button></div>
   </div>
   ${liste.length ? liste.map((K, i) => `<div class="card kunde">
     <div class="kopfz"><h2 style="margin:0">${esc(K.name)}</h2><span class="betrag">${euro(K.sichtOffen)}</span></div>
-    ${K.sicht.map(v => `<div class="vk"><span>${v.livraison ? `🚚 Bestellung ${esc(datumKurz(v.livraison.datum))}` : datumText(v.zeit)} · ${esc(postenText(v.posten))}<br><small class="muted">${esc(beim(v.verkaeufer))}${v.bezahlt ? ` · ${euro(v.bezahlt)} scho bezuelt` : ""}</small></span><span>${euro(v.offen)}</span></div>`).join("")}
+    ${K.sicht.map(v => `<div class="vk"><span>${v.livraison ? `🚚 Bestellung ${esc(datumKurz(v.livraison.datum))}` : datumText(v.zeit)} · ${esc(postenText(v.posten))}${v.betrag > v.ware ? ` + ${euro(v.betrag - v.ware)} fräi Positiounen` : ""}<br><small class="muted">${esc(beim(v.verkaeufer))}${v.bezahlt ? ` · ${euro(v.bezahlt)} scho bezuelt` : ""}${v.rech ? ` · Rechnung ${tageVon(v.rech.datum, heuteLux()) ? `zënter ${tageVon(v.rech.datum, heuteLux())} Deeg` : "vun haut"}` : ""}</small>${rechChip(v) ? `<div style="margin-top:4px">${rechChip(v)}</div>` : ""}</span><span>${euro(v.offen)}</span></div>`).join("")}
     <div class="knopfe">
       <button class="knopf akt" data-alles="${i}">Alles bezuelt ✓</button>
       <button class="knopf" data-teil="${i}">Deelbetrag…</button>
       <button class="knopf" data-erinnern="${i}">Erënneren 💬</button>
     </div></div>`).join("") : `<div class="card leer">Alles bezuelt. 🎉</div>`}`;
   box.querySelectorAll("[data-meine]").forEach(b => b.onclick = () => { NUR_MEINE = b.dataset.meine === "1"; renderOffen(); });
+  rechKnoepfe(box);
   box.querySelectorAll("[data-alles]").forEach(b => b.onclick = async () => {
     const K = liste[+b.dataset.alles];
     const wie = await zahlartWaehlen(`${K.name}: ${euro(K.sichtOffen)} bezuelt — wéi?`);
@@ -2650,6 +3039,7 @@ let ANSICHT = null;
 async function dateiZeigen(D) {
   ANSICHT = D;
   $("#ansichtName").textContent = D.name;
+  rechInfo(D);
   const inhalt = $("#ansichtInhalt");
   inhalt.innerHTML = `<div class="leer">Gëtt gelueden… (${groesseText(D.groesse)})</div>`;
   $("#ansicht").classList.remove("versteckt");
@@ -2711,9 +3101,12 @@ $("#ansichtTeilen").onclick = async () => {
   if (!datei) { alert("D'Datei gëtt nach gelueden — e Moment, dann nach eng Kéier."); return; }
   const istApp = window.navigator.standalone || matchMedia("(display-mode: standalone)").matches;
   let letzter = null;
+  // Rechnung: Mail-Adresse in die Zwischenablage (nicht abwarten — iOS teilt nur direkt nach dem Tippen); geteilt = verschickt
+  if (D.rech && D.rech.mail && navigator.clipboard) navigator.clipboard.writeText(D.rech.mail).catch(() => {});
+  const geteilt = () => { const v = D.rech && Z.vkNachId.get(D.rech.vid); if (v && v.rech && !v.rech.verschickt) { eintragen([{ art: "rversand", ref: v.id }]); rechInfo(D); } };
   if (navigator.share) for (const f of teilbareFassungen(datei)) {
     if (navigator.canShare && !navigator.canShare({ files: [f] })) { letzter = "canShare: nee (" + (f.type || "ouni Typ") + ")"; continue; }
-    try { await navigator.share({ files: [f] }); return; }
+    try { await navigator.share({ files: [f] }); geteilt(); return; }
     catch (e) { if (e && e.name === "AbortError") return; letzter = (e && (e.name + ": " + e.message)) || String(e); if (e && e.name === "NotAllowedError") break; }
   }
   if (!istApp) { const a = document.createElement("a"); a.href = URL.createObjectURL(datei); a.download = datei.name; a.click(); return; }
@@ -3219,7 +3612,7 @@ function mittenImEintrag() {
   if (FORM && (kundeLabel(FORM.k) || Object.values(FORM.n).some(n => n > 0) || FORM.betrag != null)) return true;
   if (BFORM && String(BFORM.n).trim()) return true;
   if (KFORM) return true;
-  if (KALFORM) return true;
+  if (KALFORM || RFORM) return true;
   if (L_NEU || BIERFORM || UPLOAD || ANSICHT || !$("#zahlWahl").classList.contains("versteckt") || !$("#frageWahl").classList.contains("versteckt")) return true;
   if (FORM && FORM.wie) return true;
   return false;

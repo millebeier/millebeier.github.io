@@ -269,6 +269,30 @@ beim Verkaufen/Livraison und „Fläsche beweegen“ an, solange jemand welche h
   App-Flasche (`ABS_FL`, `ABS_KISCHT`): Hand zieht eine von zwei Flaschen aus der LAGER-Kiste · Flasche schläft in der Kiste „Zz“ · Hand
   hält die Flasche **von hinten** (Finger verdecken sie nicht, vom Nutzer) und reicht sie einer offenen Hand (andere Ärmelfarbe) · eine
   Flasche mit roter Geschenkschleife + eine zerbrochen am Boden (Pfütze, ×-Augen).
+- **Rechnungen** (vom Nutzer, 20.11.2026, Fassung b; Plan, Fenster-Entwurf und Muster-PDF aus den drei alten Rechnungen gezeigt und abgesprochen):
+  **Wunsch** = Haken „🧾 Rechnung maachen“ beim Verkaufen (`verkauf.rechnung`) oder an der Bestellung — **beide standardmäßig aus** (vom Nutzer:
+  die meisten brauchen keine). Geplante Bestellung mit Haken zeigt neben „Nach net bezuelt“ den Hinweis **„🧾 Rechnung nach net geschéckt“**
+  (`.chip.rgef`, vom Nutzer). **Fenster** `#rechWahl` (`rechnungOeffnen`/`rechnungRender`, Zustand `RFORM`, zählt in `mittenImEintrag`): Adresse
+  als Textfeld aus `rechnungsAdresse` (änderbar; Haken „Adress, Mail an Telefon och beim Client späicheren“ bzw. „Als neie Client späicheren“ —
+  zurück in Client-Felder über `adresseTeile`: 1. Zeile Name, „À l'attention“ übersprungen, letzte Zeile Uertschaft), Mail/Telefon mit „📋 Kopéieren“,
+  Anlass, Positionen aus dem Verkauf (nur lesen; Stückpreis aus `anteil`, letzte Zeile nimmt den Rundungsrest, `rechnungZeilen`) + **freie
+  Positionen** (Anzahl, Text, Preis, ✕), Total / Scho bezuelt / Rescht. **„📄 PDF maachen“**: neue Nummer nur nach frischem Abgleich
+  (`frischAbgleichen`, sonst Hinweis „muss online sinn“ — keine Nummer doppelt), `naechsteNr` = je Jahr ab JJJJ-001 über **alle** Rechnungs-Einträge
+  (auch gelöschter Verkäufe). Eintrag `rechnung` mit `nr, datum, adresse, anlass, mail, tel, frei[]`; je Verkauf gilt die neueste — **Ändern behält
+  die Nummer** (ohne Änderung kein neuer Eintrag). Alter Eintrag ohne `nr` = „Rechnung gemaach (ouni Nummer)“. **Freie Positionen erhöhen den
+  geschuldeten Betrag** (vom Nutzer): `v.betrag` = Bier-Betrag `v.ware` + frei; Kasse/Offen/Umsatz/Excel stimmen, Bestand und Pro-Bier-Recetten nicht
+  (die nehmen `ware`). **PDF** mit jsPDF 2.5.1 (cdnjs, erst beim Tippen; Helvetica = WinAnsi, darum „–“ statt „−“), `rechnungPdf`/`rechnungDaten`,
+  Bilder `bilder/rechnung-{logo,krug,qr}.png` aus den alten PDFs (Facebook-QR unverändert übernommen): Logo, Absender, Facturé à, Nummer/Datum/
+  Livraison du bzw. Date de vente/Payable jusqu'au, Occasion, Positionen, Total, Déjà payé, Reste à payer, BCEE-IBAN mit Mention „Facture Nr – Kunde“,
+  „Payable dans les 30 jours“ (vom Nutzer), kein Steuer-Hinweis (vom Nutzer: erstmal nicht), Merci + Krug, Fuß mit QR. Danach die Anzeige (`#ansicht`
+  mit `#ansichtInfo`, `rechInfo`): „⬆️ Deelen“ kopiert vorher die Mail (nicht abgewartet, iOS teilt nur direkt nach dem Tippen); **erfolgreich geteilt =
+  verschickt** (Eintrag `rversand`), abgebrochen nicht; „✓ Schonn anescht verschéckt“ von Hand; „✎ Nach eppes änneren“. Wieder öffnen über den Chip
+  „🧾 JJJJ-NNN ›“ (`rechnungZeigen`, rechnet das PDF neu, kein Eintrag). **Ausstoend**: oben „🧾 Rechnung nach ze maachen (n)“ mit „Maachen“ (auch
+  bezahlte), darunter wie bisher, an jedem Verkauf der Chip (`rechChip`) und „Rechnung zënter n Deeg“; Reiterzahl zählt fehlende Rechnungen mit.
+  Startseite „Nach op bei dir“: meine fehlenden Rechnungen. Verkafen mit Haken → Meldung mit „🧾 Elo Rechnung maachen“. **💡-Aufgaben**: Rechnung
+  maachen (jetzt auch Verkäufe, Link öffnet das Fenster), neu „Rechnung … nach net verschéckt“ (ab dem Tag danach, Kontakt, 7 Tage), Erënneren zählt
+  bei Rechnungen ab dem Rechnungsdatum (= ab Fristende) und nennt die Nummer. Excel: Spalte Rechnung mit Nummer (`rechnungStand`), Blatt „Rechnungen“.
+  **Offen:** vergessener Haken lässt sich nachträglich nicht setzen (Verkauf nicht änderbar) — dem Nutzer gesagt.
 - **Aktionsknöpfe rot, nicht grün** (vom Nutzer, Fassung 20.11. a): „Geliwwert ✓“, „Bezuelt ✓“, „Alles bezuelt ✓“ und Späicheren
   bei „+ Aufgab“ sind `.knopf.akt` (Millebéier-Rot, weiße Schrift) — grün sah aus, als wäre es schon erledigt. Grün bleibt nur
   für Erledigtes (✓ bezuelt, gewählte Zahlungsart).
@@ -304,8 +328,8 @@ einstellungen/`alt26-…`; Löschungen (storno) bleiben nur, wenn ihr Ziel bleib
 geprüft (Gegenprobe gemacht). Die Datenbank ist von der Cloud-Umgebung aus nicht erreichbar — ausführen kann nur der
 Nutzer. Rückweg: D1 Time Travel (Restore auf einen Zeitpunkt davor).
 
-## Testen — vor jedem Push alle zwölf, jeder mit eigenem Rückgabewert
-**Push nur, wenn alle zwölf 0 zurückgeben** — die Schleife gibt den Push erst danach frei (`ok`-Merker). Am 18.11.2026 (Fassung g) ging
+## Testen — vor jedem Push alle dreizehn, jeder mit eigenem Rückgabewert
+**Push nur, wenn alle dreizehn 0 zurückgeben** — die Schleife gibt den Push erst danach frei (`ok`-Merker). Am 18.11.2026 (Fassung g) ging
 ein Commit trotz roter Tests raus: ein `//`-Kommentar mitten in einer einzeiligen Anweisung schnitt den Rest der Zeile ab, das ganze
 Script lief nicht, und damit auch kein automatisches Update. In Code auf einer Zeile nur `/* … */`-Kommentare.
 - `node test/logik.mjs` — schneidet `Logik`…`Oberfläche` aus der HTML (Gegenprobe gemacht).
@@ -331,6 +355,9 @@ Script lief nicht, und damit auch kein automatisches Update. In Code auf einer Z
 - `node test/aufgaben.mjs` — Aufgaben: Kästen am Kalender, anlegen (Enter/+, Fir, bis), Just meng, abhaken/zurück, „+ Aufgab“ an Bestellung
   (auch nach Ändern verlinkt) und Termin, Knöpfe in einer Zeile, 💡 Rechnung + Erklärung, nach 14 Tagen wieder, Startseite nur meine,
   „nicht geschickt“, Excel, „Jidderee muss“ (Gegenprobe gemacht). Automatische Aufgaben im Einzelnen in `logik.mjs` (Gegenprobe gemacht).
+- `JSPDF_JS=…/jspdf/dist/jspdf.umd.min.js node test/rechnungen.mjs` — Rechnungen: Haken aus, Fenster, Kopieren, freie Position, PDF-Inhalt
+  (Rohtext der PDF-Datei), Deelen = verschickt / Abbruch nicht, Ändern behält Nummer, zweites Handy JJJJ-002, offline keine Nummer, Ausstoend,
+  Startseite, Hinweis an geplanter Bestellung (Gegenprobe gemacht). jsPDF per `npm install jspdf@2.5.1` in den Scratchpad; ohne wird übersprungen.
 - `node test/biere.mjs` — Bier anlegen/ändern/archivieren/zurückholen/löschen (zwei Rückfragen, Gegenprobe gemacht),
   rotes ✕ im Verlauf, rotes Dreieck; Kasten „Fläschen“ (vier Absichten, Pfeil, ⇄, änneren, Vorschau, Gründe) und Abfüllen ändern beim Bier
   (48 → 60 → 50, Verlauf; Gegenprobe gemacht).
