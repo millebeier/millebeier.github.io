@@ -417,7 +417,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px}
 <script>
 /* Adresse des Cloudflare-Workers. Leer = Probe-Modus (alles nur auf diesem Handy). */
 const WORKER_URL = "https://millebeier.rjtp6r9s9h.workers.dev/";
-const FASSUNG = "20.11.2026 d";
+const FASSUNG = "20.11.2026 e";
 
 /* === Logik === (kein DOM; test/logik.mjs schneidet diesen Block aus) */
 const LAGER = "Lager";
@@ -484,7 +484,7 @@ function gueltig(e) {
         (e.vorher === undefined || (typeof e.vorher === "string" && e.vorher.length <= 80));
     case "rechnung": // ohne nr = alter Haken „Rechnung gemaach“; mit nr = echte Rechnung (Fassung 20.11. b), je ref gilt die neueste
       return typeof e.ref === "string" && (e.nr === undefined || (typeof e.nr === "string" && /^\d{4}-\d{3,4}$/.test(e.nr) && optDatum(e.datum) && !!e.datum &&
-        optText(e.adresse, 400) && optText(e.anlass, 120) && optText(e.mail, 120) && optText(e.tel, 40) &&
+        optText(e.adresse, 400) && optText(e.anlass, 120) && optDatum(e.liefer) && optText(e.mail, 120) && optText(e.tel, 40) &&
         (e.frei === undefined || (Array.isArray(e.frei) && e.frei.length <= 12 && e.frei.every(f => f && text(f.txt, 120) && ganz(f.n) && geld(f.preis))))));
     case "rversand": return typeof e.ref === "string"; // Rechnung verschickt (geteilt), ref = Verkauf
     case "bier":
@@ -643,7 +643,7 @@ function rechne(eintraege) {
   for (const v of vk.values()) { v.ware = v.betrag; v.rechnungWunsch = !!(v.rechnung || (v.livraison && v.livraison.rechnung)); v.rech = null; }
   for (const e of aktiv) if (e.art === "rechnung" && vk.has(e.ref)) {
     const v = vk.get(e.ref); v.rechnungGemacht = true;
-    if (e.nr) v.rech = { id: e.id, nr: e.nr, datum: e.datum, adresse: e.adresse || "", anlass: e.anlass || "", mail: e.mail || "", tel: e.tel || "",
+    if (e.nr) v.rech = { id: e.id, nr: e.nr, datum: e.datum, liefer: e.liefer || "", adresse: e.adresse || "", anlass: e.anlass || "", mail: e.mail || "", tel: e.tel || "",
       frei: (e.frei || []).map(f => ({ ...f })), zeit: e.zeit, durch: e.durch, erst: v.rech ? v.rech.erst : e.zeit, erstDurch: v.rech ? v.rech.erstDurch : e.durch, verschickt: null };
   }
   for (const e of aktiv) if (e.art === "rversand" && vk.has(e.ref) && vk.get(e.ref).rech) { const r = vk.get(e.ref).rech; if (!r.verschickt) { r.verschickt = e.zeit; r.verschicktDurch = e.durch; } }
@@ -943,7 +943,8 @@ function rechnungDaten(Z, v, F) {
   const L = v.livraison;
   const wie = v.wie && v.wie.length ? ` (${v.wie.map(w => ZAHLARTEN[w]).join(", ")})` : "";
   return { nr: F.nr, datum: F.datum, datumText: datumLang(F.datum), faellig: tagPlus(F.datum, 30), faelligText: datumLang(tagPlus(F.datum, 30)),
-    lieferLabel: L ? "Livraison du" : "Date de vente", lieferText: datumLang(L ? L.datum : tagVon(v.zeit)),
+    /* echter Tag der Lieferung bzw. des Verkaufs (vom Nutzer, 20.11.: am 19. geliefert, geplant war der 20.) — im Fenster änderbar */
+    lieferLabel: L ? "Livraison du" : "Date de vente", lieferText: datumLang(F.liefer || tagVon(v.zeit)),
     adresse: String(F.adresse || "").split("\n").map(x => x.trim()).filter(Boolean), anlass: (F.anlass || "").trim(),
     zeilen, total, bezahlt, rest, bezahltText: `Déjà payé${wie}${rest > 0 ? " — acompte" : ""}`, kurzName: v.kaeufer };
 }
@@ -1144,7 +1145,7 @@ function autoAufgaben(Z, heute) {
   // Rechnung maachen: Rechnung gewünscht (Bestellung geliefert oder Verkauf mit Haken), noch nicht gemacht → öffnet das Fenster
   for (const v of Z.verkaeufe) if (v.rechnungWunsch && !v.rechnungGemacht)
     out.push({ aid: aidVon("rechnung", v.id), typ: "rechnung", text: `Rechnung maachen: ${v.kaeufer}`,
-      sub: v.livraison ? `geliwwert ${tagKurz(v.livraison.datum)}` : `verkaaft ${tagKurz(tagVon(v.zeit))}`,
+      sub: `${v.livraison ? "geliwwert" : "verkaaft"} ${tagKurz(tagVon(v.zeit))}`,
       fuer: [v.verkaeufer], link: { typ: "rech", id: v.id }, wieder: 14 });
   // Rechnung gemacht, aber nicht geteilt (vom Nutzer, 20.11.2026): ab dem Tag danach, abgehakt nach 7 Tagen wieder
   for (const v of Z.rechnungen) if (!v.rech.verschickt && tagVon(v.rech.erst) < heute)
@@ -1544,6 +1545,13 @@ function mengeText(h) {
   return `${frei < 0 ? `<span style="color:var(--rot)">${frei}</span>` : frei}${fa ? ` <small class="muted">+ ${freiFa} F.</small>` : ""}${resZeile(rFl, rFa)}`;
 }
 
+// Rechnung in der Liste pro Bier (vom Nutzer, 20.11.: Käufer, die kein Client sind, findet man nur hier): Nummer, „maachen“ oder 🧾 nachträglich
+function uebRech(r) {
+  const v = !r.geplant && !r.alt && Z.vkNachId.get(r.id);
+  if (!v) return r.rechnung ? " · 🧾 " + esc(r.rechnung) : "";
+  return " " + (v.rech || v.rechnungGemacht ? rechChip(v) : rechFehlt(v) ? `<button class="chip warn" data-rech="${esc(v.id)}">🧾 Rechnung maachen ›</button>`
+    : `<button class="knopf klein kaufrech" data-rech="${esc(v.id)}" aria-label="Rechnung nodréiglech">🧾</button>`);
+}
 function renderUebersicht() {
   const box = $("#t-uebersicht");
   box.onclick = e => {
@@ -1597,6 +1605,7 @@ function renderUebersicht() {
     <div class="hinweis" style="margin:0 0 8px">All Verkéf als .xlsx: pro Béier e Blat wéi an der aler Tabell, dozou Bestellungen a Stock.</div>
     <button class="knopf" data-excel>📊 Excel-Export (.xlsx)</button><div id="xMeld"></div></div>
   ${F.abgefuellt === 0 ? `<div class="card"><b>Fir unzefänken:</b> Ënner <b>Stock</b> déi ofgefëllte Fläschen an d'Lager androen an se dann un d'Leit verdeelen.</div>` : ""}`;
+  rechKnoepfe(box);
 }
 
 let OFFEN_SORTE = "", ARCHIV_UEB = false;
@@ -1607,7 +1616,7 @@ function sorteDetail(s) {
     ${z.length ? `<div class="tabwrap"><table class="detail">
       <tr><th>Client</th><th>Fl.</th><th>Recetten</th><th>bezuel?</th></tr>
       ${z.map(r => `<tr class="${r.geplant ? "geplant" : ""}">
-        <td><b>${esc(r.kunde)}</b><br><small class="muted">${r.datum ? esc(datumKurz(r.datum)) : r.alt ? "ouni Datum" : datumText(r.zeit)} · ${esc(beim(r.kontakt))}${r.geplant ? " · geplangt" : ""}${r.remarque ? " · " + esc(r.remarque) : ""}${r.rechnung ? " · 🧾 " + esc(r.rechnung) : ""}</small></td>
+        <td><b>${esc(r.kunde)}</b><br><small class="muted">${r.datum ? esc(datumKurz(r.datum)) : r.alt ? "ouni Datum" : datumText(r.zeit)} · ${esc(beim(r.kontakt))}${r.geplant ? " · geplangt" : ""}${r.remarque ? " · " + esc(r.remarque) : ""}${uebRech(r)}</small></td>
         <td>${r.n}</td><td>${r.recetten ? euro(r.recetten) : "–"}</td><td>${r.bezuelt === "Jo" ? `<span style="color:var(--gruen)">${esc(r.wie || "Jo")}</span>` : esc(r.bezuelt.replace(/^Deelweis.*/, "Deelweis") + (r.wie && r.bezuelt.startsWith("Deelweis") ? " (" + r.wie + ")" : ""))}</td></tr>`).join("")}
       <tr class="summe"><td>Total</td><td>${fest.reduce((a, r) => a + r.n, 0)}</td><td>${euro(fest.reduce((a, r) => a + r.recetten, 0))}</td><td></td></tr>
     </table></div><div class="hinweis">Gro an schréi = geplangt Bestellung, nach net am Total.</div>` : `<div class="leer">Nach näischt.</div>`}</div>`;
@@ -2672,7 +2681,7 @@ let RFORM = null;
 function rechnungOeffnen(vid) {
   const v = Z.vkNachId.get(vid); if (!v) return;
   const K = v.kid ? Z.kunden.find(k => k.kid === v.kid) : null, r = v.rech;
-  RFORM = { vid, nr: r ? r.nr : "", datum: r ? r.datum : heuteLux(), kid: K ? K.kid : "",
+  RFORM = { vid, nr: r ? r.nr : "", datum: r ? r.datum : heuteLux(), liefer: (r && r.liefer) || tagVon(v.zeit), kid: K ? K.kid : "",
     adresse: r ? r.adresse : (K ? rechnungsAdresse(K) : [v.kaeufer]).join("\n"),
     anlass: r ? r.anlass : (v.livraison && v.livraison.anlass) || "", mail: r ? r.mail : (K && K.mail) || "", tel: r ? r.tel : (K && K.tel) || "",
     frei: r ? r.frei.map(f => ({ n: String(f.n), txt: f.txt, preis: zahlText(f.preis) })) : [], kunde: false, laeuft: false };
@@ -2708,8 +2717,9 @@ function rechnungRender() {
   if (!v) { box.classList.add("versteckt"); RFORM = null; document.body.style.overflow = ""; return; }
   const K = F.kid ? Z.kunden.find(k => k.kid === F.kid) : null, r = v.rech, L = v.livraison;
   karte.innerHTML = `<h2>🧾 Rechnung · ${esc(v.kaeufer)}</h2>
-    <div class="unter">${L ? "Geliwwert " + esc(datumKurz(L.datum)) : "Verkaaft " + esc(datumText(v.zeit))} · ${F.nr ? `Facture N° <b>${esc(F.nr)}</b>` : "Nummer kënnt beim PDF"} · Datum ${esc(datumLang(F.datum))}</div>
+    <div class="unter">${F.nr ? `Facture N° <b>${esc(F.nr)}</b>` : "Nummer kënnt beim PDF"} · Datum ${esc(datumLang(F.datum))}</div>
     ${r ? `<div class="rstand">gemaach ${esc(datumText(r.erst))} vum ${esc(r.erstDurch)} · ${r.verschickt ? `<span class="ok">📨 verschéckt ${esc(datumText(r.verschickt))}</span>` : `<span class="gelb">📨 nach net verschéckt</span> <button class="kop" id="rSchonn">✓ Schonn anescht verschéckt</button>`}</div>` : ""}
+    <label for="rLiefer">${L ? "Geliwwert den" : "Verkaaft den"}</label><input id="rLiefer" type="date" value="${esc(F.liefer)}">
     <label for="rAdr">Adress op der Rechnung</label>
     <textarea id="rAdr" rows="5" autocapitalize="words">${esc(F.adresse)}</textarea>
     <label class="check klein"><input type="checkbox" id="rKunde" ${F.kunde ? "checked" : ""}> ${K ? "Adress, Mail an Telefon och beim Client späicheren" : "Als neie Client späicheren"}</label>
@@ -2728,7 +2738,7 @@ function rechnungRender() {
     <button class="haupt grau" id="rZu">Ofbriechen</button>`;
   box.classList.remove("versteckt"); document.body.style.overflow = "hidden";
   const feld = (id, k) => { const el = $("#" + id); el.oninput = () => { F[k] = el.value; }; };
-  feld("rAdr", "adresse"); feld("rMail", "mail"); feld("rTel", "tel"); feld("rAnlass", "anlass");
+  feld("rAdr", "adresse"); feld("rMail", "mail"); feld("rLiefer", "liefer"); feld("rTel", "tel"); feld("rAnlass", "anlass");
   $("#rKunde").onchange = e => { F.kunde = e.target.checked; };
   const freiBinden = () => {
     karte.querySelectorAll("[data-rf]").forEach(el => el.oninput = () => { F.frei[+el.dataset.i][el.dataset.rf] = el.value; $("#rSumme").innerHTML = rSummeHtml(Z.vkNachId.get(F.vid) || v); });
@@ -2776,8 +2786,9 @@ async function rechnungFertig() {
     let v = Z.vkNachId.get(F.vid); if (!v) return meld("Dëse Verkaf gëtt et net méi.");
     if (!F.nr && v.rech) F.nr = v.rech.nr; // ein anderes Handy war schneller: dieselbe Rechnung, keine zweite Nummer
     const nr = F.nr || naechsteNr(Z, F.datum);
-    const e = { art: "rechnung", ref: v.id, nr, datum: F.datum, adresse, anlass: String(F.anlass || "").trim(), mail, tel, frei: fr.frei };
-    const r = v.rech, gleich = r && r.adresse === e.adresse && r.anlass === e.anlass && r.mail === e.mail && r.tel === e.tel && JSON.stringify(r.frei) === JSON.stringify(e.frei);
+    const liefer = /^\d{4}-\d{2}-\d{2}$/.test(F.liefer || "") ? F.liefer : tagVon(v.zeit);
+    const e = { art: "rechnung", ref: v.id, nr, datum: F.datum, liefer, adresse, anlass: String(F.anlass || "").trim(), mail, tel, frei: fr.frei };
+    const r = v.rech, gleich = r && (r.liefer || tagVon(v.zeit)) === e.liefer && r.adresse === e.adresse && r.anlass === e.anlass && r.mail === e.mail && r.tel === e.tel && JSON.stringify(r.frei) === JSON.stringify(e.frei);
     const neu = [];
     if (!gleich) neu.push(e);
     if (F.kunde) {
@@ -2854,7 +2865,7 @@ function renderOffen() {
   // Rechnungen nach ze maachen (vom Nutzer, 20.11.2026): eigener Bereich oben, auch schon bezahlte Verkäufe
   const fehlt = Z.verkaeufe.filter(v => rechFehlt(v) && (!NUR_MEINE || v.verkaeufer === EIN.ich)).sort(ordnung);
   box.innerHTML = `${fehlt.length ? `<div class="card" id="oRech"><h2>🧾 Rechnung nach ze maachen (${fehlt.length})</h2>
-    ${fehlt.map(v => `<div class="rechz"><span><b>${esc(v.kaeufer)}</b> · ${euro(v.betrag)}<small>${v.livraison ? `🚚 geliwwert ${esc(datumKurz(v.livraison.datum))}` : `verkaaft ${esc(datumText(v.zeit))}`} · ${esc(beim(v.verkaeufer))} · ${v.offen <= 0 ? "✓ bezuelt" : v.bezahlt > 0 ? euro(v.offen) + " op" : "nach net bezuelt"}</small></span>
+    ${fehlt.map(v => `<div class="rechz"><span><b>${esc(v.kaeufer)}</b> · ${euro(v.betrag)}<small>${v.livraison ? `🚚 geliwwert ${esc(datumText(v.zeit))}` : `verkaaft ${esc(datumText(v.zeit))}`} · ${esc(beim(v.verkaeufer))} · ${v.offen <= 0 ? "✓ bezuelt" : v.bezahlt > 0 ? euro(v.offen) + " op" : "nach net bezuelt"}</small></span>
       <button class="knopf akt" data-rech="${esc(v.id)}">🧾 Maachen</button></div>`).join("")}</div>` : ""}
   <div class="card">
     <div class="kopfz" style="display:flex;justify-content:space-between;align-items:center">

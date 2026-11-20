@@ -206,6 +206,24 @@ ist("geliefert ohne Haken: „Rechnung nodréiglech“", await A.evaluate(id => 
 await A.click('[data-tab="kunden"]'); await warte(200);
 await A.click('[data-kauf="k-ferro1"]'); await warte(900); await A.click('[data-kakeef="k-ferro1"]'); await warte(200);
 ist("Client Akeef: Nummer an der Rechnung", await A.locator("#kListe").innerText(), t => t.includes("🧾 " + J + "-001"));
+// Lieferdatum = Tag des „Geliwwert“, nicht der geplante (vom Nutzer, 20.11.); im Fenster änderbar
+const rsV = await A.evaluate(() => Z.livraisons.find(L => L.kunde === "Rock Solid").verkauf.id);
+await A.click('[data-tab="livraisons"]'); await warte(300);
+await A.click(`#lListe [data-rech="${rsV}"]`); await warte(300);
+ist("Fenster: Geliwwert den = heute (geplant war der 19.11.)", await A.inputValue("#rLiefer"), await A.evaluate(() => heuteLux()));
+await A.fill("#rLiefer", "2026-11-17"); await A.click("#rOk"); await warte(2500);
+ist("PDF: Livraison du 17.11.2026", (await pdfText(A)).includes("17.11.2026"), true);
+ist("gespeichert: liefer", await A.evaluate(id => Z.vkNachId.get(id).rech.liefer, rsV), "2026-11-17");
+await A.click("#ansichtZu"); await warte(200);
+// Übersicht pro Bier: 🧾 auch für Käufer, die kein Client sind
+await A.evaluate(() => eintragen([{ art: "verkauf", verkaeufer: "Laurent", kaeufer: "Schmit Pol", posten: [{ sorte: "NEIPA", n: 1 }], betrag: 3 }])); await warte(300);
+await A.click('[data-tab="uebersicht"]'); await warte(200);
+await A.click('tr[data-sorte="NEIPA"]'); await warte(300);
+ist("Iwwersiicht: Nummer und 🧾 nodréiglech in der Liste", [await A.locator("#t-uebersicht").innerText(), await A.locator("#t-uebersicht .kaufrech").count()], v => v[0].includes("🧾 " + J + "-003") && v[1] >= 1);
+const vid0 = await A.locator("#t-uebersicht .kaufrech").first().getAttribute("data-rech");
+await A.locator("#t-uebersicht .kaufrech").first().click(); await warte(300);
+ist("🧾 in der Iwwersiicht öffnet das Fenster", [await A.locator("#rechWahl").isVisible(), await A.evaluate(() => RFORM && RFORM.vid)], v => v[0] && v[1] === vid0);
+await A.click("#rZu"); await warte(200);
 ist("keine Seitenfehler", [...A.konsole, ...B.konsole].filter(t => !/ERR_|net::|Failed to load/.test(t)), []);
 await browser.close();
 console.log(fehler ? `${fehler} Prüfung(en) fehlgeschlagen` : "alles gut");

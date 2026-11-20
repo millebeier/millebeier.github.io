@@ -296,6 +296,10 @@ beim Verkaufen/Livraison und „Fläsche beweegen“ an, solange jemand welche h
   **Rechnung nodréiglech** (vom Nutzer, Fassung d, Entwurf gezeigt): Verkauf ohne Haken → kleiner **grauer** Knopf „🧾 Rechnung nodréiglech“
   (`rechNachKnopf`, `.knopf.klein`) an offenen Verkäufen unter Ausstoend und an gelieferten Bestellungen; im Reiter Client → Akeef je Kauf ein
   kleines 🧾 (bzw. Nummer / „Rechnung maachen ›“ wenn gewünscht) — so findet man auch bezahlte Verkäufe. Gewünscht bleibt gelb + rotes „Maachen“.
+  Ebenso in der **Iwwersiicht → Liste pro Bier** (`uebRech`, vom Nutzer, Fassung e: Käufer ohne Client findet man nur dort).
+  **Lieferdatum auf der Rechnung** (vom Nutzer, Fassung e: am 19. geliefert, geplant war der 20., PDF zeigte den 20.): „Livraison du“ / „Date de
+  vente“ = Tag, an dem „Geliwwert ✓“ bzw. der Verkauf eingetragen wurde (`tagVon(v.zeit)`), im Fenster als Datum änderbar (`#rLiefer`,
+  `rechnung.liefer`); alte Rechnungen ohne `liefer` nehmen von selbst den echten Tag.
 - **Eigener Stückpreis** (vom Nutzer, 20.11.2026, Fassung d, Entwurf gezeigt): in Verkafen und Bestellung ist der Preis „3 € ✎“ gestrichelt
   antippbar (`prChipHtml`/`prBinden`, Zustand `FORM.preis`/`LFORM.preis`), wird zum kleinen Feld (`.prfeld`, ändert nur diesen Span, nie den Kasten);
   geändert = gelb + „amplaz 3 €“, Betrag rechnet mit (`stueckPreis`). Gilt nur für diesen Verkauf/diese Bestellung, Listenpreis bleibt. Gespeichert
@@ -365,7 +369,7 @@ Script lief nicht, und damit auch kein automatisches Update. In Code auf einer Z
   „nicht geschickt“, Excel, „Jidderee muss“ (Gegenprobe gemacht). Automatische Aufgaben im Einzelnen in `logik.mjs` (Gegenprobe gemacht).
 - `JSPDF_JS=…/jspdf/dist/jspdf.umd.min.js node test/rechnungen.mjs` — Rechnungen: Haken aus, Fenster, Kopieren, freie Position, PDF-Inhalt
   (Rohtext der PDF-Datei), Deelen = verschickt / Abbruch nicht, Ändern behält Nummer, zweites Handy JJJJ-002, offline keine Nummer, Ausstoend,
-  Startseite, Hinweis an geplanter Bestellung, eigener Stückpreis (Verkafen/Bestellung/Ändern), „Rechnung nodréiglech“, Client-Akeef (Gegenprobe gemacht). jsPDF per `npm install jspdf@2.5.1` in den Scratchpad; ohne wird übersprungen.
+  Startseite, Hinweis an geplanter Bestellung, eigener Stückpreis (Verkafen/Bestellung/Ändern), „Rechnung nodréiglech“, Client-Akeef, Lieferdatum, 🧾 in der Iwwersiicht (Gegenprobe gemacht). jsPDF per `npm install jspdf@2.5.1` in den Scratchpad; ohne wird übersprungen.
 - `node test/biere.mjs` — Bier anlegen/ändern/archivieren/zurückholen/löschen (zwei Rückfragen, Gegenprobe gemacht),
   rotes ✕ im Verlauf, rotes Dreieck; Kasten „Fläschen“ (vier Absichten, Pfeil, ⇄, änneren, Vorschau, Gründe) und Abfüllen ändern beim Bier
   (48 → 60 → 50, Verlauf; Gegenprobe gemacht).
