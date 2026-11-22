@@ -45,6 +45,13 @@ ist("steht unter Ausstoend", await p.evaluate(() => Z.kaeufer.find(k => k.name =
 // Rechnung wie früher ohne Nummer (alter Haken) — das Fenster prüft test/rechnungen.mjs
 await p.evaluate(() => { const v = Z.verkaeufe.find(x => x.kaeufer === "Ferro Forum"); eintragen([{ art: "rechnung", ref: v.id }]); }); await warte(900);
 await p.click("[data-lbezuelt]"); await p.click("#zahlWahl [data-wie=\"bank\"]"); await warte(200);
+// Überweisung ist erst angekündigt (vom Nutzer, 22.11.): zählt nicht, bis „✓ Ukomm“ unter Ausstoend
+ist("Überweisung angekündigt: Kasse 0, steht unter Ausstoend zum Kontrollieren", [await p.evaluate(() => Z.kasse), await p.evaluate(() => Z.wartend.length)], [0, 1]);
+await p.click('[data-tab="offen"]'); await warte(200);
+ist("Ausstoend: Bereich Iwwerweisunge kucken", await p.locator("#oBank").innerText(), t => t.includes("Ferro Forum") && t.includes("90 €"));
+await p.click("#oBank [data-bk]"); await warte(300);
+ist("✓ Ukomm: bezahlt, Bereich weg", [await p.evaluate(() => Z.kasse), await p.locator("#oBank").count()], [90, 0]);
+await p.click('[data-tab="livraisons"]'); await warte(200);
 ist("Rechnung gemaach und bezuelt", await p.locator("#lListe").innerText(), s => s.includes("Rechnung gemaach") && s.includes("✓ bezuelt"));
 ist("Kasse", await p.evaluate(() => Z.kasse), 90);
 

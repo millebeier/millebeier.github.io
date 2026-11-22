@@ -366,7 +366,9 @@ table.buchtab{width:100%;border-collapse:collapse;font-size:13px} .buchtab td,.b
 .buchtab tr.storno td{color:var(--muted);text-decoration:line-through}
 button.chip{cursor:pointer;font:inherit;font-size:12px}
 .rechz{display:flex;justify-content:space-between;align-items:center;gap:8px;border-top:1px solid var(--line);padding:9px 0}
-.rechz:first-of-type{border-top:0} .rechz small{display:block;color:var(--muted)}
+.rechz:first-of-type{border-top:0}
+.bankk{display:flex;gap:5px;align-items:center;flex-shrink:0} .bankk input{width:128px;padding:6px;font-size:14px} .bankk .knopf{margin:0;white-space:nowrap}
+@media (max-width:420px){.bankz{flex-wrap:wrap}.bankk{width:100%;justify-content:flex-end}} .rechz small{display:block;color:var(--muted)}
 #ansichtInhalt .tabelle{overflow:auto;-webkit-overflow-scrolling:touch;background:#fff;color:#111;border-radius:6px;margin-bottom:12px}
 #ansichtInhalt .tabelle table{border-collapse:collapse;font-size:12px;width:auto;min-width:100%}
 #ansichtInhalt .tabelle td{border:1px solid #ccc;padding:3px 6px;text-align:left;white-space:nowrap;color:#111}
@@ -433,7 +435,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px}
 <script>
 /* Adresse des Cloudflare-Workers. Leer = Probe-Modus (alles nur auf diesem Handy). */
 const WORKER_URL = "https://millebeier.rjtp6r9s9h.workers.dev/";
-const FASSUNG = "22.11.2026 c";
+const FASSUNG = "22.11.2026 d";
 
 /* === Logik === (kein DOM; test/logik.mjs schneidet diesen Block aus) */
 const LAGER = "Lager";
@@ -442,7 +444,7 @@ const STANDARD = {
   leute: ["Jeff", "Marc", "Claude", "Laurent"],
 };
 const GRUENDE = { getrunken: "selwer gedronk", verschenkt: "verschenkt / Prouf", kaputt: "futti", sonst: "soss eppes" };
-const ARTEN = ["abfuellung", "bewegung", "abgang", "verkauf", "zahlung", "einstellungen", "storno", "livraison", "rechnung", "bier", "bierstatus", "datei", "kunde", "termin", "aufgabe", "aufhak", "rversand"];
+const ARTEN = ["abfuellung", "bewegung", "abgang", "verkauf", "zahlung", "einstellungen", "storno", "livraison", "rechnung", "bier", "bierstatus", "datei", "kunde", "termin", "aufgabe", "aufhak", "rversand", "zbest"];
 /* Kalender (vom Nutzer, 16.11.2026): feste Arten; Akafen bewusst nicht (vom Nutzer). Reihenfolge = Knöpfe im Formular. */
 const TERMIN_ARTEN = {
   braudag: { ic: "🍺", txt: "Braudag" }, umschlauchen: { ic: "🔄", txt: "Ëmschlauchen" }, hopfen: { ic: "🌿", txt: "Hopfestopfen" },
@@ -502,7 +504,8 @@ function gueltig(e) {
       return typeof e.ref === "string" && (e.nr === undefined || (typeof e.nr === "string" && /^\d{4}-\d{3,4}$/.test(e.nr) && optDatum(e.datum) && !!e.datum &&
         optText(e.adresse, 400) && optText(e.anlass, 120) && optDatum(e.liefer) && optText(e.mail, 120) && optText(e.tel, 40) &&
         (e.frei === undefined || (Array.isArray(e.frei) && e.frei.length <= 12 && e.frei.every(f => f && text(f.txt, 120) && ganz(f.n) && geld(f.preis))))));
-    case "rversand": return typeof e.ref === "string"; // Rechnung verschickt (geteilt), ref = Verkauf
+    case "rversand": return typeof e.ref === "string";
+    case "zbest": return typeof e.ref === "string" && optDatum(e.datum); // Überweisung angekommen (ref = zahlung mit wart), datum = Tag laut Kontoauszug // Rechnung verschickt (geteilt), ref = Verkauf
     case "bier":
       return text(e.name, 30) && e.name !== LAGER && geld(e.preis) && optDatum(e.braudatum) && optDatum(e.mhd) &&
         optZahl(e.alk, 0, 30) && optZahl(e.liter, 0, 100000) && optText(e.stil, 40) && optText(e.notiz, 300) &&
@@ -534,7 +537,7 @@ function gueltig(e) {
         Number.isInteger(e.groesse) && e.groesse > 0 && Number.isInteger(e.teile) && e.teile >= 1 && e.teile <= 200 &&
         typeof e.bier === "string" && e.bier.length <= 30 && e.feld in FELDER;
     case "zahlung": return typeof e.ref === "string" && geld(e.betrag) && e.betrag > 0 && (e.wie === undefined || e.wie in ZAHLARTEN) &&
-      (e.vor === undefined || typeof e.vor === "boolean") && optDatum(e.datum); // vor: Vorauszahlung; datum: anderer Zahltag (Buchhaltung), ref = lid der Bestellung (Fassung h)
+      (e.vor === undefined || typeof e.vor === "boolean") && optDatum(e.datum) && (e.wart === undefined || typeof e.wart === "boolean"); // vor: Vorauszahlung; datum: anderer Zahltag (Buchhaltung), ref = lid der Bestellung (Fassung h)
     case "einstellungen":
       return Array.isArray(e.sorten) && e.sorten.length > 0 && e.sorten.length <= 30 &&
         e.sorten.every(s => s && text(s.name, 30) && geld(s.preis)) &&
@@ -672,8 +675,18 @@ function rechne(eintraege) {
   // Vorauszahlung (vom Nutzer, Fassung h): hängt an der Bestellung (lid, bleibt beim Ändern). Vor der Lieferung zählt sie in der
   // Kasse und an der Bestellung, danach am Verkauf der Lieferung. Bestellung gelöscht → zählt nicht mehr (wie ein stornierter Verkauf).
   const livNachLid = new Map([...liv.values()].map(L => [L.lid, L]));
-  for (const L of liv.values()) { L.vorbezahlt = 0; L.vorWie = []; }
+  for (const L of liv.values()) { L.vorbezahlt = 0; L.vorWie = []; L.vorWart = []; }
+  /* Überweisung (vom Nutzer, 22.11.2026): mit `wart` nur angekündigt — zählt erst, wenn jemand „✓ Ukomm“ bestätigt (Eintrag zbest). */
+  const zbest = new Map(); for (const e of aktiv) if (e.art === "zbest" && !zbest.has(e.ref)) zbest.set(e.ref, e);
+  const wartend = [];
+  for (const e of aktiv) if (e.art === "zahlung" && e.wart && !zbest.has(e.id)) {
+    const L = e.vor ? livNachLid.get(e.ref) : null, v = e.vor ? (L && L.verkauf) : vk.get(e.ref);
+    if (e.vor ? !L : !v) continue;
+    const W = { e, v: v || null, L: L || (v && v.livraison) || null };
+    wartend.push(W); if (v) (v.wart ||= []).push(W); if (L) L.vorWart.push(W);
+  }
   for (const e of aktiv) if (e.art === "zahlung") {
+    if (e.wart && !zbest.has(e.id)) continue;
     let v = null;
     if (e.vor) {
       const L = livNachLid.get(e.ref); if (!L) continue;
@@ -711,7 +724,7 @@ function rechne(eintraege) {
   }
 
   return {
-    reserviert, kasseNach, cfg, basisSorten, geloescht, liste, aktiv, storniert, nachId, bestand, halter, sorten, sortenNamen, personen,
+    reserviert, kasseNach, zbest, wartend, cfg, basisSorten, geloescht, liste, aktiv, storniert, nachId, bestand, halter, sorten, sortenNamen, personen,
     verkaeufe: [...vk.values()],
     rechnungen: [...vk.values()].filter(v => v.rech).sort((a, b) => a.rech.nr.localeCompare(b.rech.nr)),
     altVerkaeufe: altVk,
@@ -784,6 +797,7 @@ function beschreibe(e, Z) {
       if (e.vor) { const L = Z && ((Z.livraisons || []).find(x => x.lid === e.ref) || Z.nachId.get(e.ref));
         return `💶 Virauszuelung ${euro(e.betrag)}${e.wie ? " per " + ZAHLARTEN[e.wie] : ""}` + (L ? `: ${L.kunde}` : ""); }
       const v = Z && Z.nachId.get(e.ref);
+      if (e.wart) return `🏦 Iwwerweisung ugekënnegt: ${euro(e.betrag)}` + (v ? ` · ${v.kaeufer} (${beim(v.verkaeufer)})` : "");
       return `✓ ${euro(e.betrag)} bezuelt${e.wie ? " per " + ZAHLARTEN[e.wie] : ""}${e.datum ? " den " + datumKurz(e.datum) : ""}` + (v ? `: ${v.kaeufer} (${beim(v.verkaeufer)})` : "");
     }
     case "livraison": return `🚚 Bestellung geplangt: ${((Z && Z.livraisons && Z.livraisons.find(L => L.id === e.id)) || e).kunde}, ${postenText(e.posten)}, ${datumKurz(e.datum)} · ${euro(e.betrag)}`;
@@ -794,6 +808,8 @@ function beschreibe(e, Z) {
       const alt = Z && Z.liste && Z.liste.some(x => x.art === "rechnung" && x.nr === e.nr && x.zeit < e.zeit);
       return `🧾 Rechnung ${e.nr} ${alt ? "geännert" : "gemaach"}` + (v ? `: ${v.kaeufer} · ${euro((v.ware != null ? v.ware : v.betrag) + fr)}` : "");
     }
+    case "zbest": { const z = Z && Z.nachId.get(e.ref), v = z && Z.nachId.get(z.ref);
+      return `✓ Iwwerweisung ukomm${z ? ": " + euro(z.betrag) : ""}${e.datum ? " den " + datumKurz(e.datum) : ""}` + (v && v.kaeufer ? ` · ${v.kaeufer}` : ""); }
     case "rversand": { const v = Z && Z.vkNachId && Z.vkNachId.get(e.ref);
       return `📨 Rechnung ${v && v.rech ? v.rech.nr + " " : ""}verschéckt` + (v ? `: ${v.kaeufer}` : ""); }
     case "bier": return `🍺 Béier: ${e.name}` + [e.stil, e.alk != null ? String(e.alk).replace(".", ",") + " %" : "", euro(e.preis), e.braudatum ? "gebraut " + datumKurz(e.braudatum) : ""].filter(Boolean).map(x => " · " + x).join("");
@@ -1167,6 +1183,11 @@ function autoAufgaben(Z, heute) {
   for (const v of Z.rechnungen) if (!v.rech.verschickt && tagVon(v.rech.erst) < heute)
     out.push({ aid: aidVon("verschickt", v.id), typ: "verschickt", text: `Rechnung ${v.rech.nr} nach net verschéckt: ${v.kaeufer}`, sub: euro(v.betrag),
       fuer: [v.verkaeufer], link: { typ: "rech", id: v.id }, wieder: 7 });
+  // Überweisung nach 7 Tagen nicht bestätigt (vom Nutzer, 22.11.): für den Verkäufer bzw. Kontakt, abgehakt nach 7 Tagen wieder
+  for (const W of Z.wartend || []) { const d = tageVon(tagVon(W.e.zeit), heute); if (d < 7) continue;
+    const wer = W.v ? W.v.kaeufer : W.L ? W.L.kunde : "?", fuer = W.v ? W.v.verkaeufer : W.L ? W.L.kontakt : W.e.durch;
+    out.push({ aid: aidVon("iwwerweisung", W.e.id), typ: "iwwerweisung", text: `Iwwerweisung vu ${wer} (${euro(W.e.betrag)}) kucken — ukomm?`,
+      sub: `ugekënnegt ${tagKurz(tagVon(W.e.zeit))}`, fuer: [fuer], link: { typ: "offen" }, wieder: 7 }); }
   // X erënneren: offen seit mindestens 30 Tagen, je Verkäufer und Käufer; mit Rechnung ab dem Rechnungsdatum, also ab Ablauf der 30 Tage
   const gr = new Map();
   for (const v of Z.verkaeufe) if (v.offen > 0) {
@@ -1287,11 +1308,12 @@ function buchDaten(Z, F) {
     const wer = (v && v.kaeufer) || (L && L.kunde) || "?";
     const verk = (v && v.verkaeufer) || (L && L.kontakt) || e.durch;
     const storniert = Z.storniert.has(e.id) || (!e.vor && !Z.vkNachId.has(e.ref)) || (e.vor && !L);
-    const d = zahlTag(e);
+    const best = e.wart ? Z.zbest.get(e.id) : null, wart = !!e.wart && !best;
+    const d = best ? (best.datum || tagVon(best.zeit)) : zahlTag(e);
     if (!imZeit(d) || !hatBier(posten) || (F.wie && e.wie !== F.wie) || (F.verk && verk !== F.verk) || !kundeOk(wer)) continue;
     if (F.status && (!v || (F.status === "op" ? v.offen <= 0 : v.offen > 0))) continue;
     zahlungen.push({ nr: nummern.get(e.id), e, datum: d, betrag: e.betrag, wie: e.wie || "", wer, verk, posten, vor: !!e.vor,
-      rech: v && v.rech ? v.rech.nr : "", storniert });
+      rech: v && v.rech ? v.rech.nr : "", storniert, wart });
   }
   zahlungen.sort((a, b) => a.e.zeit - b.e.zeit);
   // Rechnungen lückenlos: je Nummer die neueste Fassung, gelöschter Verkauf = storniert
@@ -1310,7 +1332,9 @@ function buchDaten(Z, F) {
   // Ausstoend zum Stichtag „bis“: verkauft bis dahin, bezahlt bis dahin
   const ausstoend = Z.verkaeufe.filter(v => tagVon(v.zeit) <= F.bis && hatBier(v.posten) && (!F.verk || v.verkaeufer === F.verk) && kundeOk(v.kaeufer)).map(v => {
     let bez = 0;
-    for (const e of Z.aktiv) if (e.art === "zahlung" && zahlTag(e) <= F.bis && (e.vor ? (v.livraison && v.livraison.lid === e.ref) : e.ref === v.id)) bez += e.betrag;
+    for (const e of Z.aktiv) if (e.art === "zahlung" && (e.vor ? (v.livraison && v.livraison.lid === e.ref) : e.ref === v.id)) {
+      const b = e.wart ? Z.zbest.get(e.id) : null; if (e.wart && !b) continue;
+      if ((b ? (b.datum || tagVon(b.zeit)) : zahlTag(e)) <= F.bis) bez += e.betrag; }
     return { v, datum: tagVon(v.zeit), betrag: v.betrag, bezahlt: runde(bez), offen: runde(Math.max(0, v.betrag - bez)) };
   }).filter(x => x.offen > 0).sort((a, b) => a.v.zeit - b.v.zeit);
   // Stock je Artikel: Anfang (vor „von“), Bewegungen im Zeitraum, Ende
@@ -1340,7 +1364,7 @@ function buchDaten(Z, F) {
     .filter(x => imZeit(x.datum) && (!F.bier || zerlege(x.e.sorte).bier === F.bier) && (!F.grund || x.e.grund === F.grund) && (!F.verk || x.e.wer === F.verk))
     .sort((a, b) => a.datum.localeCompare(b.datum) || a.e.zeit - b.e.zeit);
   // Résumé
-  const ok = zahlungen.filter(z => !z.storniert);
+  const ok = zahlungen.filter(z => !z.storniert && !z.wart);
   const jeWie = {}; for (const z of ok) jeWie[z.wie || "?"] = runde((jeWie[z.wie || "?"] || 0) + z.betrag);
   const jeVerk = {}; for (const x of verkaeufe) jeVerk[x.v.verkaeufer] = runde((jeVerk[x.v.verkaeufer] || 0) + x.betrag);
   const jeBier = {};
@@ -1512,7 +1536,7 @@ function render() {
   const [, kM, kT] = heuteLux().split("-").map(Number);
   $("#kalBtn").innerHTML = `<span class="kalic"><i>${KAL_MON[kM - 1]}</i><b>${kT}</b></span>` + (nKal ? `<span class="badge">${nKal}</span>` : "");
   document.querySelectorAll("#nav button").forEach(b => b.classList.toggle("an", b.dataset.tab === tab));
-  const nOffen = Z.kaeufer.filter(k => k.offen > 0).length + Z.verkaeufe.filter(rechFehlt).length; // auch fehlende Rechnungen
+  const nOffen = Z.kaeufer.filter(k => k.offen > 0).length + Z.verkaeufe.filter(rechFehlt).length + (Z.wartend || []).filter(W => !W.v || W.v.offen <= 0).length; // auch fehlende Rechnungen und Überweisungen
   $('#nav [data-tab="offen"]').innerHTML = "<i>💶</i>Ausstoend" + (nOffen ? `<span class="badge">${nOffen}</span>` : "");
   renderSync();
   const nGeplant = Z.livraisons.filter(L => !L.verkauf).length;
@@ -2356,6 +2380,7 @@ function renderLListe() {
         : L.vorbezahlt > 0 ? `<button class="chip warn lvor" data-lvor="${esc(L.lid)}">${euro(L.vorbezahlt)} Acompte${L.vorWie.length ? " · " + esc(L.vorWie.map(w => ZAHLARTEN[w]).join(", ")) : ""} — ${euro(runde(L.betrag - L.vorbezahlt))} op ›</button>`
         : `<button class="chip lvor nb" data-lvor="${esc(L.lid)}">💶 Nach net bezuelt ›</button>`) : ""}
       ${!v && L.rechnung ? `<span class="chip rgef">🧾 Rechnung nach net geschéckt</span>` : ""}
+      ${!v ? L.vorWart.map(W => `<span class="chip warn">🏦 ${euro(W.e.betrag)} Iwwerweisung ugekënnegt</span>`).join("") : ""}
       ${L.anlass || L.notiz ? `<div class="hinweis" style="margin-top:4px">${esc([L.anlass, L.notiz].filter(Boolean).join(" · "))}</div>` : ""}
       ${status}<div class="knopfe ${!v ? "einz" : ""}">${knoepfe}</div>
       ${!v && A_INLINE && A_INLINE.wo === "liv:" + L.lid ? aufFormHtml(A_INLINE.F, `Nei Aufgab fir d'Bestellung ${L.kunde}`) : ""}</div>`;
@@ -2405,13 +2430,13 @@ function renderLListe() {
     const L = Z.livraisons.find(x => x.lid === b.dataset.lvor && !x.verkauf); if (!L) return;
     const rest = runde(L.betrag - L.vorbezahlt); if (!(rest > 0)) return;
     zahlartWaehlen(`${L.kunde}: ${L.vorbezahlt ? "Rescht " : ""}bezuelt?`, rest).then(r => {
-      if (r) eintragen([{ art: "zahlung", ref: L.lid, vor: true, betrag: r.betrag, wie: r.wie, ...zd() }]);
+      if (r) eintragen([{ art: "zahlung", ref: L.lid, vor: true, betrag: r.betrag, wie: r.wie, ...zd(), ...zw(r.wie) }]);
     });
   });
   rechKnoepfe(box);
   box.querySelectorAll("[data-lbezuelt]").forEach(b => b.onclick = () => {
     const v = Z.vkNachId.get(b.dataset.lbezuelt); if (!v) return;
-    zahlartWaehlen(`${v.kaeufer}: ${euro(v.offen)} bezuelt — wéi?`).then(wie => { if (wie) eintragen([{ art: "zahlung", ref: v.id, betrag: v.offen, wie, ...zd() }]); });
+    zahlartWaehlen(`${v.kaeufer}: ${euro(v.offen)} bezuelt — wéi?`).then(wie => { if (wie) eintragen([{ art: "zahlung", ref: v.id, betrag: v.offen, wie, ...zd(), ...zw(wie) }]); });
   });
 }
 // Formular-Anfang direkt unter den festen Kopf (vom Nutzer: Fassung i beim Ändern, Fassung k auch bei „Nei Bestellung“)
@@ -2621,10 +2646,10 @@ async function vSpeichern() {
   const v = neu.find(e => e.art === "verkauf");
   if (!v) return; // gerade eben schon gespeichert (Doppeltipp)
   const wie = FORM.wie;
-  if (wie !== "spaeter" && betrag > 0) eintragen([{ art: "zahlung", ref: v.id, betrag, wie }]);
+  if (wie !== "spaeter" && betrag > 0) eintragen([{ art: "zahlung", ref: v.id, betrag, wie, ...zw(wie) }]);
   const verk = FORM.verkaeufer;
   FORM = leeresFormular(); FORM.verkaeufer = verk;
-  FORM.meldung = { art: "ok", text: `✓ Agedroen: ${KE.name}${KE.eintraege.length ? " (📇 neie Client)" : ""}, ${postenText(posten)}, ${euro(betrag)} — ${wie !== "spaeter" ? "bezuelt per " + ZAHLARTEN[wie] : "steet ënner „Ausstoend“"}` +
+  FORM.meldung = { art: "ok", text: `✓ Agedroen: ${KE.name}${KE.eintraege.length ? " (📇 neie Client)" : ""}, ${postenText(posten)}, ${euro(betrag)} — ${wie === "bank" ? "🏦 Iwwerweisung: steet ënner „Ausstoend“, bis se ukomm ass" : wie !== "spaeter" ? "bezuelt per " + ZAHLARTEN[wie] : "steet ënner „Ausstoend“"}` +
     (umbuchen.length ? ` (${umbuchen.map(u => postenText([u])).join(", ")} ${u0(umbuchen[0].von)} ëmgebucht)` : "") +
     (v.rechnung ? " · 🧾 Rechnung: steet ënner „Ausstoend“" : ""), ...(v.rechnung ? { rech: v.id } : {}) };
   if (document.activeElement) document.activeElement.blur();
@@ -2665,6 +2690,8 @@ async function fehlendesHolen(wer, posten) {
 }
 
 let ZAHL_DATUM = "";
+// Überweisung = nur angekündigt, bis „✓ Ukomm“ (vom Nutzer, 22.11.)
+const zw = wie => wie === "bank" ? { wart: true } : {};
 // Anderer Zahltag aus dem Zahlungsfenster: nur mitschicken, wenn nicht heute (und gültig)
 const zd = () => /^\d{4}-\d{2}-\d{2}$/.test(ZAHL_DATUM) && ZAHL_DATUM !== heuteLux() ? { datum: ZAHL_DATUM } : {};
 /* Zahlungsart wählen (Ausstoend, Livraisons): Fenster mit WERO / SumUp / Iwwerweisung / Bar. Gibt die Art oder null.
@@ -2983,13 +3010,21 @@ async function rechnungZeigen(vid) {
 let NUR_MEINE = false;
 function renderOffen() {
   const box = $("#t-offen");
+  if (tipptIn(box)) return;
+  const meinW = W => !NUR_MEINE || (W.v ? W.v.verkaeufer : W.L ? W.L.kontakt : W.e.durch) === EIN.ich;
+  const wart = (Z.wartend || []).filter(meinW).sort((a, b) => a.e.zeit - b.e.zeit);
   const liste = Z.kaeufer.map(K => {
     const vs = K.verkaeufe.filter(v => v.offen > 0 && (!NUR_MEINE || v.verkaeufer === EIN.ich));
     return { ...K, sicht: vs, sichtOffen: runde(vs.reduce((a, v) => a + v.offen, 0)) };
   }).filter(K => K.sicht.length);
   // Rechnungen nach ze maachen (vom Nutzer, 20.11.2026): eigener Bereich oben, auch schon bezahlte Verkäufe
   const fehlt = Z.verkaeufe.filter(v => rechFehlt(v) && (!NUR_MEINE || v.verkaeufer === EIN.ich)).sort(ordnung);
-  box.innerHTML = `${fehlt.length ? `<div class="card" id="oRech"><h2>🧾 Rechnung nach ze maachen (${fehlt.length})</h2>
+  const wartHtml = wart.length ? `<div class="card" id="oBank"><h2>🏦 Iwwerweisunge kucken (${wart.length})</h2>
+    <div class="m" style="color:var(--muted);font-size:13px;margin-bottom:6px">Ugekënnegt, awer nach net bestätegt. Um Kontoauszug kucken, dann „✓ Ukomm“.</div>
+    ${wart.map(W => { const wer = W.v ? W.v.kaeufer : W.L ? W.L.kunde : "?", verk = W.v ? W.v.verkaeufer : W.L ? W.L.kontakt : W.e.durch, d = tageVon(tagVon(W.e.zeit), heuteLux());
+      return `<div class="rechz bankz"><span><b>${esc(wer)}</b> · ${euro(W.e.betrag)}<small>ugekënnegt ${esc(datumText(W.e.zeit))}${d ? ` (virun ${d} Deeg)` : ""} · ${esc(beim(verk))}${W.e.vor ? " · Virauszuelung" : ""}</small></span>
+        <span class="bankk"><input type="date" data-bkd="${esc(W.e.id)}" value="${heuteLux()}" aria-label="Ukomm den"><button class="knopf akt" data-bk="${esc(W.e.id)}">✓ Ukomm</button><button class="knopf klein" data-bkweg="${esc(W.e.id)}" aria-label="Net komm">✕</button></span></div>`; }).join("")}</div>` : "";
+  box.innerHTML = `${wartHtml}${fehlt.length ? `<div class="card" id="oRech"><h2>🧾 Rechnung nach ze maachen (${fehlt.length})</h2>
     ${fehlt.map(v => `<div class="rechz"><span><b>${esc(v.kaeufer)}</b> · ${euro(v.betrag)}<small>${v.livraison ? `🚚 geliwwert ${esc(datumText(v.zeit))}` : `verkaaft ${esc(datumText(v.zeit))}`} · ${esc(beim(v.verkaeufer))} · ${v.offen <= 0 ? "✓ bezuelt" : v.bezahlt > 0 ? euro(v.offen) + " op" : "nach net bezuelt"}</small></span>
       <button class="knopf akt" data-rech="${esc(v.id)}">🧾 Maachen</button></div>`).join("")}</div>` : ""}
   <div class="card">
@@ -2999,7 +3034,7 @@ function renderOffen() {
   </div>
   ${liste.length ? liste.map((K, i) => `<div class="card kunde">
     <div class="kopfz"><h2 style="margin:0">${esc(K.name)}</h2><span class="betrag">${euro(K.sichtOffen)}</span></div>
-    ${K.sicht.map(v => `<div class="vk"><span>${v.livraison ? `🚚 Bestellung ${esc(datumKurz(v.livraison.datum))}` : datumText(v.zeit)} · ${esc(postenText(v.posten))}${v.betrag > v.ware ? ` + ${euro(v.betrag - v.ware)} fräi Positiounen` : ""}<br><small class="muted">${esc(beim(v.verkaeufer))}${v.bezahlt ? ` · ${euro(v.bezahlt)} scho bezuelt` : ""}${v.rech ? ` · Rechnung ${tageVon(v.rech.datum, heuteLux()) ? `zënter ${tageVon(v.rech.datum, heuteLux())} Deeg` : "vun haut"}` : ""}</small>${rechChip(v) ? `<div style="margin-top:4px">${rechChip(v)}</div>` : ""}${rechNachKnopf(v) ? `<div>${rechNachKnopf(v)}</div>` : ""}</span><span>${euro(v.offen)}</span></div>`).join("")}
+    ${K.sicht.map(v => `<div class="vk"><span>${v.livraison ? `🚚 Bestellung ${esc(datumKurz(v.livraison.datum))}` : datumText(v.zeit)} · ${esc(postenText(v.posten))}${v.betrag > v.ware ? ` + ${euro(v.betrag - v.ware)} fräi Positiounen` : ""}<br><small class="muted">${esc(beim(v.verkaeufer))}${v.bezahlt ? ` · ${euro(v.bezahlt)} scho bezuelt` : ""}${v.rech ? ` · Rechnung ${tageVon(v.rech.datum, heuteLux()) ? `zënter ${tageVon(v.rech.datum, heuteLux())} Deeg` : "vun haut"}` : ""}</small>${rechChip(v) ? `<div style="margin-top:4px">${rechChip(v)}</div>` : ""}${rechNachKnopf(v) ? `<div>${rechNachKnopf(v)}</div>` : ""}${(v.wart || []).map(W => `<div style="margin-top:4px"><span class="chip warn">🏦 ${euro(W.e.betrag)} Iwwerweisung ugekënnegt ${esc(datumText(W.e.zeit))}</span></div>`).join("")}</span><span>${euro(v.offen)}</span></div>`).join("")}
     <div class="knopfe">
       <button class="knopf akt" data-alles="${i}">Alles bezuelt ✓</button>
       <button class="knopf" data-teil="${i}">Deelbetrag…</button>
@@ -3007,11 +3042,19 @@ function renderOffen() {
     </div></div>`).join("") : `<div class="card leer">Alles bezuelt. 🎉</div>`}`;
   box.querySelectorAll("[data-meine]").forEach(b => b.onclick = () => { NUR_MEINE = b.dataset.meine === "1"; renderOffen(); });
   rechKnoepfe(box);
+  box.querySelectorAll("[data-bkd]").forEach(i => i.onchange = () => i.blur());
+  box.querySelectorAll("[data-bk]").forEach(b => b.onclick = () => {
+    const i = box.querySelector(`[data-bkd="${CSS.escape(b.dataset.bk)}"]`), d = i && /^\d{4}-\d{2}-\d{2}$/.test(i.value) ? i.value : heuteLux();
+    eintragen([{ art: "zbest", ref: b.dataset.bk, ...(d !== heuteLux() ? { datum: d } : {}) }]);
+  });
+  box.querySelectorAll("[data-bkweg]").forEach(b => b.onclick = () => {
+    if (confirm("Dës Iwwerweisung ass net komm? D'Ukënnegung gëtt geläscht — de Betrag steet dann nees als op.")) eintragen([{ art: "storno", ref: b.dataset.bkweg }]);
+  });
   box.querySelectorAll("[data-alles]").forEach(b => b.onclick = async () => {
     const K = liste[+b.dataset.alles];
     const wie = await zahlartWaehlen(`${K.name}: ${euro(K.sichtOffen)} bezuelt — wéi?`);
     if (!wie) return;
-    eintragen(K.sicht.map(v => ({ art: "zahlung", ref: v.id, betrag: v.offen, wie, ...zd() })));
+    eintragen(K.sicht.map(v => ({ art: "zahlung", ref: v.id, betrag: v.offen, wie, ...zd(), ...zw(wie) })));
   });
   box.querySelectorAll("[data-teil]").forEach(b => b.onclick = async () => {
     const K = liste[+b.dataset.teil];
@@ -3023,7 +3066,7 @@ function renderOffen() {
     if (rest > 0 && !confirm(`Dat sinn ${euro(rest)} méi wéi op. Agedroe ginn nëmmen ${euro(x - rest)}. Ok?`)) return;
     const wie = await zahlartWaehlen(`${K.name}: ${euro(x - rest)} bezuelt — wéi?`);
     if (!wie) return;
-    eintragen(zahlungen.map(z => ({ ...z, wie, ...zd() })));
+    eintragen(zahlungen.map(z => ({ ...z, wie, ...zd(), ...zw(wie) })));
   });
   box.querySelectorAll("[data-erinnern]").forEach(b => b.onclick = async () => {
     const K = liste[+b.dataset.erinnern];
@@ -3649,8 +3692,8 @@ function buchTabelle(D, sicht) {
   const art = p => postenText(p);
   if (sicht === "zuelungen") return { titel: "Zuelungen", kopf: ["Nr", "Datum", "Client", "Fir", "Zuelaart", "Verkeefer", "Betrag"], rechts: [6],
     zeilen: D.zahlungen.map(z => [z.nr, datumKurz(z.datum), z.wer, (z.rech ? "Facture " + z.rech + " · " : "") + (z.vor ? "Virauszuelung · " : "") + art(z.posten) + (z.storniert ? " — STORNIERT" : ""),
-      ZAHLARTEN[z.wie] || "ouni Aart", z.verk, z.storniert ? "(" + geldT(z.betrag) + ")" : geldT(z.betrag)]),
-    summe: ["", "", "", `Total (${D.zahlungen.filter(z => !z.storniert).length} Zuelungen, ouni stornéiert)`, "", "", geldT(D.resume.agaangen)] };
+      (ZAHLARTEN[z.wie] || "ouni Aart") + (z.wart ? " — UGEKËNNEGT, NACH NET UKOMM" : ""), z.verk, z.storniert || z.wart ? "(" + geldT(z.betrag) + ")" : geldT(z.betrag)]),
+    summe: ["", "", "", `Total (${D.zahlungen.filter(z => !z.storniert && !z.wart).length} Zuelungen, ouni stornéiert/ugekënnegt)`, "", "", geldT(D.resume.agaangen)] };
   if (sicht === "verkeef") return { titel: "Verkéf", kopf: ["Datum", "Client", "Wat", "Verkeefer", "Rechnung", "Bezuelt", "Betrag"], rechts: [6],
     zeilen: D.verkaeufe.map(x => [datumKurz(x.datum), x.v.kaeufer, art(x.posten) + (x.frei ? ` + ${geldT(x.frei)} € fräi Pos.` : ""), x.v.verkaeufer, x.v.rech ? x.v.rech.nr : "",
       x.v.offen <= 0 ? (wieListe(x.v) || "Jo") : x.v.bezahlt > 0 ? `Deelweis (${geldT(x.v.offen)} op)` : "Nee", geldT(x.betrag)]),
@@ -3809,21 +3852,34 @@ async function rechnungenSammelPdf(liste, B) {
 
 /* ---------- Verlauf ---------- */
 let VERLAUF_MAX = 100;
+let VERLAUF_Q = "";
 function renderVerlauf() {
   const box = $("#t-verlauf");
+  // Suchfeld (vom Nutzer, 22.11.): bleibt stehen, nur die Liste darunter wird neu gebaut
+  if (!$("#vlSuche")) {
+    box.innerHTML = `<button class="knopf" id="vlZurueck" style="margin-top:12px">← Zréck an d'Astellungen</button><div class="card"><h2>📜 Verlaf</h2>
+      <input id="vlSuche" type="search" placeholder="🔍 Sichen (Numm, Béier, Betrag, wien …)" value="${esc(VERLAUF_Q)}" autocomplete="off"><div id="vlListe"></div></div>`;
+    $("#vlZurueck").onclick = () => { TAB = "einst"; render(); window.scrollTo(0, 0); };
+    $("#vlSuche").oninput = e => { VERLAUF_Q = e.target.value; VERLAUF_MAX = 100; renderVerlaufListe(); };
+  }
+  renderVerlaufListe();
+}
+function renderVerlaufListe() {
+  const box = $("#vlListe"); if (!box) return;
   const offenIds = new Set(AUSGANG.map(e => e.id));
-  const alle = [...Z.liste].reverse();
+  const q = VERLAUF_Q.trim().toLowerCase();
+  const passt = e => !q || q.split(/\s+/).every(w => (beschreibe(e, Z) + " " + (e.durch || "") + " " + zeitText(e.zeit)).toLowerCase().includes(w));
+  const alle = [...Z.liste].reverse().filter(passt);
   const zeige = alle.slice(0, VERLAUF_MAX);
-  box.innerHTML = `<button class="knopf" id="vlZurueck" style="margin-top:12px">← Zréck an d'Astellungen</button><div class="card"><h2>📜 Verlaf</h2>
+  box.innerHTML = `${q ? `<div class="hinweis" style="margin:8px 0 0">${alle.length} fonnt</div>` : ""}
     ${zeige.length ? zeige.map(e => {
       const weg = Z.storniert.get(e.id);
       const kann = e.art !== "storno" && !weg;
       return `<div class="log ${weg ? "weg" : ""}"><div class="lt"><div>${esc(beschreibe(e, Z))}</div>
         <small>${zeitText(e.zeit)} · ${esc(e.durch || "?")}${offenIds.has(e.id) ? " · ⏳ nach net geschéckt" : ""}${weg ? ` · geläscht vum ${esc(weg.durch || "?")}` : ""}</small></div>
         ${kann ? `<button class="zurueck" data-storno="${esc(e.id)}" aria-label="Läschen" title="Läschen">✕</button>` : ""}</div>`;
-    }).join("") : `<div class="leer">Nach näischt agedroen.</div>`}
-    ${alle.length > VERLAUF_MAX ? `<button class="knopf" id="mehr" style="width:100%;margin-top:10px">Méi al weisen</button>` : ""}
-  </div>`;
+    }).join("") : `<div class="leer">${q ? "Näischt fonnt." : "Nach näischt agedroen."}</div>`}
+    ${alle.length > VERLAUF_MAX ? `<button class="knopf" id="mehr" style="width:100%;margin-top:10px">Méi al weisen</button>` : ""}`;
   box.querySelectorAll("[data-storno]").forEach(b => b.onclick = () => {
     const e = Z.nachId.get(b.dataset.storno);
     if (!e) return;

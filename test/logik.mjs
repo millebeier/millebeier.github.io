@@ -456,5 +456,28 @@ ist("CSV Zeilen", c.trim().split("\r\n").length, 4);
   ist("Verlauf", [L.beschreibe(r1, L.rechne([ab, v1, r1])), L.beschreibe(r2, L.rechne([ab, v1, r1, r2]))], ["🧾 Rechnung 2026-001 gemaach: Ferro · 250 €", "🧾 Rechnung 2026-001 geännert: Ferro · 210 €"]);
 }
 
+// ---------- Überweisung angekündigt → bestätigt (vom Nutzer, 22.11.) ----------
+{
+  let z = Date.parse("2026-11-01T09:00:00Z"), i = 0;
+  const U = (art, x) => ({ id: "uw-" + String(++i).padStart(5, "0"), zeit: (z += 1000), art, durch: "Jeff", ...x });
+  const ab = U("abfuellung", { sorte: "NEIPA", n: 50 });
+  const v = U("verkauf", { verkaeufer: "Jeff", kaeufer: "Hoffmann", posten: [{ sorte: "NEIPA", n: 10 }], betrag: 30 });
+  const zw = U("zahlung", { ref: v.id, betrag: 30, wie: "bank", wart: true });
+  let Y = L.rechne([ab, v, zw]);
+  ist("Angekündigt: nicht bezahlt, nicht in der Kasse, wartend", [Y.vkNachId.get(v.id).offen, Y.kasse, Y.wartend.length], [30, 0, 1]);
+  ist("💡 erst nach 7 Tagen, für den Verkäufer", [L.autoAufgaben(Y, "2026-11-07").some(a => a.typ === "iwwerweisung"), L.autoAufgaben(Y, "2026-11-08").filter(a => a.typ === "iwwerweisung").map(a => [a.text, a.fuer])],
+    [false, [["Iwwerweisung vu Hoffmann (30 €) kucken — ukomm?", ["Jeff"]]]]);
+  const F = { von: "2026-01-01", bis: "2026-12-31", bier: "", wie: "", verk: "", kunde: "", status: "" };
+  ist("Buchhaltung: angekündigt nicht im Total", L.buchDaten(Y, F).resume.agaangen, 0);
+  const b = U("zbest", { ref: zw.id, datum: "2026-11-05" });
+  Y = L.rechne([ab, v, zw, b]);
+  ist("Bestätigt: bezahlt, Kasse, nichts mehr wartend, kein 💡", [Y.vkNachId.get(v.id).offen, Y.kasse, Y.wartend.length, L.autoAufgaben(Y, "2026-11-20").some(a => a.typ === "iwwerweisung")], [0, 30, 0, false]);
+  const D = L.buchDaten(Y, F);
+  ist("Buchhaltung: Zahltag = Tag laut Kontoauszug", [D.resume.agaangen, D.zahlungen[0].datum], [30, "2026-11-05"]);
+  ist("Ausstoend am 4.11. noch offen, am 5.11. nicht", [L.buchDaten(Y, { ...F, bis: "2026-11-04" }).ausstoend.length, L.buchDaten(Y, { ...F, bis: "2026-11-05" }).ausstoend.length], [1, 0]);
+  ist("Alte Überweisung ohne wart zählt sofort", L.rechne([ab, v, U("zahlung", { ref: v.id, betrag: 30, wie: "bank" })]).kasse, 30);
+  ist("Verlauf", [L.beschreibe(zw, Y), L.beschreibe(b, Y)], ["🏦 Iwwerweisung ugekënnegt: 30 € · Hoffmann (beim Jeff)", "✓ Iwwerweisung ukomm: 30 € den 5.11.2026 · Hoffmann"]);
+}
+
 console.log(fehler ? `${fehler} von ${n} Prüfungen fehlgeschlagen` : `Alle ${n} Prüfungen bestanden`);
 process.exit(fehler ? 1 : 0);

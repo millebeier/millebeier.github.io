@@ -136,6 +136,23 @@ await p.click('[data-alles]'); await warte(200);
 ist("Zahlungsfenster: Datum heute vorbelegt", await p.inputValue("#zahlDatum"), await p.evaluate(() => heuteLux()));
 await p.fill("#zahlDatum", J + "-01-02"); await p.click('#zahlWahl [data-wie="bank"]'); await warte(400);
 ist("Zahlung mit anderem Zahltag gespeichert", await p.evaluate(() => { const e = Z.liste.filter(x => x.art === "zahlung").pop(); return [e.datum, e.wie]; }), [J + "-01-02", "bank"]);
+// Verkafen per Überweisung → angekündigt, ✕ = nicht gekommen; Verlauf-Suche
+await p.click('[data-tab="verkaufen"]'); await warte(200);
+await p.fill("#vName", "Hoffmann"); await p.fill("#vN0", "1"); await p.click('[data-bez="bank"]'); await p.click("#vSpeichern"); await warte(300);
+if (await p.locator("#frageWahl:not(.versteckt)").count()) { await p.click('#frageWahl [data-wahl^="q:"]'); await warte(500); }
+ist("Verkafen Überweisung: Meldung", await p.locator("#vMeldung").innerText(), t => t.includes("Iwwerweisung") && t.includes("bis se ukomm ass"));
+await p.click('[data-tab="offen"]'); await warte(300);
+ist("Ausstoend: Hoffmann zum Kontrollieren + Chip am Verkauf", [await p.locator("#oBank").innerText(), await p.locator("#t-offen").innerText()], v => v[0].includes("Hoffmann") && v[1].includes("Iwwerweisung ugekënnegt"));
+const hW = await p.evaluate(() => Z.wartend.find(W => W.v && W.v.kaeufer === "Hoffmann").e.id);
+await p.click(`#oBank [data-bkweg="${hW}"]`); await warte(300);
+ist("✕ Net komm: Ankündigung weg, Betrag offen", [await p.locator("#oBank").innerText().catch(() => ""), await p.evaluate(() => Z.verkaeufe.find(v => v.kaeufer === "Hoffmann").offen)], v => !v[0].includes("Hoffmann") && v[1] === 3);
+await p.click("#zahnrad"); await warte(200); await p.click("#eVerlauf"); await warte(300);
+await p.fill("#vlSuche", "hoffmann"); await warte(200);
+ist("Verlauf-Suche: nur Hoffmann", await p.locator("#vlListe").innerText(), t => t.includes("fonnt") && t.includes("Hoffmann") && !t.includes("Kalbusch"));
+await p.evaluate(() => render()); await warte(100);
+ist("Suche bleibt beim Neuaufbau stehen", [await p.inputValue("#vlSuche"), await p.evaluate(() => document.activeElement && document.activeElement.id)], ["hoffmann", "vlSuche"]);
+await p.fill("#vlSuche", "gibtsnet"); await warte(200);
+ist("Verlauf-Suche: nichts", await p.locator("#vlListe").innerText(), t => t.includes("Näischt fonnt"));
 ist("keine Seitenfehler", konsole, []);
 await browser.close();
 console.log(fehler ? `${fehler} Prüfung(en) fehlgeschlagen` : "alles gut");

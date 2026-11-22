@@ -323,6 +323,15 @@ beim Verkaufen/Livraison und „Fläsche beweegen“ an, solange jemand welche h
   stornierte mit rotem „ANNULÉE“); „📊 Komplett Excel“ wie bisher. Ergebnis jeweils in `#ansicht` mit „⬆️ Deelen“ (`buchDateiZeigen`).
   **Zahltag änderbar** (Abgleich mit dem Kontoauszug): Zahlungsfenster hat „Bezuelt den“ (heute vorbelegt, `#zahlDatum`, `ZAHL_DATUM`, `zd()`),
   `zahlung.datum` nur wenn nicht heute; Buchhaltung nimmt `datum`, sonst den Eintragstag. Rechnungsnummer: bleibt wie es ist (vom Nutzer, 22.11.: die ersten Nummern waren Test-Rechnungen; echte zählen danach weiter).
+- **Überweisung erst angekündigt** (vom Nutzer, 22.11.2026, Fassung d: „sonst würde verpasst, dass einer nicht zahlt“): Zahlart „Iwwerweisung“
+  (Verkafen, Ausstoend, Bestellung/Vorauszahlung, Deelbetrag) speichert `zahlung` mit `wart: true` (`zw()`) — zählt **nicht** als bezahlt und nicht in
+  der Kasse (`rechne`: `Z.wartend`, `v.wart`, `L.vorWart`). Ausstoend oben „🏦 Iwwerweisunge kucken (n)“ mit Datum (heute vorbelegt = Tag laut
+  Kontoauszug) und „✓ Ukomm“ → Eintrag `zbest` (ref = Zahlung, `datum` nur wenn nicht heute) → erst dann bezahlt; „✕“ = nicht gekommen (storno der
+  Ankündigung, Betrag wieder offen). Chip „🏦 … Iwwerweisung ugekënnegt“ am Verkauf und an der geplanten Bestellung. 💡 nach 7 Tagen „Iwwerweisung vu X
+  kucken — ukomm?“ für Verkäufer/Kontakt, abgehakt nach 7 Tagen wieder. Buchhaltung: angekündigte stehen als „UGEKËNNEGT, NACH NET UKOMM“ (nicht im
+  Total), bestätigte mit dem Tag vom Kontoauszug. Alte Überweisungen ohne `wart` zählen wie bisher sofort. Reiterzahl Ausstoend zählt Wartende mit.
+- **Verlauf mit Suchfeld** (vom Nutzer, Fassung 22.11. d): `#vlSuche` bleibt beim Neuaufbau stehen (nur `#vlListe` wird neu gebaut, `renderVerlaufListe`),
+  sucht in Text, wer und Zeit (alle Wörter müssen vorkommen), „n fonnt“.
 - **Aktionsknöpfe rot, nicht grün** (vom Nutzer, Fassung 20.11. a): „Geliwwert ✓“, „Bezuelt ✓“, „Alles bezuelt ✓“ und Späicheren
   bei „+ Aufgab“ sind `.knopf.akt` (Millebéier-Rot, weiße Schrift) — grün sah aus, als wäre es schon erledigt. Grün bleibt nur
   für Erledigtes (✓ bezuelt, gewählte Zahlungsart).
@@ -390,7 +399,7 @@ Script lief nicht, und damit auch kein automatisches Update. In Code auf einer Z
   Startseite, Hinweis an geplanter Bestellung, eigener Stückpreis (Verkafen/Bestellung/Ändern), „Rechnung nodréiglech“, Client-Akeef, Lieferdatum, 🧾 in der Iwwersiicht (Gegenprobe gemacht). jsPDF per `npm install jspdf@2.5.1` in den Scratchpad; ohne wird übersprungen.
 - `JSPDF_JS=… XLSX_JS=… node test/buchhaltung.mjs` — Buchhaltung: Résumé, Kassenbuch (feste Nummern, storniert sichtbar, nicht im Total),
   Filter SumUp, Druck-PDF der Liste, Verkéf mit Bier-Anteil, Rechnungen inkl. storniert, Ausstoend zum Stichtag, Stock Anfang/Ende, Ännerungen,
-  Lescht Joer, Sammel-PDF (ANNULÉE), Excel der Liste, Zahltag im Zahlungsfenster, Verschenkt mit Bemerkung, Gratis mit Grund-Filter (Gegenprobe gemacht).
+  Lescht Joer, Sammel-PDF (ANNULÉE), Excel der Liste, Zahltag im Zahlungsfenster, Verschenkt mit Bemerkung, Gratis mit Grund-Filter, Überweisung angekündigt/✕, Verlauf-Suche (Gegenprobe gemacht).
 - `node test/biere.mjs` — Bier anlegen/ändern/archivieren/zurückholen/löschen (zwei Rückfragen, Gegenprobe gemacht),
   rotes ✕ im Verlauf, rotes Dreieck; Kasten „Fläschen“ (vier Absichten, Pfeil, ⇄, änneren, Vorschau, Gründe) und Abfüllen ändern beim Bier
   (48 → 60 → 50, Verlauf; Gegenprobe gemacht).
