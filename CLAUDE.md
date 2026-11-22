@@ -333,7 +333,10 @@ beim Verkaufen/Livraison und „Fläsche beweegen“ an, solange jemand welche h
   „Deelbetrag“, „Bezuelt ✓“ an der Bestellung und Vorauszahlung stornieren vorher die angekündigten Überweisungen der betroffenen Verkäufe/Bestellung
   (`wartWeg`) — sonst käme nach Bar-Zahlung trotzdem die 💡, oder mit „Iwwerweisung“ gäbe es zwei Ankündigungen. 💡 nach 7 Tagen „Iwwerweisung vu X
   kucken — ukomm?“ für Verkäufer/Kontakt, abgehakt nach 7 Tagen wieder. Buchhaltung: angekündigte stehen als „UGEKËNNEGT, NACH NET UKOMM“ (nicht im
-  Total), bestätigte mit dem Tag vom Kontoauszug. Alte Überweisungen ohne `wart` zählen wie bisher sofort. Reiterzahl Ausstoend zählt Wartende mit.
+  Total), bestätigte mit dem Tag vom Kontoauszug. Alte Überweisungen ohne `wart` zählen wie bisher sofort. **Durchsicht** (vom Nutzer, Fassung 22.11. j): 🏦-Block auch an der
+  **gelieferten** Bestellung; geplante Bestellung, deren Rest ganz als Überweisung angekündigt ist, zeigt nur den 🏦-Hinweis (kein „Nach net
+  bezuelt ›“); Zahlungsfenster-Datum heißt „Den“ (bei Iwwerweisung = Tag der Ankündigung, der Ankunftstag kommt mit „Ukomm“); Startseite „Nach op bei
+  dir“ mit „🏦 Iwwerweisung ugekënnegt“; Excel `bezahltText` „Nee (Iwwerweisung ugekënnegt)“, Bestellungen-Blatt ebenso. Reiterzahl Ausstoend zählt Wartende mit.
 - **Bezahl-Knöpfe in Ausstoend** (vom Nutzer, 22.11.2026, Fassung i, Entwurf gezeigt: „Alles bezuelt“ war verwirrend): Karte = Käufer. Ein offener
   Verkauf → roter Knopf „<Betrag> bezuelt ✓“; mehrere → je Verkauf ein roter Knopf „<Betrag> bezuelt ✓“ (`data-vbez`, vom Nutzer: rot, damit man
   sieht, dass man klicken kann), unten abgesetzt „Béid zesummen: …“ / „All n zesummen: … bezuelt ✓“ und der Satz „Deelbetrag geet op deen eelsten

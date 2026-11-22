@@ -175,6 +175,24 @@ await karte("Zwee").locator(".vbez", { hasText: "18 €" }).click(); await warte
 await p.click('#zahlWahl [data-wie="bar"]'); await warte(500);
 ist("Einzelknopf bezahlt nur diesen Verkauf", await p.evaluate(() => Z.verkaeufe.filter(v => v.kaeufer === "Zwee").map(v => v.offen).sort((a, b) => a - b)), [0, 72]);
 ist("Danach nur noch ein Verkauf: Knopf „72 € bezuelt ✓“", await karte("Zwee").locator("[data-alles]").innerText(), "72 € bezuelt ✓");
+// Überweisungs-Durchsicht (Fassung j): Bestellung mit angekündigter Vorauszahlung, Lieferung, Startseite, Excel, Zahlungsfenster
+await p.evaluate(() => eintragen([{ art: "livraison", kunde: "Vorab", kontakt: "Laurent", aus: "Lager", datum: tagPlus(heuteLux(), 3), posten: [{ sorte: "NEIPA", n: 4 }], betrag: 12 }]));
+await warte(400); await p.click('[data-tab="livraisons"]'); await warte(300);
+const lidV = await p.evaluate(() => Z.livraisons.find(L => L.kunde === "Vorab").lid);
+await p.click(`[data-lvor="${lidV}"]`); await warte(200);
+ist("Zahlungsfenster: Datum heißt „Den“", await p.locator('label[for="zahlDatum"]').innerText(), "Den");
+await p.click('#zahlWahl [data-wie="bank"]'); await warte(500);
+const lkarte = () => p.locator(`#lListe .liv[data-lid="${lidV}"]`);
+ist("Geplant, ganz angekündigt: nur 🏦, kein „Nach net bezuelt ›“", [await lkarte().locator(".lvor.nb").count(), await lkarte().innerText()], v => v[0] === 0 && v[1].includes("nach ausstoend") && v[1].includes("Ukomm"));
+ist("Excel Bestellungen: Iwwerweisung ugekënnegt", await p.evaluate(() => exportBlaetter(Z, zeitText).find(b => b.name === "Bestellungen").zeilen.find(z => z[1] === "Vorab")[8]), "– (Iwwerweisung ugekënnegt)");
+await warte(900); await lkarte().locator("[data-geliwwert]").click(); await warte(500);
+ist("Geliefert: 🏦 mit Ukomm auch an der gelieferten Karte", await lkarte().innerText(), t => t.includes("✓ geliwwert") && t.includes("nach ausstoend") && t.includes("Ukomm") && t.includes("Aanescht bezuelt"));
+ist("Excel Verkauf: Nee (Iwwerweisung ugekënnegt)", await p.evaluate(() => bezahltText(Z.verkaeufe.find(v => v.kaeufer === "Vorab"))), "Nee (Iwwerweisung ugekënnegt)");
+await p.click("#hautBtn"); await warte(300);
+ist("Startseite: 🏦 beim Käufer", await p.locator("#hOp").innerText(), t => /Vorab\s*🏦 Iwwerweisung ugekënnegt/.test(t));
+await p.click('[data-tab="livraisons"]'); await warte(300);
+await lkarte().locator("[data-bk]").click(); await warte(500);
+ist("Ukomm an der gelieferten Karte: bezahlt", await p.evaluate(() => Z.verkaeufe.find(v => v.kaeufer === "Vorab").offen), 0);
 await p.click("#zahnrad"); await warte(200); await p.click("#eVerlauf"); await warte(300);
 await p.fill("#vlSuche", "hoffmann"); await warte(200);
 ist("Verlauf-Suche: nur Hoffmann", await p.locator("#vlListe").innerText(), t => t.includes("fonnt") && t.includes("Hoffmann") && !t.includes("Kalbusch"));
