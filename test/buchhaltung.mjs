@@ -148,6 +148,20 @@ await p.click(`[data-bkand="${hW}"]`); await warte(300);
 ist("Aanescht bezuelt: Auswahl ohne Iwwerweisung", await p.evaluate(() => [...document.querySelectorAll("#zahlWahl [data-wie]")].map(b => b.dataset.wie)), ["wero", "sumup", "bar"]);
 await p.click('#zahlWahl [data-wie="sumup"]'); await warte(400);
 ist("Aanescht bezuelt: SumUp, bezahlt, nichts wartet mehr", await p.evaluate(() => { const v = Z.verkaeufe.find(v => v.kaeufer === "Hoffmann"); return [v.offen, v.wie, Z.wartend.some(W => W.v && W.v.kaeufer === "Hoffmann")]; }), [0, ["sumup"], false]);
+// „Alles bezuelt“ ersetzt eine angekündigte Überweisung (Fassung h): keine falsche 💡, nie zwei Ankündigungen
+await p.evaluate(() => { const v = eintragen([{ art: "verkauf", verkaeufer: "Laurent", kaeufer: "Muller", posten: [{ sorte: "NEIPA", n: 2 }], betrag: 6, aus: "Lager" }])[0];
+  setTimeout(() => eintragen([{ art: "zahlung", ref: v.id, betrag: 6, wie: "bank", wart: true }]), 50); });
+await warte(3200); /* länger als die 3-s-Sperre für gleichen Inhalt */ await p.click('[data-tab="offen"]'); await warte(300);
+const kM = await p.evaluate(() => [...document.querySelectorAll("#t-offen .kunde")].findIndex(c => c.textContent.includes("Muller")));
+await p.locator("#t-offen .kunde").nth(kM).locator("[data-alles]").click(); await warte(200);
+await p.click('#zahlWahl [data-wie="bank"]'); await warte(500);
+ist("Alles bezuelt mit Iwwerweisung: nur eine Ankündigung", await p.evaluate(() => Z.wartend.filter(W => W.v && W.v.kaeufer === "Muller").length), 1);
+await warte(900);
+const kM2 = await p.evaluate(() => [...document.querySelectorAll("#t-offen .kunde")].findIndex(c => c.textContent.includes("Muller")));
+await p.locator("#t-offen .kunde").nth(kM2).locator("[data-alles]").click(); await warte(200);
+await p.click('#zahlWahl [data-wie="bar"]'); await warte(500);
+ist("Alles bezuelt mit Bar: bezahlt, Ankündigung weg (keine 💡)", await p.evaluate(() => [Z.verkaeufe.find(v => v.kaeufer === "Muller").offen, Z.wartend.some(W => W.v && W.v.kaeufer === "Muller"),
+  autoAufgaben(Z, tagPlus(heuteLux(), 10)).some(a => a.typ === "iwwerweisung" && a.text.includes("Muller"))]), [0, false, false]);
 await p.click("#zahnrad"); await warte(200); await p.click("#eVerlauf"); await warte(300);
 await p.fill("#vlSuche", "hoffmann"); await warte(200);
 ist("Verlauf-Suche: nur Hoffmann", await p.locator("#vlListe").innerText(), t => t.includes("fonnt") && t.includes("Hoffmann") && !t.includes("Kalbusch"));

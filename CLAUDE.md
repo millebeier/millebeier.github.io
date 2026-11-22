@@ -329,7 +329,9 @@ beim Verkaufen/Livraison und „Fläsche beweegen“ an, solange jemand welche h
   Verkauf unter „Nach net bezuelt“ bzw. an der geplanten Bestellung (`wartHtml`/`wartBinden`): Hinweis gestrichelt wie „Nach net bezuelt“: „🏦 Iwwerweisung vum <Datum> nach ausstoend · <Betrag>“ (vom Nutzer, Fassung g), „ukomm den“ + Datum (heute
   vorbelegt = Tag laut Kontoauszug), „✓ Ukomm“ → Eintrag `zbest` (ref = Zahlung, `datum` nur wenn nicht heute) → erst dann bezahlt; **„Aanescht
   bezuelt“** (statt ✕, vom Nutzer: bezahlt werden muss trotzdem) → Auswahl WERO/SumUp/Bar (`zahlartWaehlen(…, ohne)`) → storno der Ankündigung + neue
-  Zahlung mit gleichem Betrag in einem `eintragen`. 💡 nach 7 Tagen „Iwwerweisung vu X
+  Zahlung mit gleichem Betrag in einem `eintragen`. **Jede andere Zahlung ersetzt die Ankündigung** (vom Nutzer, Fassung h): „Alles bezuelt“,
+  „Deelbetrag“, „Bezuelt ✓“ an der Bestellung und Vorauszahlung stornieren vorher die angekündigten Überweisungen der betroffenen Verkäufe/Bestellung
+  (`wartWeg`) — sonst käme nach Bar-Zahlung trotzdem die 💡, oder mit „Iwwerweisung“ gäbe es zwei Ankündigungen. 💡 nach 7 Tagen „Iwwerweisung vu X
   kucken — ukomm?“ für Verkäufer/Kontakt, abgehakt nach 7 Tagen wieder. Buchhaltung: angekündigte stehen als „UGEKËNNEGT, NACH NET UKOMM“ (nicht im
   Total), bestätigte mit dem Tag vom Kontoauszug. Alte Überweisungen ohne `wart` zählen wie bisher sofort. Reiterzahl Ausstoend zählt Wartende mit.
 - **Verlauf mit Suchfeld** (vom Nutzer, Fassung 22.11. d): `#vlSuche` bleibt beim Neuaufbau stehen (nur `#vlListe` wird neu gebaut, `renderVerlaufListe`),

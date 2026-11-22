@@ -435,7 +435,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px}
 <script>
 /* Adresse des Cloudflare-Workers. Leer = Probe-Modus (alles nur auf diesem Handy). */
 const WORKER_URL = "https://millebeier.rjtp6r9s9h.workers.dev/";
-const FASSUNG = "22.11.2026 g";
+const FASSUNG = "22.11.2026 h";
 
 /* === Logik === (kein DOM; test/logik.mjs schneidet diesen Block aus) */
 const LAGER = "Lager";
@@ -2430,13 +2430,13 @@ function renderLListe() {
     const L = Z.livraisons.find(x => x.lid === b.dataset.lvor && !x.verkauf); if (!L) return;
     const rest = runde(L.betrag - L.vorbezahlt); if (!(rest > 0)) return;
     zahlartWaehlen(`${L.kunde}: ${L.vorbezahlt ? "Rescht " : ""}bezuelt?`, rest).then(r => {
-      if (r) eintragen([{ art: "zahlung", ref: L.lid, vor: true, betrag: r.betrag, wie: r.wie, ...zd(), ...zw(r.wie) }]);
+      if (r) eintragen([...wartWeg([L]), { art: "zahlung", ref: L.lid, vor: true, betrag: r.betrag, wie: r.wie, ...zd(), ...zw(r.wie) }]);
     });
   });
   rechKnoepfe(box); wartBinden(box);
   box.querySelectorAll("[data-lbezuelt]").forEach(b => b.onclick = () => {
     const v = Z.vkNachId.get(b.dataset.lbezuelt); if (!v) return;
-    zahlartWaehlen(`${v.kaeufer}: ${euro(v.offen)} bezuelt — wéi?`).then(wie => { if (wie) eintragen([{ art: "zahlung", ref: v.id, betrag: v.offen, wie, ...zd(), ...zw(wie) }]); });
+    zahlartWaehlen(`${v.kaeufer}: ${euro(v.offen)} bezuelt — wéi?`).then(wie => { if (wie) eintragen([...wartWeg([v]), { art: "zahlung", ref: v.id, betrag: v.offen, wie, ...zd(), ...zw(wie) }]); });
   });
 }
 // Formular-Anfang direkt unter den festen Kopf (vom Nutzer: Fassung i beim Ändern, Fassung k auch bei „Nei Bestellung“)
@@ -2692,6 +2692,8 @@ async function fehlendesHolen(wer, posten) {
 let ZAHL_DATUM = "";
 // Überweisung = nur angekündigt, bis „✓ Ukomm“ (vom Nutzer, 22.11.)
 const zw = wie => wie === "bank" ? { wart: true } : {};
+// Neue Zahlung ersetzt eine angekündigte Überweisung (vom Nutzer, 22.11., Fassung h): sonst falsche 💡 oder zwei Ankündigungen
+const wartWeg = liste => liste.flatMap(x => (x && (x.wart || x.vorWart) || [])).map(W => ({ art: "storno", ref: W.e.id }));
 // Anderer Zahltag aus dem Zahlungsfenster: nur mitschicken, wenn nicht heute (und gültig)
 const zd = () => /^\d{4}-\d{2}-\d{2}$/.test(ZAHL_DATUM) && ZAHL_DATUM !== heuteLux() ? { datum: ZAHL_DATUM } : {};
 /* Zahlungsart wählen (Ausstoend, Livraisons): Fenster mit WERO / SumUp / Iwwerweisung / Bar. Gibt die Art oder null.
@@ -3064,7 +3066,7 @@ function renderOffen() {
     const K = liste[+b.dataset.alles];
     const wie = await zahlartWaehlen(`${K.name}: ${euro(K.sichtOffen)} bezuelt — wéi?`);
     if (!wie) return;
-    eintragen(K.sicht.map(v => ({ art: "zahlung", ref: v.id, betrag: v.offen, wie, ...zd(), ...zw(wie) })));
+    eintragen([...wartWeg(K.sicht), ...K.sicht.map(v => ({ art: "zahlung", ref: v.id, betrag: v.offen, wie, ...zd(), ...zw(wie) }))]);
   });
   box.querySelectorAll("[data-teil]").forEach(b => b.onclick = async () => {
     const K = liste[+b.dataset.teil];
@@ -3076,7 +3078,7 @@ function renderOffen() {
     if (rest > 0 && !confirm(`Dat sinn ${euro(rest)} méi wéi op. Agedroe ginn nëmmen ${euro(x - rest)}. Ok?`)) return;
     const wie = await zahlartWaehlen(`${K.name}: ${euro(x - rest)} bezuelt — wéi?`);
     if (!wie) return;
-    eintragen(zahlungen.map(z => ({ ...z, wie, ...zd(), ...zw(wie) })));
+    eintragen([...wartWeg(K.sicht.filter(v => zahlungen.some(z => z.ref === v.id))), ...zahlungen.map(z => ({ ...z, wie, ...zd(), ...zw(wie) }))]);
   });
   box.querySelectorAll("[data-erinnern]").forEach(b => b.onclick = async () => {
     const K = liste[+b.dataset.erinnern];
