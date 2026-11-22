@@ -311,7 +311,8 @@ beim Verkaufen/Livraison und „Fläsche beweegen“ an, solange jemand welche h
   Verkeefer, Client, Status; acht Ansichten (`BUCH_SICHTEN`): **Résumé** (verkauft, agaangen, op zum Stichtag, Rechnungen; je Zahlart, je Bier
   mit Fl./Fässer/€/gratis, je Verkäufer) · **Zuelungen** = Kassenbuch mit **fester Nummer Z-JJJJ-NNN** (`zahlNummern`, nach Eintragszeit,
   auch gelöschte behalten ihre Nummer und stehen durchgestrichen als STORNIERT, nicht im Total) · **Verkéf** (mit Bier-Filter nur der Anteil
-  des Biers) · **Rechnungen** lückenlos inkl. stornierter · **Ausstoend zum Stichtag „bis“** (Zahlungen bis dahin, auch aus Vorjahren) ·
+  des Biers) · **Rechnungen** lückenlos inkl. stornierter (storniert = Verkauf gelöscht **oder** Rechnung selbst im Verlauf
+  gelöscht — Fassung 22.11. b, vom Nutzer gemeldet: 001–003 nur als Rechnung gelöscht, standen noch als gültig da) · **Ausstoend zum Stichtag „bis“** (Zahlungen bis dahin, auch aus Vorjahren) ·
   **Stock** je Artikel (Anfang vor „vum“, abgefüllt, verkauft, getrunken, verschenkt, futti/soss, Ende) · **Ännerungen** (Löschungen,
   geänderte Bestellungen/Abfüllungen/Rechnungen mit wer/wann) · **Ausgaben** (Platzhalter, später). Logik `buchDaten(Z, F)` im Logik-Block,
   Tabellen `buchTabelle` (gleich für Bildschirm, PDF, Excel). **Alte Excel-Verkäufe bleiben draußen** (ohne Geld). Unter jeder Liste
