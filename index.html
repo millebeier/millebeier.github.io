@@ -435,7 +435,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px}
 <script>
 /* Adresse des Cloudflare-Workers. Leer = Probe-Modus (alles nur auf diesem Handy). */
 const WORKER_URL = "https://millebeier.rjtp6r9s9h.workers.dev/";
-const FASSUNG = "22.11.2026 d";
+const FASSUNG = "22.11.2026 e";
 
 /* === Logik === (kein DOM; test/logik.mjs schneidet diesen Block aus) */
 const LAGER = "Lager";
@@ -791,7 +791,7 @@ function beschreibe(e, Z) {
   switch (e.art) {
     case "abfuellung": return e.vorher != null ? `🍺 Ofgefëllt geännert: ${artikelText(e.sorte)} ${e.vorher} → ${e.n}` : `🍺 ${e.n} × ${artikelText(e.sorte)} ofgefëllt (an d'Lager)`;
     case "bewegung": return `➡️ ${e.n} × ${artikelText(e.sorte)}: ${e.von} → ${e.an}`;
-    case "abgang": return `🗑️ ${e.n} × ${artikelText(e.sorte)} ${beim(e.wer)}: ${GRUENDE[e.grund]}`;
+    case "abgang": return `🗑️ ${e.n} × ${artikelText(e.sorte)} ${beim(e.wer)}: ${GRUENDE[e.grund]}${e.notiz ? " — " + e.notiz : ""}`; /* Bemerkung sichtbar und suchbar (vom Nutzer, 22.11.) */
     case "verkauf": return `${e.alt ? "📜 Al Tabell:" : e.liv ? "🚚 Geliwwert" : "💶"} ${e.verkaeufer} → ${((Z && Z.vkNachId && Z.vkNachId.get(e.id)) || e).kaeufer}: ${postenText(e.posten)} · ${euro(e.betrag)}`;
     case "zahlung": {
       if (e.vor) { const L = Z && ((Z.livraisons || []).find(x => x.lid === e.ref) || Z.nachId.get(e.ref));

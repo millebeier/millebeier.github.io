@@ -476,6 +476,7 @@ ist("CSV Zeilen", c.trim().split("\r\n").length, 4);
   ist("Buchhaltung: Zahltag = Tag laut Kontoauszug", [D.resume.agaangen, D.zahlungen[0].datum], [30, "2026-11-05"]);
   ist("Ausstoend am 4.11. noch offen, am 5.11. nicht", [L.buchDaten(Y, { ...F, bis: "2026-11-04" }).ausstoend.length, L.buchDaten(Y, { ...F, bis: "2026-11-05" }).ausstoend.length], [1, 0]);
   ist("Alte Überweisung ohne wart zählt sofort", L.rechne([ab, v, U("zahlung", { ref: v.id, betrag: 30, wie: "bank" })]).kasse, 30);
+  ist("Verlauf: Abgang mit Bemerkung", L.beschreibe(U("abgang", { sorte: "NEIPA", n: 2, wer: "Jeff", grund: "verschenkt", notiz: "Carlo" }), Y), "🗑️ 2 × NEIPA beim Jeff: verschenkt / Prouf — Carlo");
   ist("Verlauf", [L.beschreibe(zw, Y), L.beschreibe(b, Y)], ["🏦 Iwwerweisung ugekënnegt: 30 € · Hoffmann (beim Jeff)", "✓ Iwwerweisung ukomm: 30 € den 5.11.2026 · Hoffmann"]);
 }
 
