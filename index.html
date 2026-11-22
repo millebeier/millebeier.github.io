@@ -353,7 +353,7 @@ textarea{width:100%;font:16px/1.4 inherit;padding:10px;border-radius:10px;border
 .haupt.grau{background:var(--card2);color:var(--text)}
 /* Buchhaltung (Fassung 22.11. a) */
 #t-buch .zeile>div{flex:1;min-width:0} #t-buch select,#t-buch input[type=date]{width:100%;box-sizing:border-box}
-.buchp button{font-size:13px;padding:8px 4px}
+.buchp button{font-size:13px;padding:8px 4px} .buchg{grid-template-columns:repeat(3,1fr)!important;margin:0 0 10px} .buchg button{font-size:12px;padding:7px 4px}
 .buchtabs{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-top:12px}
 .buchtabs button{padding:8px 2px;border-radius:9px;border:1px solid var(--line);background:var(--card2);color:var(--text);font-size:12.5px;font-weight:700;cursor:pointer}
 .buchtabs button.an{background:var(--akzent);border-color:var(--akzent);color:#fff}
@@ -433,7 +433,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px}
 <script>
 /* Adresse des Cloudflare-Workers. Leer = Probe-Modus (alles nur auf diesem Handy). */
 const WORKER_URL = "https://millebeier.rjtp6r9s9h.workers.dev/";
-const FASSUNG = "22.11.2026 b";
+const FASSUNG = "22.11.2026 c";
 
 /* === Logik === (kein DOM; test/logik.mjs schneidet diesen Block aus) */
 const LAGER = "Lager";
@@ -1335,6 +1335,10 @@ function buchDaten(Z, F) {
     else if (e.art === "rechnung" && e.nr && Z.liste.some(x => x.art === "rechnung" && x.nr === e.nr && x.zeit < e.zeit)) aenderungen.push({ e, was: "geännert", text: beschreibe(e, Z) });
   }
   aenderungen.reverse();
+  // Gratis (net verkaaft): jeder Abgang im Zeitraum, Filter Bier, Grund (F.grund), wer (Verkeefer-Filter) — vom Nutzer, 22.11.
+  const gratis = Z.aktiv.filter(e => e.art === "abgang").map(e => ({ e, datum: e.datum && /^\d{4}-\d{2}-\d{2}$/.test(e.datum) ? e.datum : tagVon(e.zeit) }))
+    .filter(x => imZeit(x.datum) && (!F.bier || zerlege(x.e.sorte).bier === F.bier) && (!F.grund || x.e.grund === F.grund) && (!F.verk || x.e.wer === F.verk))
+    .sort((a, b) => a.datum.localeCompare(b.datum) || a.e.zeit - b.e.zeit);
   // Résumé
   const ok = zahlungen.filter(z => !z.storniert);
   const jeWie = {}; for (const z of ok) jeWie[z.wie || "?"] = runde((jeWie[z.wie || "?"] || 0) + z.betrag);
@@ -1347,7 +1351,7 @@ function buchDaten(Z, F) {
   }
   for (const s of stockListe) { const g = s.getrunken + s.verschenkt + s.kaputt + s.sonst; if (g) (jeBier[zerlege(s.key).bier] ||= { fl: 0, faesser: 0, euro: 0, gratis: 0 }).gratis += g; }
   return {
-    verkaeufe, zahlungen, rechnungen, ausstoend, stock: stockListe, aenderungen,
+    verkaeufe, zahlungen, rechnungen, ausstoend, stock: stockListe, aenderungen, gratis,
     resume: { verkauft: runde(verkaeufe.reduce((a, x) => a + x.betrag, 0)), agaangen: runde(ok.reduce((a, z) => a + z.betrag, 0)),
       op: runde(ausstoend.reduce((a, x) => a + x.offen, 0)), rechnungen: rechnungen.filter(r => !r.storniert).length, jeWie, jeVerk, jeBier },
   };
@@ -3580,7 +3584,7 @@ function flaschenForm(box, B, P, neu, o) {
   const fort = B.absicht === "fort";
   box.innerHTML = `<div class="card"><h2>${A.ic} ${esc(A.txt)}</h2>${o.kopf || `<button class="zurueck" id="${P}Zreck">‹ aner Saach</button>`}
     ${fort ? `<label>Wat ass geschitt?</label><div class="gruende">${Object.keys(GRUENDE).map(g => `<button data-grund="${g}" class="${B.grund === g ? "an" : ""}">${GRUND_IC[g]}</button>`).join("")}</div>
-      ${B.grund === "sonst" ? `<input id="${P}Notiz" value="${esc(B.notiz)}" placeholder="Wat?" style="margin-top:6px" maxlength="300">` : ""}
+      ${B.grund === "sonst" || B.grund === "verschenkt" ? `<input id="${P}Notiz" value="${esc(B.notiz)}" placeholder="${B.grund === "sonst" ? "Wat?" : "Fir wien? / Bemierkung (fräiwëlleg)"}" style="margin-top:6px" maxlength="300">` : ""}
       <div class="pfeil eins">${kasten("Wer", B.wer, B.wer === LAGER ? "📦 vum Lager" : B.wer === EIN.ich ? "👤 vu mengen: " + B.wer : "👤 vum " + B.wer)}</div>`
     : `<div class="pfeil">${kasten("Von", B.von)}<div class="pm">➜<button id="${P}Tausch" aria-label="ëmdréinen">⇄</button></div>${kasten("An", B.an)}</div>`}
     <div class="zeile" style="margin-top:6px"><div><label for="${P}Sorte">Béier</label><select id="${P}Sorte">${opt(sorten, B.sorte, sorteTxt)}</select></div>
@@ -3616,7 +3620,7 @@ function flaschenForm(box, B, P, neu, o) {
       e = { art: "bewegung", sorte: B.sorte, n, von: B.von, an: B.an };
     } else {
       { const f = zuWenig(Z, B.wer, [{ sorte: B.sorte, n }]); if (f.length && !confirm(`Net genuch fräi:\n\n${fehltText(B.wer, f)}\n\nTrotzdeem?`)) return; }
-      e = { art: "abgang", sorte: B.sorte, n, wer: B.wer, grund: B.grund, ...(B.grund === "sonst" && B.notiz.trim() ? { notiz: B.notiz.trim() } : {}) };
+      e = { art: "abgang", sorte: B.sorte, n, wer: B.wer, grund: B.grund, ...((B.grund === "sonst" || B.grund === "verschenkt") && B.notiz.trim() ? { notiz: B.notiz.trim() } : {}) }; /* verschenkt mit Name/Bemerkung (vom Nutzer, 22.11.) */
     }
     if (document.activeElement) document.activeElement.blur();
     const text = "✓ " + beschreibe(e, Z);
@@ -3626,9 +3630,10 @@ function flaschenForm(box, B, P, neu, o) {
 }
 
 /* ---------- Buchhaltung (vom Nutzer, 21.11.2026, Entwurf gezeigt) — im Zahnrad, am Computer im Browser druckbar ---------- */
-const BUCH_SICHTEN = { resume: "Résumé", zuelungen: "Zuelungen", verkeef: "Verkéf", rechnungen: "Rechnungen", ausstoend: "Ausstoend", stock: "Stock", aenner: "Ännerungen", ausgaben: "Ausgaben" };
+// „Ausgaben“ (Platzhalter) hat seinen Platz an „Gratis“ abgegeben (Fassung 22.11. c); kommt mit den Ausgaben selbst zurück
+const BUCH_SICHTEN = { resume: "Résumé", zuelungen: "Zuelungen", verkeef: "Verkéf", rechnungen: "Rechnungen", ausstoend: "Ausstoend", stock: "Stock", gratis: "Gratis", aenner: "Ännerungen" };
 let BUCH = null, BUCH_MELD = "";
-function buchStart() { const j = heuteLux().slice(0, 4); return { preset: "joer", von: j + "-01-01", bis: j + "-12-31", bier: "", wie: "", verk: "", kunde: "", status: "", sicht: "resume", rvon: j + "-01-01", rbis: j + "-12-31" }; }
+function buchStart() { const j = heuteLux().slice(0, 4); return { preset: "joer", von: j + "-01-01", bis: j + "-12-31", bier: "", wie: "", verk: "", kunde: "", status: "", grund: "", sicht: "resume", rvon: j + "-01-01", rbis: j + "-12-31" }; }
 function buchPreset(B, p) {
   const h = heuteLux(), j = +h.slice(0, 4), m = h.slice(0, 7);
   B.preset = p;
@@ -3638,7 +3643,7 @@ function buchPreset(B, p) {
 }
 const geldT = x => runde(x).toFixed(2).replace(".", ",");
 const filterText = B => [B.bier && "Béier: " + bierText(B.bier), B.wie && "Zuelaart: " + ZAHLARTEN[B.wie], B.verk && "Verkeefer: " + B.verk, B.kunde && "Client: " + B.kunde,
-  B.status && (B.status === "op" ? "nach op" : "bezuelt")].filter(Boolean).join(" · ") || "keen Filter";
+  B.status && (B.status === "op" ? "nach op" : "bezuelt"), B.sicht === "gratis" && B.grund && "Grond: " + GRUENDE[B.grund]].filter(Boolean).join(" · ") || "keen Filter";
 /* Tabelle je Sicht: {titel, kopf[], zeilen[][], rechts[] (Spalten-Index rechtsbündig), summe[]} — gleich für Bildschirm, PDF und Excel */
 function buchTabelle(D, sicht) {
   const art = p => postenText(p);
@@ -3659,6 +3664,9 @@ function buchTabelle(D, sicht) {
     summe: ["", `Total (${D.ausstoend.length})`, "", "", "", "", geldT(D.resume.op)] };
   if (sicht === "stock") return { titel: "Stock", kopf: ["Artikel", "Ufank", "Ofgefëllt", "Verkaaft", "Gedronk", "Verschenkt", "Futti/soss", "Enn"], rechts: [1, 2, 3, 4, 5, 6, 7],
     zeilen: D.stock.map(s => [artikelText(s.key), s.anfang, s.abgefuellt, s.verkauft, s.getrunken, s.verschenkt, s.kaputt + s.sonst, s.ende]), summe: null };
+  if (sicht === "gratis") return { titel: "Gratis (net verkaaft)", kopf: ["Datum", "Béier", "Unzuel", "Grond", "Bei wiem", "Bemierkung", "Agedroen vum"], rechts: [2],
+    zeilen: D.gratis.map(x => [datumKurz(x.datum), artikelText(x.e.sorte), x.e.n, GRUENDE[x.e.grund], x.e.wer, x.e.notiz || "", x.e.durch || ""]),
+    summe: ["Total", "", D.gratis.reduce((a, x) => a + x.e.n, 0), "", "", "", ""] };
   if (sicht === "aenner") return { titel: "Ännerungen", kopf: ["Wéini", "Wien", "Wat", "Agab"], rechts: [],
     zeilen: D.aenderungen.map(a => [zeitText(a.e.zeit), a.e.durch || "?", a.was, a.text]), summe: null };
   return null;
@@ -3697,9 +3705,8 @@ function renderBuch() {
         ${Object.entries(R.jeBier).map(([k, b]) => `<tr><td>${esc(bierText(k))}</td><td class="r">${b.fl}</td><td class="r">${b.faesser}</td><td class="r">${geldT(b.euro)}</td><td class="r">${b.gratis}</td></tr>`).join("") || `<tr><td class="leer">–</td></tr>`}</table>
       <div class="m">Gratis = selwer gedronk, verschenkt, futti (Detail ënner „Stock“).</div>
       <h3>No Verkeefer</h3><table class="buchtab">${kv(R.jeVerk)}</table>`
-    : B.sicht === "ausgaben" ? `<h2>Ausgaben</h2><div class="leer">Kënnt méi spéit (Malz, Hopfen, Fläschen … mat Foto vum Beleg).</div>`
-    : `<h2>${esc(T.titel)} · ${esc(datumKurz(B.von))} – ${esc(datumKurz(B.bis))}${B.sicht === "ausstoend" ? ` <small class="muted">(Stand ${esc(datumKurz(B.bis))})</small>` : ""}</h2><div class="m">${esc(filterText(B))}</div>${tab(T)}`}
-    ${B.sicht !== "ausgaben" ? `<button class="haupt" id="buPdf">🖨️ PDF vun dëser Lëscht</button><button class="haupt grau" id="buXls">📊 Excel vun dëser Lëscht</button>` : ""}
+    : `${B.sicht === "gratis" ? `<div class="seg buchg">${[["", "All"], ...Object.keys(GRUENDE).map(g => [g, GRUND_IC[g]])].map(([g, t]) => `<button data-bug="${g}" class="${B.grund === g ? "an" : ""}">${esc(t)}</button>`).join("")}</div>` : ""}<h2>${esc(T.titel)} · ${esc(datumKurz(B.von))} – ${esc(datumKurz(B.bis))}${B.sicht === "ausstoend" ? ` <small class="muted">(Stand ${esc(datumKurz(B.bis))})</small>` : ""}</h2><div class="m">${esc(filterText(B))}</div>${tab(T)}`}
+    <button class="haupt" id="buPdf">🖨️ PDF vun dëser Lëscht</button><button class="haupt grau" id="buXls">📊 Excel vun dëser Lëscht</button>
     <div id="buMeld"></div></div>
   <div class="card"><h2>🧾 Rechnungen drécken</h2>
     <div class="zeile"><div><label for="buRvon">vum</label><input id="buRvon" type="date" value="${B.rvon}"></div><div><label for="buRbis">bis</label><input id="buRbis" type="date" value="${B.rbis}"></div></div>
@@ -3708,6 +3715,7 @@ function renderBuch() {
   <div class="card"><h2>📊 Komplett Excel</h2><div class="m">Wéi bis elo — all Blieder.</div><button class="haupt grau" id="buXlsAll">📊 Excel (.xlsx)</button><div id="buXmeld"></div></div>`;
   $("#buZurueck").onclick = () => { TAB = "einst"; render(); window.scrollTo(0, 0); };
   box.querySelectorAll("[data-bup]").forEach(b => b.onclick = () => { if (b.dataset.bup === "frai") B.preset = "frai"; else buchPreset(B, b.dataset.bup); BUCH_MELD = ""; renderBuch(); });
+  box.querySelectorAll("[data-bug]").forEach(b => b.onclick = () => { B.grund = b.dataset.bug; renderBuch(); });
   box.querySelectorAll("[data-bus]").forEach(b => b.onclick = () => { B.sicht = b.dataset.bus; BUCH_MELD = ""; renderBuch(); });
   const datum = (id, k) => { const el = $("#" + id); el.onchange = () => { if (/^\d{4}-\d{2}-\d{2}$/.test(el.value)) { B[k] = el.value; if (k === "von" || k === "bis") B.preset = "frai"; } el.blur(); renderBuch(); }; };
   datum("buVon", "von"); datum("buBis", "bis"); datum("buRvon", "rvon"); datum("buRbis", "rbis");

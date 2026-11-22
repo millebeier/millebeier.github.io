@@ -259,7 +259,7 @@ beim Verkaufen/Livraison und „Fläsche beweegen“ an, solange jemand welche h
   Ofgefëllt/Weiderginn/Fort und Vun/Un — zu abstrakt): erst **vier Absichten** (`ABSICHTEN`): 📥 Ech huele mer Fläschen (Lager ➜ ich) ·
   📤 Zréck an d'Lager (ich ➜ Lager) · 🤝 Engem anere ginn (ich ➜ erster anderer) · 🍻 Net verkaaft. Dann **Pfeil-Bild** (`.pfeil`, zwei
   Kästen mit Stand „huet n“ bzw. „n fräi · m do“, „änneren“ = Auswahl, ⇄ dreht um), Bier + Anzahl, grüne **Vorschau** „Duerno: …“
-  (`#bVor`, beim Tippen ohne Neuaufbau). Net verkaaft: **Gründe als Knöpfe** (`GRUND_IC`; Soss eppes mit Textfeld → `notiz`), „vu mengen“.
+  (`#bVor`, beim Tippen ohne Neuaufbau). Net verkaaft: **Gründe als Knöpfe** (`GRUND_IC`; Soss eppes und — seit Fassung 22.11. c, vom Nutzer — Verschenkt / Prouf mit Textfeld → `notiz`), „vu mengen“.
   Nach dem Speichern **wieder die vier Knöpfe** mit Meldung (vom Nutzer); nach 5 min weg ebenso (`ZUKLAPPEN.bestand`).
   **Abfüllen nicht mehr hier**, sondern beim Bier (vom Nutzer: kein eigener Knopf): Anlegen wie bisher mit Flaschen/Fässern; **✎ Änneren**
   zeigt „Ofgefëllt an d'Lager“ mit der **Gesamtzahl** (`abgefuelltFelder`), ändern gleicht am Lager aus (`abfuellKorrektur`: alle
@@ -314,7 +314,9 @@ beim Verkaufen/Livraison und „Fläsche beweegen“ an, solange jemand welche h
   des Biers) · **Rechnungen** lückenlos inkl. stornierter (storniert = Verkauf gelöscht **oder** Rechnung selbst im Verlauf
   gelöscht — Fassung 22.11. b, vom Nutzer gemeldet: 001–003 nur als Rechnung gelöscht, standen noch als gültig da) · **Ausstoend zum Stichtag „bis“** (Zahlungen bis dahin, auch aus Vorjahren) ·
   **Stock** je Artikel (Anfang vor „vum“, abgefüllt, verkauft, getrunken, verschenkt, futti/soss, Ende) · **Ännerungen** (Löschungen,
-  geänderte Bestellungen/Abfüllungen/Rechnungen mit wer/wann) · **Ausgaben** (Platzhalter, später). Logik `buchDaten(Z, F)` im Logik-Block,
+  geänderte Bestellungen/Abfüllungen/Rechnungen mit wer/wann) · **Gratis** (vom Nutzer, Fassung 22.11. c: jeder Abgang mit Datum, Bier,
+  Anzahl, Grund, bei wem, Bemerkung, eingetragen von; Grund-Knöpfe All/Gedronk/Verschenkt/Futti/Soss als eigener Filter `BUCH.grund`; hat den
+  Platz des Platzhalters „Ausgaben“ bekommen — der kommt mit den Ausgaben selbst zurück). Logik `buchDaten(Z, F)` im Logik-Block,
   Tabellen `buchTabelle` (gleich für Bildschirm, PDF, Excel). **Alte Excel-Verkäufe bleiben draußen** (ohne Geld). Unter jeder Liste
   „🖨️ PDF vun dëser Lëscht“ (`buchPdf`, jsPDF, ab 7 Spalten quer, Kopf mit Zeitraum/Filter/erstellt von, Seitenzahlen) und „📊 Excel vun dëser
   Lëscht“ (`buchExcel`); „📄 All Rechnungen als ee PDF“ zwischen zwei Daten (`rechnungenSammelPdf`, `rechnungPdf` hängt mit `vorher` Seiten an,
@@ -388,7 +390,7 @@ Script lief nicht, und damit auch kein automatisches Update. In Code auf einer Z
   Startseite, Hinweis an geplanter Bestellung, eigener Stückpreis (Verkafen/Bestellung/Ändern), „Rechnung nodréiglech“, Client-Akeef, Lieferdatum, 🧾 in der Iwwersiicht (Gegenprobe gemacht). jsPDF per `npm install jspdf@2.5.1` in den Scratchpad; ohne wird übersprungen.
 - `JSPDF_JS=… XLSX_JS=… node test/buchhaltung.mjs` — Buchhaltung: Résumé, Kassenbuch (feste Nummern, storniert sichtbar, nicht im Total),
   Filter SumUp, Druck-PDF der Liste, Verkéf mit Bier-Anteil, Rechnungen inkl. storniert, Ausstoend zum Stichtag, Stock Anfang/Ende, Ännerungen,
-  Lescht Joer, Sammel-PDF (ANNULÉE), Excel der Liste, Zahltag im Zahlungsfenster (Gegenprobe gemacht).
+  Lescht Joer, Sammel-PDF (ANNULÉE), Excel der Liste, Zahltag im Zahlungsfenster, Verschenkt mit Bemerkung, Gratis mit Grund-Filter (Gegenprobe gemacht).
 - `node test/biere.mjs` — Bier anlegen/ändern/archivieren/zurückholen/löschen (zwei Rückfragen, Gegenprobe gemacht),
   rotes ✕ im Verlauf, rotes Dreieck; Kasten „Fläschen“ (vier Absichten, Pfeil, ⇄, änneren, Vorschau, Gründe) und Abfüllen ändern beim Bier
   (48 → 60 → 50, Verlauf; Gegenprobe gemacht).

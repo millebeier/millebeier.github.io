@@ -109,6 +109,26 @@ if (XLSX_JS && existsSync(XLSX_JS)) {
     const z = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1 }); return [f.name.endsWith(".xlsx"), z[2][0], z[z.length - 1][6]]; }), [true, "Nr", 84]);
   await p.click("#ansichtZu"); await warte(200);
 }
+// Verschenkt mit Bemerkung (vom Nutzer, 22.11.): Feld bei „Verschenkt / Prouf“, gespeichert als notiz
+await p.click('[data-tab="bestand"]'); await warte(300);
+await p.click('[data-abs="fort"]'); await warte(200);
+await p.selectOption("#bSorte", "NEIPA"); await p.fill("#bN", "2");
+await p.click('[data-grund="verschenkt"]'); await warte(200);
+ist("Verschenkt: Feld für Name/Bemerkung", await p.getAttribute("#bNotiz", "placeholder"), t => t.includes("Fir wien"));
+await p.fill("#bNotiz", "Proufflaschen fir de Café"); await p.click("#bOk"); await warte(500);
+ist("Abgang mit notiz", await p.evaluate(() => { const e = Z.liste.filter(x => x.art === "abgang").pop(); return [e.grund, e.n, e.notiz]; }), ["verschenkt", 2, "Proufflaschen fir de Café"]);
+await warte(900); await p.click('[data-abs="fort"]'); await warte(200);
+await p.click('[data-grund="kaputt"]'); await warte(200);
+ist("Futti: kein Bemerkungsfeld", await p.locator("#bNotiz").count(), 0);
+// Buchhaltung → Gratis mit Grund-Filter
+await p.click("#zahnrad"); await warte(200); await p.click("#eBuch"); await warte(300);
+await p.click('[data-bus="gratis"]'); await warte(200);
+ist("Gratis: alle Gründe, Total 5", await p.locator("#buInhalt").innerText(), t => t.includes("selwer gedronk") && t.includes("verschenkt") && t.includes("Proufflaschen fir de Café") && /Total\s+5/.test(t));
+await p.click('[data-bug="verschenkt"]'); await warte(200);
+ist("Gratis nur verschenkt: Total 2", await p.locator("#buInhalt").innerText(), t => !t.includes("selwer gedronk") && /Total\s+2/.test(t) && t.includes("Grond: verschenkt"));
+await p.click("#buPdf"); await warte(2000);
+ist("PDF Gratis mit Bemerkung", await p.evaluate(async () => { const f = [...DATEN.entries()].filter(([k]) => k.startsWith("buch-")).pop()[1]; return new TextDecoder("latin1").decode(await f.arrayBuffer()); }), t => t.includes("Proufflaschen") && t.includes("verschenkt"));
+await p.click("#ansichtZu"); await warte(200);
 // Zahltag im Zahlungsfenster
 await p.evaluate(() => eintragen([{ art: "verkauf", verkaeufer: "Laurent", kaeufer: "Spéit", posten: [{ sorte: "NEIPA", n: 1 }], betrag: 3, aus: "Lager" }])); await warte(400);
 await p.click('[data-tab="offen"]'); await warte(200);
