@@ -129,7 +129,7 @@ await A.click("#ansichtZu"); await warte(300);
 await A.click('[data-tab="offen"]'); await warte(200);
 ist("Ausstoend: Nummer an der offenen Rechnung", await A.locator("#t-offen").innerText(), t => t.includes("Rechnung nach ze maachen (1)") && t.includes("🧾 " + J + "-001") && t.includes("Rechnung vun haut") && t.includes("fräi Positiounen"));
 // Startseite: meine fehlende Rechnung
-await A.click("#hautBtn"); await warte(200);
+await A.click('#nav [data-tab="haut"]'); await warte(200);
 ist("Startseite: Nach op bei dir mit 🧾", await A.locator("#hOp").innerText(), t => t.includes("Rechnung maachen: Kalbusch"));
 ist("💡-Aufgabe Rechnung maachen öffnet das Fenster", await A.evaluate(() => aufStand().op.filter(a => a.typ === "rechnung").map(a => [a.text, a.link.typ])), [["Rechnung maachen: Kalbusch", "rech"]]);
 
@@ -203,7 +203,7 @@ await A.evaluate(id => { const L = Z.livraisons.find(x => x.id === id); eintrage
 await warte(400);
 ist("geliefert ohne Haken: „Rechnung nodréiglech“", await A.evaluate(id => { const L = Z.livraisons.find(x => x.id === id); const b = document.querySelector(`#lListe .knopf.klein[data-rech="${L.verkauf.id}"]`); return b && b.textContent; }, lRS), "🧾 Rechnung nodréiglech");
 // Client → Akeef: 🧾 / Nummer
-await A.click('[data-tab="kunden"]'); await warte(200);
+await A.click('#zahnrad'); await A.click('#t-einst [data-zb="kunden"]'); await warte(200);
 await A.click('[data-kauf="k-ferro1"]'); await warte(900); await A.click('[data-kakeef="k-ferro1"]'); await warte(200);
 ist("Client Akeef: Nummer an der Rechnung", await A.locator("#kListe").innerText(), t => t.includes("🧾 " + J + "-001"));
 // Lieferdatum = Tag des „Geliwwert“, nicht der geplante (vom Nutzer, 20.11.); im Fenster änderbar

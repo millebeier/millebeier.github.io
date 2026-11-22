@@ -15,15 +15,15 @@ await p.evaluate(() => { localStorage.clear(); window.OHNE_ALTIMPORT = true; EIN
 const liste = () => p.evaluate(() => [...document.querySelectorAll("#kListe .kz > .kz-kopf")].map(b => b.textContent.trim()));
 
 // Reiter und Verlauf
-ist("Reiter Client statt Verlaf", await p.evaluate(() => [...document.querySelectorAll("nav [data-tab]")].map(b => b.textContent.replace(/[^A-Za-zäëéü]/g, "")).slice(-1)), ["Client"]);
+ist("Client nicht mehr unten, sondern im Zahnrad (Fassung 22.11. m)", await p.evaluate(() => !document.querySelector('#nav [data-tab="kunden"]')), true);
 ist("kee Stammclienten méi bei Bestellungen", await p.evaluate(() => !!document.querySelector("#kBuch")), false);
-await p.click("#zahnrad"); await p.click("#eVerlauf");
+await p.click("#zahnrad"); await p.click('#t-einst [data-zb="verlauf"]');
 ist("Verlaf iwwer d'Zahnrad", await p.locator("#t-verlauf").innerText(), t => t.includes("Verlaf"));
-await p.click("#vlZurueck");
+await p.click('#t-verlauf [data-zb="einst"]');
 ist("Zréck an d'Astellungen", await p.evaluate(() => TAB), "einst");
 
 // Anlegen
-await p.click('[data-tab="kunden"]');
+await p.click('#zahnrad'); await p.click('#t-einst [data-zb="kunden"]');
 ist("leer", await p.locator("#kListe").innerText(), t => t.includes("Client (0)") && t.includes("Nach keen Client"));
 await p.click("#kNeu");
 await p.click("#kOk"); await warte(100);
@@ -51,20 +51,20 @@ ist("zou: keng Kontaktdaten", await p.locator("#kListe").innerText(), t => !t.in
 
 // Automatesch zouklappen: kuerz an aner Reiter bleift op, no méi wéi 5 min net am Reiter Client geet alles zou
 await p.evaluate(() => { K_AUF.add(Z.kunden[0].kid); K_AKEEF.add(Z.kunden[0].kid); renderKunden(); });
-await p.click('[data-tab="bestand"]'); await p.click('[data-tab="kunden"]');
+await p.click('[data-tab="bestand"]'); await p.click('#zahnrad'); await p.click('#t-einst [data-zb="kunden"]');
 ist("kuerz ewech: bleift op", await p.evaluate(() => K_AUF.size), 1);
-await p.click('[data-tab="bestand"]'); await p.evaluate(() => { ZU_WEG.kunden = Date.now() - 6 * 60 * 1000; }); await p.click('[data-tab="kunden"]');
+await p.click('[data-tab="bestand"]'); await p.evaluate(() => { ZU_WEG.kunden = Date.now() - 6 * 60 * 1000; }); await p.click('#zahnrad'); await p.click('#t-einst [data-zb="kunden"]');
 ist("no 6 min: alles zou", await p.evaluate(() => [K_AUF.size, K_AKEEF.size, document.querySelectorAll("#kListe .kz-inhalt").length]), [0, 0, 0]);
 // Datselwecht am Stock (Archiv vun de Béieren) an an der Iwwersiicht (Zort ▶ an Archiv)
 await p.evaluate(() => { ARCHIV_AUF = true; ARCHIV_UEB = true; OFFEN_SORTE = "NEIPA"; });
 await p.click('[data-tab="bestand"]'); await p.click('[data-tab="uebersicht"]'); await p.click('[data-tab="bestand"]');
 ist("kuerz ewech: Stock/Iwwersiicht bleiwen op", await p.evaluate(() => [ARCHIV_AUF, ARCHIV_UEB, OFFEN_SORTE]), [true, true, "NEIPA"]);
-await p.click('[data-tab="kunden"]'); await p.evaluate(() => { ZU_WEG.bestand = ZU_WEG.uebersicht = Date.now() - 6 * 60 * 1000; });
+await p.click('#zahnrad'); await p.click('#t-einst [data-zb="kunden"]'); await p.evaluate(() => { ZU_WEG.bestand = ZU_WEG.uebersicht = Date.now() - 6 * 60 * 1000; });
 await p.click('[data-tab="bestand"]');
 ist("no 6 min: Stock-Archiv zou", await p.evaluate(() => ARCHIV_AUF), false);
 await p.click('[data-tab="uebersicht"]');
 ist("no 6 min: Iwwersiicht zou", await p.evaluate(() => [ARCHIV_UEB, OFFEN_SORTE]), [false, ""]);
-await p.click('[data-tab="kunden"]');
+await p.click('#zahnrad'); await p.click('#t-einst [data-zb="kunden"]');
 
 // Sich
 await p.fill("#kSuche", "fer"); await warte(100);
@@ -146,7 +146,7 @@ ist("alen Akaf weist elo den aktuellen Numm", await p.evaluate(() => Z.verkaeufe
 ist("Ausstoend/Keefer: kee „Marc Gloden“ méi", await p.evaluate(() => Z.kaeufer.map(k => k.name).includes("Marc Gloden")), false);
 
 // Akeef
-await p.click('[data-tab="kunden"]');
+await p.click('#zahnrad'); await p.click('#t-einst [data-zb="kunden"]');
 const kid = n => p.evaluate(n => Z.kunden.find(k => k.label === n).kid, n);
 await p.evaluate(() => { K_AUF.clear(); K_AKEEF.clear(); renderKunden(); });
 await p.click(`[data-kauf="${await kid("Ferro Forum")}"]`);

@@ -55,7 +55,7 @@ await p.evaluate(J => {
 }, +J);
 await warte(800);
 // Öffnen über das Zahnrad
-await p.click("#zahnrad"); await warte(200); await p.click("#eBuch"); await warte(300);
+await p.click("#zahnrad"); await warte(200); await p.click('#t-einst [data-zb="buch"]'); await warte(300);
 ist("Buchhaltung offen, Zahnrad markiert", [await p.locator("#t-buch").isVisible(), await p.locator("#zahnrad.an").count()], [true, 1]);
 ist("Résumé dëst Joer: ohne Vorjahr, ohne gelöschten Verkauf", await p.locator("#buInhalt").innerText(), t => t.includes("84 €") && t.includes("Verkaaft") && t.includes("Agaangen") && t.includes("SumUp") && t.includes("WERO") && !t.includes("Vorjoer"));
 ist("Résumé: Zahlen", await p.evaluate(() => { const R = buchDaten(Z, BUCH).resume; return [R.verkauft, R.agaangen, R.op, R.rechnungen, R.jeWie]; }), [84, 84, 30, 1, { sumup: 54, wero: 30 }]); // 30 = Vorjahr, unbezahlt, zum Stichtag noch offen
@@ -126,7 +126,7 @@ await warte(900); await p.click('[data-abs="fort"]'); await warte(200);
 await p.click('[data-grund="kaputt"]'); await warte(200);
 ist("Futti: kein Bemerkungsfeld", await p.locator("#bNotiz").count(), 0);
 // Buchhaltung → Gratis mit Grund-Filter
-await p.click("#zahnrad"); await warte(200); await p.click("#eBuch"); await warte(300);
+await p.click("#zahnrad"); await warte(200); await p.click('#t-einst [data-zb="buch"]'); await warte(300);
 await p.click('[data-bus="gratis"]'); await warte(200);
 ist("Gratis: alle Gründe, Total 5", await p.locator("#buInhalt").innerText(), t => t.includes("selwer gedronk") && t.includes("verschenkt") && t.includes("Proufflaschen fir de Café") && /Total\s+5/.test(t));
 await p.click('[data-bug="verschenkt"]'); await warte(200);
@@ -197,12 +197,12 @@ ist("Excel Bestellungen: Iwwerweisung ugekënnegt", await p.evaluate(() => expor
 await warte(900); await lkarte().locator("[data-geliwwert]").click(); await warte(500);
 ist("Geliefert: 🏦 mit Ukomm auch an der gelieferten Karte", await lkarte().innerText(), t => t.includes("✓ geliwwert") && t.includes("nach ausstoend") && t.includes("Ukomm") && t.includes("Aanescht bezuelt"));
 ist("Excel Verkauf: Nee (Iwwerweisung ugekënnegt)", await p.evaluate(() => bezahltText(Z.verkaeufe.find(v => v.kaeufer === "Vorab"))), "Nee (Iwwerweisung ugekënnegt)");
-await p.click("#hautBtn"); await warte(300);
+await p.click('#nav [data-tab="haut"]'); await warte(300);
 ist("Startseite: 🏦 beim Käufer", await p.locator("#hOp").innerText(), t => /Vorab\s*🏦 Iwwerweisung ugekënnegt/.test(t));
 await p.click('[data-tab="livraisons"]'); await warte(300);
 await lkarte().locator("[data-bk]").click(); await warte(500);
 ist("Ukomm an der gelieferten Karte: bezahlt", await p.evaluate(() => Z.verkaeufe.find(v => v.kaeufer === "Vorab").offen), 0);
-await p.click("#zahnrad"); await warte(200); await p.click("#eVerlauf"); await warte(300);
+await p.click("#zahnrad"); await warte(200); await p.click('#t-einst [data-zb="verlauf"]'); await warte(300);
 await p.fill("#vlSuche", "hoffmann"); await warte(200);
 ist("Verlauf-Suche: nur Hoffmann", await p.locator("#vlListe").innerText(), t => t.includes("fonnt") && t.includes("Hoffmann") && !t.includes("Kalbusch"));
 await p.evaluate(() => render()); await warte(100);

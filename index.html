@@ -107,7 +107,7 @@ nav .badge.grau{background:var(--card2);border:1px solid var(--line)}
 .kgross{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0 0}
 .kgross button{border-radius:14px;border:1px solid var(--line);background:var(--card2);color:var(--text);padding:11px 4px;cursor:pointer;text-align:center}
 .kgross button b{display:block;font-size:17px} .kgross button small{display:block;font-size:12px;color:var(--muted);margin-top:2px}
-.kgross button.an{background:var(--akzent);border-color:var(--akzent)} .kgross button.an small{color:#fdd}
+.kgross b.zbn{font-size:15px;margin-top:2px} .kgross button.an{background:var(--akzent);border-color:var(--akzent)} .kgross button.an small{color:#fdd}
 .aufz{display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-top:1px solid #262626}
 .aufz:first-of-type{border-top:0}
 .abox{width:26px;height:26px;flex:none;border:2px solid #888;border-radius:7px;background:none;color:#10200f;font-weight:900;font-size:15px;padding:0;cursor:pointer;line-height:1}
@@ -384,17 +384,16 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px}
   <div class="kopf">
     <h1 id="zurHaut" title="Startsäit"><img src="bilder/logo-96.png" alt=""><span aria-label="Millebéier">Milleb<span class="akz">e</span>ier</span></h1>
     <button id="sync" aria-label="Verbindung"></button>
-    <button class="zahnrad" id="hautBtn" aria-label="Startsäit">🏠</button>
     <button class="zahnrad" id="kalBtn" aria-label="Kalenner">📅</button>
     <button class="zahnrad" id="zahnrad" aria-label="Astellungen">⚙️</button>
   </div>
   <nav id="nav">
+    <button data-tab="haut"><i>🏠</i>Haut</button>
     <button data-tab="bestand"><i>📦</i>Stock</button>
     <button data-tab="verkaufen"><i>🍺</i>Verkafen</button>
     <button data-tab="livraisons"><i>🚚</i>Bestellungen</button>
     <button data-tab="offen"><i>💶</i>Ausstoend</button>
     <button data-tab="uebersicht"><i>📊</i>Iwwersiicht</button>
-    <button data-tab="kunden"><i>📇</i>Client</button>
   </nav>
   <div id="syncInfo" class="versteckt"></div>
   <button id="neu" class="versteckt"></button>
@@ -406,7 +405,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px}
   <section id="t-uebersicht" class="versteckt"></section>
   <section id="t-verkaufen" class="versteckt"><div id="vForm"></div></section>
   <section id="t-livraisons" class="versteckt"><div id="lListe"></div><div id="lForm"></div></section>
-  <section id="t-kunden" class="versteckt"><div class="card" style="padding:10px 14px"><input id="kSuche" type="search" autocomplete="off" placeholder="🔍 Client sichen"></div><div id="kListe"></div></section>
+  <section id="t-kunden" class="versteckt"><div class="zbk"></div><div class="card" style="padding:10px 14px"><input id="kSuche" type="search" autocomplete="off" placeholder="🔍 Client sichen"></div><div id="kListe"></div></section>
   <section id="t-offen" class="versteckt"></section>
   <section id="t-bestand" class="versteckt"><div id="bTabelle"></div><div id="bForm"></div><div id="bBiere"></div></section>
   <section id="t-verlauf" class="versteckt"></section>
@@ -435,7 +434,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px}
 <script>
 /* Adresse des Cloudflare-Workers. Leer = Probe-Modus (alles nur auf diesem Handy). */
 const WORKER_URL = "https://millebeier.rjtp6r9s9h.workers.dev/";
-const FASSUNG = "22.11.2026 l";
+const FASSUNG = "22.11.2026 m";
 
 /* === Logik === (kein DOM; test/logik.mjs schneidet diesen Block aus) */
 const LAGER = "Lager";
@@ -1527,10 +1526,8 @@ function render() {
   $("#nav").classList.toggle("versteckt", !bereit());
   $("#zahnrad").classList.toggle("versteckt", !bereit());
   $("#kalBtn").classList.toggle("versteckt", !bereit());
-  $("#hautBtn").classList.toggle("versteckt", !bereit());
-  $("#hautBtn").classList.toggle("an", tab === "haut");
   $("#kalBtn").classList.toggle("an", tab === "kalender");
-  $("#zahnrad").classList.toggle("an", tab === "einst" || tab === "verlauf" || tab === "buch");
+  $("#zahnrad").classList.toggle("an", ZB_TABS.includes(tab));
   const nKal = kalAnzahlBald(Z);
   // Kalenderblatt mit dem heutigen Tag statt 📅 (Apples Emoji zeigt immer „17“; vom Nutzer, Fassung g)
   const [, kM, kT] = heuteLux().split("-").map(Number);
@@ -1543,6 +1540,7 @@ function render() {
   $('#nav [data-tab="livraisons"]').innerHTML = "<i>🚚</i>Bestellungen" + (nGeplant ? `<span class="badge grau">${nGeplant}</span>` : "");
   ({ start: renderStart, uebersicht: renderUebersicht, verkaufen: renderVerkaufen, offen: renderOffen, livraisons: renderLivraisons,
      bestand: renderBestand, verlauf: renderVerlauf, buch: renderBuch, einst: renderEinst, kunden: renderKunden, kalender: renderKalender, haut: renderHaut })[tab]();
+  if (ZB_TABS.includes(tab)) zbKaesten(tab);
   $("#fuss").innerHTML = `Versioun ${esc(FASSUNG)}` + (EIN.ich ? ` · Du bass ${esc(de(EIN.ich))}` : "");
 }
 
@@ -3753,7 +3751,7 @@ function renderBuch() {
     ${T.summe ? `<tr class="summe">${T.summe.map((c, i) => `<td class="${T.rechts.includes(i) ? "r" : ""}">${esc(c)}</td>`).join("")}</tr>` : ""}</table></div>`;
   const kv = (o, f = x => x) => Object.entries(o).map(([k, w]) => `<tr><td>${esc(f(k))}</td><td class="r">${geldT(w)}</td></tr>`).join("") || `<tr><td class="leer">–</td></tr>`;
   const rechImZeit = buchDaten(Z, { ...B, von: B.rvon, bis: B.rbis, bier: "", wie: "", verk: "", kunde: "", status: "" }).rechnungen;
-  box.innerHTML = `<button class="knopf" id="buZurueck" style="margin-top:12px">← Zréck an d'Astellungen</button>
+  box.innerHTML = `<div class="zbk">${zbHtml("buch")}</div>
   <div class="card"><h2>📒 Buchhaltung</h2>
     <div class="seg buchp">${[["joer", "Dëst Joer"], ["lescht", "Lescht Joer"], ["mount", "Dëse Mount"], ["frai", "Fräi"]].map(([k, t]) => `<button data-bup="${k}" class="${B.preset === k ? "an" : ""}">${t}</button>`).join("")}</div>
     <div class="zeile"><div><label for="buVon">vum</label><input id="buVon" type="date" value="${B.von}"></div><div><label for="buBis">bis</label><input id="buBis" type="date" value="${B.bis}"></div></div>
@@ -3781,8 +3779,7 @@ function renderBuch() {
     <div class="m" style="margin-top:6px">${rechImZeit.length ? `${rechImZeit.length} Rechnung(en) · ${esc(rechImZeit[0].nr)} … ${esc(rechImZeit[rechImZeit.length - 1].nr)}${rechImZeit.some(r => r.storniert) ? ` · stornéiert: ${esc(rechImZeit.filter(r => r.storniert).map(r => r.nr).join(", "))}` : ""}` : "Keng Rechnung an dësem Zäitraum."}</div>
     <button class="haupt" id="buRech" ${rechImZeit.length ? "" : "disabled"}>📄 All Rechnungen als ee PDF</button><div id="buRmeld"></div></div>
   <div class="card"><h2>📊 Komplett Excel</h2><div class="m">Wéi bis elo — all Blieder.</div><button class="haupt grau" id="buXlsAll">📊 Excel (.xlsx)</button><div id="buXmeld"></div></div>`;
-  $("#buZurueck").onclick = () => { TAB = "einst"; render(); window.scrollTo(0, 0); };
-  box.querySelectorAll("[data-bup]").forEach(b => b.onclick = () => { if (b.dataset.bup === "frai") B.preset = "frai"; else buchPreset(B, b.dataset.bup); BUCH_MELD = ""; renderBuch(); });
+    box.querySelectorAll("[data-bup]").forEach(b => b.onclick = () => { if (b.dataset.bup === "frai") B.preset = "frai"; else buchPreset(B, b.dataset.bup); BUCH_MELD = ""; renderBuch(); });
   box.querySelectorAll("[data-bug]").forEach(b => b.onclick = () => { B.grund = b.dataset.bug; renderBuch(); });
   box.querySelectorAll("[data-bus]").forEach(b => b.onclick = () => { B.sicht = b.dataset.bus; BUCH_MELD = ""; renderBuch(); });
   const datum = (id, k) => { const el = $("#" + id); el.onchange = () => { if (/^\d{4}-\d{2}-\d{2}$/.test(el.value)) { B[k] = el.value; if (k === "von" || k === "bis") B.preset = "frai"; } el.blur(); renderBuch(); }; };
@@ -3882,9 +3879,8 @@ function renderVerlauf() {
   const box = $("#t-verlauf");
   // Suchfeld (vom Nutzer, 22.11.): bleibt stehen, nur die Liste darunter wird neu gebaut
   if (!$("#vlSuche")) {
-    box.innerHTML = `<button class="knopf" id="vlZurueck" style="margin-top:12px">← Zréck an d'Astellungen</button><div class="card"><h2>📜 Verlaf</h2>
+    box.innerHTML = `<div class="zbk"></div><div class="card"><h2>📜 Verlaf</h2>
       <input id="vlSuche" type="search" placeholder="🔍 Sichen (Numm, Béier, Betrag, wien …)" value="${esc(VERLAUF_Q)}" autocomplete="off"><div id="vlListe"></div></div>`;
-    $("#vlZurueck").onclick = () => { TAB = "einst"; render(); window.scrollTo(0, 0); };
     $("#vlSuche").oninput = e => { VERLAUF_Q = e.target.value; VERLAUF_MAX = 100; renderVerlaufListe(); };
   }
   renderVerlaufListe();
@@ -3914,7 +3910,6 @@ function renderVerlaufListe() {
     eintragen([{ art: "storno", ref: e.id }]);
   });
   const m = $("#mehr"); if (m) m.onclick = () => { VERLAUF_MAX += 200; renderVerlauf(); };
-  $("#vlZurueck").onclick = () => { TAB = "einst"; EFORM = null; render(); window.scrollTo(0, 0); };
 }
 
 /* ---------- Alte Verkäufe einspielen (einmalig) ---------- */
@@ -3933,15 +3928,28 @@ function altEinspielen() {
 }
 
 /* ---------- Einstellungen ---------- */
+/* Zahnrad: vier Kästen oben (vom Nutzer, Fassung 22.11. m) — Client liegt seitdem hier statt unten in der Reihe */
+const ZB_TABS = ["einst", "kunden", "verlauf", "buch"];
+function zbKaesten(tab) {
+  const box = document.querySelector(`#t-${tab} .zbk`); if (!box) return;
+  const html = zbHtml(tab);
+  if (box.innerHTML !== html) box.innerHTML = html;
+}
+function zbHtml(tab) {
+  const k = [["einst", "⚙️", "Astellungen", "Leit · Handy · Excel"], ["kunden", "📇", "Client", `${Z.kunden.length} ${Z.kunden.length === 1 ? "Client" : "Clienten"}`],
+    ["verlauf", "📜", "Verlaf", "Wien wéini wat"], ["buch", "📒", "Buchhaltung", "Lëschten · PDF · Excel"]];
+  return `<div class="kgross">${k.map(([t, ic, n, u]) => `<button data-zb="${t}" class="${t === tab ? "an" : ""}"><b>${ic}</b><b class="zbn">${n}</b><small>${esc(u)}</small></button>`).join("")}</div>`;
+}
+document.addEventListener("click", e => {
+  const b = e.target.closest && e.target.closest("[data-zb]"); if (!b) return;
+  TAB = b.dataset.zb; EFORM = null; BUCH_MELD = ""; render(); window.scrollTo(0, 0);
+});
 function renderEinst() {
   const box = $("#t-einst");
   if (tipptIn(box)) return;
   if (!EFORM) EFORM = { leute: [...Z.cfg.leute] };
   const E = EFORM;
-  box.innerHTML = `<div class="card"><h2>📒 Buchhaltung</h2><div class="hinweis" style="margin:0 0 8px">Zäitraum a Filter (Béier, Zuelaart, Verkeefer …), Lëschten als PDF fir ze drécken oder Excel, all Rechnungen als ee PDF. Am beschten um Computer.</div>
-    <button class="knopf" id="eBuch" style="width:100%">Buchhaltung opmaachen</button></div>
-  <div class="card"><h2>📜 Verlaf</h2><div class="hinweis" style="margin:0 0 8px">Wien wéini wat agedroen huet — hei kann een och Agaben läschen (rout ✕).</div>
-    <button class="knopf" id="eVerlauf" style="width:100%">Verlaf opmaachen</button></div>
+  box.innerHTML = `<div class="zbk">${zbHtml("einst")}</div>
   <div class="card"><h2>Dësen Handy</h2>
     <label for="eIch">Ech sinn</label>
     <select id="eIch">${Z.cfg.leute.map(p => `<option ${p === EIN.ich ? "selected" : ""}>${esc(p)}</option>`).join("")}</select>
@@ -3982,8 +3990,6 @@ function renderEinst() {
   };
   $("#eCsv").onclick = () => excelExport($("#eMeld"));
   $("#eNeu").onclick = () => abgleichen();
-  $("#eVerlauf").onclick = () => { TAB = "verlauf"; render(); window.scrollTo(0, 0); };
-  $("#eBuch").onclick = () => { TAB = "buch"; BUCH_MELD = ""; render(); window.scrollTo(0, 0); };
   const ea = $("#eAlt"); if (ea) ea.onclick = altEinspielen;
   const ab = $("#eAbmelden"); if (ab) ab.onclick = () => { if (confirm("Code op dësem Handy läschen?")) { EIN.code = ""; merke(SP, EIN); render(); } };
   const pw = $("#eProbeWeg"); if (pw) pw.onclick = () => {
@@ -4037,7 +4043,6 @@ document.querySelectorAll("#nav button").forEach(b => b.onclick = () => {
   EFORM = null; render(); window.scrollTo(0, 0);
 });
 $("#sync").onclick = () => { SYNC_AUF = !SYNC_AUF; renderSync(); };
-$("#hautBtn").onclick = () => { TAB = "haut"; render(); window.scrollTo(0, 0); };
 $("#zurHaut").onclick = () => { if (!bereit()) return; TAB = "haut"; render(); window.scrollTo(0, 0); };
 $("#kalBtn").onclick = () => { TAB = "kalender"; KAL_BEREICH = "kalender"; A_INLINE = null; KALFORM = null; KAL_MELD = ""; render(); window.scrollTo(0, 0); };
 $("#zahnrad").onclick = () => { TAB = "einst"; EFORM = null; render(); window.scrollTo(0, 0); };

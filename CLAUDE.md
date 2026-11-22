@@ -1,7 +1,7 @@
 # millebeier
 
 Bestands- und Kassen-App für **Millebéier** (so geschrieben wie im Logo; Repo, Dateien und Speicherschlüssel ohne é), die kleine Brauerei von Laurent, Jeff, Marc und Claude
-(Luxemburg). **App-Texte auf Luxemburgisch** (vom Nutzer, 13.11.2026). **Reiter nach dem Ablauf** (vom Nutzer gewählt): Stock · Verkafen · Bestellungen · Ausstoend · Iwwersiicht · Client
+(Luxemburg). **App-Texte auf Luxemburgisch** (vom Nutzer, 13.11.2026). **Reiter nach dem Ablauf** (vom Nutzer gewählt): **seit Fassung 22.11. m Haut · Stock · Verkafen · Bestellungen · Ausstoend · Iwwersiicht** — Haut (Startseite) ganz links statt 🏠 oben, **Client liegt im Zahnrad** (vom Nutzer: selten gebraucht, Iwwersiicht wichtiger). Das Zahnrad hat oben vier Kästen ⚙️ Astellungen · 📇 Client · 📜 Verlaf · 📒 Buchhaltung (`ZB_TABS`, `zbHtml`, `zbKaesten`; offener rot, Zahnrad bleibt markiert; kein „← Zréck an d'Astellungen“ mehr). Vorher: Stock · Verkafen · Bestellungen · Ausstoend · Iwwersiicht · Client
 (seit Fassung 15.11. e; der **Verlauf** liegt seitdem im Zahnrad ⚙️ → „📜 Verlaf“, mit „← Zréck an d'Astellungen“)
 („Bestellungen“ hieß bis Fassung w „Livraisons“ — vom Nutzer umbenannt, auch alle Texte und das Excel-Blatt; im Code
 heißen Reiter, Funktionen und die Eintragsart weiter `livraison(s)`). **Seit Fassung 17.11. a: Reiter unten** (fest am Bildschirmrand, Symbol + Name,

@@ -96,7 +96,7 @@ await p.evaluate(() => { const a = AUSGANG.find(x => x.art === "aufgabe" && x.au
 ist("nach 15 Tagen wieder da, „nach eng Kéier“", await zeilen(), z => z.some(x => x.includes("Rechnung maachen") && x.includes("nach eng Kéier")));
 
 // Startseite: nur meine und „All“, nicht Marcs; abhaken dort
-await p.click("#hautBtn");
+await p.click('#nav [data-tab="haut"]');
 ist("Startseite: Fir dech ze maachen", await txt("#hAuf"), t => t.includes("Etiketten bestellen") && t.includes("Hopfen mathuelen") && !t.includes("Hopfen kafen") && t.includes("💡 Rechnung maachen"));
 ist("„Du hues zur Verfügung“", await txt("#t-haut"), t => t.includes("Du hues zur Verfügung") && !t.includes("Du hues fräi"));
 await p.click('#hAuf .aufz:has-text("Etiketten bestellen") [data-ahak]');

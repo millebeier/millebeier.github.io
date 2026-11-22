@@ -82,7 +82,7 @@ await A.waitForSelector("#frageWahl:not(.versteckt)"); await A.click('#frageWahl
 await warte(400);
 ist("Name in bekannter Schreibweise", await A.evaluate(() => Z.kaeufer.map(k => k.name)), ["Paul", "Anne"]);
 // den letzten Verkauf rückgängig
-await A.click('#zahnrad'); await A.click('#eVerlauf');
+await A.click('#zahnrad'); await A.click('#t-einst [data-zb="verlauf"]');
 await A.locator("[data-storno]").first().click();
 await warte(300);
 ist("Rückgängig wirkt", await A.evaluate(() => [Z.offen, hat(Z, "Laurent", "NEIPA")]), [9, 7]);
@@ -148,7 +148,7 @@ await huelen5(); await A.click("#bOk"); await warte(300);
 ist("gleicher Inhalt nach 4 s: zählt (gewollt zweimal)", await A.evaluate(() => hat(Z, "Laurent", "NEIPA")), abf + 10);
 // Neue Fassung: ohne laufenden Eintrag lädt die App selbst neu, mitten im Eintrag nur ein Knopf.
 html = html.replace(/const FASSUNG = "[^"]+";/, 'const FASSUNG = "TEST-NEU";');
-await A.click('#zahnrad'); await A.click('#eVerlauf');
+await A.click('#zahnrad'); await A.click('#t-einst [data-zb="verlauf"]');
 await Promise.all([A.waitForEvent("load"), A.evaluate(() => updatePruefen())]);
 ist("neue Fassung von selbst geladen", await txt(A, "#fuss"), s => s.includes("TEST-NEU"));
 await B.click('[data-tab="verkaufen"]');

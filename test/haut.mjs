@@ -14,7 +14,8 @@ await p.evaluate(() => { localStorage.clear(); localStorage.setItem("millebeier_
 await p.reload();
 ist("beim Öffnen die Startseite (nicht der letzte Reiter)", await p.evaluate(() => TAB), "haut");
 ist("Begrüßung mit Namen und Datum", await p.locator(".hallo").innerText(), t => t.includes("Moien Laurent") && /\d+\. [A-ZÄË][a-zäë]+/.test(t));
-ist("kein Reiter markiert", await p.locator("#nav button.an").count(), 0);
+ist("unten ist Haut markiert (ganz links)", await p.evaluate(() => [...document.querySelectorAll("#nav button.an")].map(b => b.dataset.tab).concat(document.querySelector("#nav button").dataset.tab)), ["haut", "haut"]);
+ist("kein 🏠 mehr oben", await p.locator("#hautBtn").count(), 0);
 ist("Leer: keine Flaschen, nichts geplant, keiner schuldet", await p.locator("#t-haut").innerText(),
   t => t.includes("keng Fläschen") && t.includes("Näischt fir dech an de nächste 7 Deeg") && t.includes("Keen ass dir eppes schëlleg"));
 
@@ -95,13 +96,13 @@ ist("Reiter unten am Bildschirm, alle Namen passen", await p.evaluate(() => { co
   await q.close();
 }
 ist("Reiter mit Symbol und Namen", await p.evaluate(() => [...document.querySelectorAll("#nav button")].map(x => x.querySelector("i") && x.textContent.replace(x.querySelector("i").textContent, "").replace(/\d+$/, ""))),
-  ["Stock", "Verkafen", "Bestellungen", "Ausstoend", "Iwwersiicht", "Client"]);
+  ["Haut", "Stock", "Verkafen", "Bestellungen", "Ausstoend", "Iwwersiicht"]);
 await p.click('[data-tab="bestand"]');
 ist("Reiter wechselt", await p.evaluate(() => [TAB, document.querySelector('#nav [data-tab="bestand"]').classList.contains("an")]), ["bestand", true]);
 ist("Inhalt endet nicht unter den Reitern", await p.evaluate(() => { scrollTo(0, document.body.scrollHeight); const f = document.querySelector("#fuss").getBoundingClientRect(); return f.bottom <= document.querySelector("#nav").getBoundingClientRect().top + 1; }), true);
 // 🏠 oben und kurzes Sync-Zeichen (Fassung b)
-await p.click("#hautBtn");
-ist("🏠 führt zur Startseite und ist markiert", await p.evaluate(() => [TAB, document.querySelector("#hautBtn").classList.contains("an")]), ["haut", true]);
+await p.click('#nav [data-tab="haut"]');
+ist("Haut unten führt zur Startseite und ist markiert", await p.evaluate(() => [TAB, document.querySelector('#nav [data-tab="haut"]').classList.contains("an")]), ["haut", true]);
 ist("Sync kurz: ⚠️ und Anzahl (offline im Test)", await p.locator("#sync").innerText(), s => /^⚠️ \d+$/.test(s));
 ist("Langtext erst nach Antippen", await p.locator("#syncInfo").isVisible(), false);
 await p.click("#sync");
@@ -109,10 +110,18 @@ ist("Antippen zeigt den ganzen Text", await p.locator("#syncInfo").innerText(), 
 await warte(900); await p.click("#sync");
 ist("nochmal Antippen klappt zu", await p.locator("#syncInfo").isVisible(), false);
 await p.click("#zahnrad");
-ist("Zahnrad markiert, 🏠 nicht", await p.evaluate(() => [TAB, document.querySelector("#zahnrad").classList.contains("an"), document.querySelector("#hautBtn").classList.contains("an")]), ["einst", true, false]);
-await p.click("#eVerlauf");
+ist("Zahnrad markiert, Haut nicht", await p.evaluate(() => [TAB, document.querySelector("#zahnrad").classList.contains("an"), document.querySelector('#nav [data-tab="haut"]').classList.contains("an")]), ["einst", true, false]);
+ist("Zahnrad: vier Kästen, Astellungen markiert", await p.evaluate(() => [...document.querySelectorAll("#t-einst [data-zb]")].map(b => b.dataset.zb + (b.classList.contains("an") ? "*" : ""))), ["einst*", "kunden", "verlauf", "buch"]);
+await p.click('#t-einst [data-zb="kunden"]');
+ist("Client im Zahnrad: Zahnrad markiert, Kästen oben, Client markiert", await p.evaluate(() => [TAB, document.querySelector("#zahnrad").classList.contains("an"), [...document.querySelectorAll("#t-kunden [data-zb].an")].map(b => b.dataset.zb)]), ["kunden", true, ["kunden"]]);
+await p.click('#t-kunden [data-zb="buch"]'); await warte(300);
+ist("Buchhaltung: Kästen oben, Buchhaltung markiert", await p.evaluate(() => [TAB, [...document.querySelectorAll("#t-buch [data-zb].an")].map(b => b.dataset.zb)]), ["buch", ["buch"]]);
+await p.click('[data-bus="stock"]'); await warte(300);
+ist("Kästen bleiben beim Umschalten in der Buchhaltung", await p.locator("#t-buch [data-zb]").count(), 4);
+await p.click('#t-buch [data-zb="einst"]'); await warte(300);
+await p.click('#t-einst [data-zb="verlauf"]');
 ist("im Verlauf bleibt das Zahnrad markiert", await p.evaluate(() => [TAB, document.querySelector("#zahnrad").classList.contains("an")]), ["verlauf", true]);
-await p.click("#hautBtn"); await warte(900);
+await p.click('#nav [data-tab="haut"]'); await warte(900);
 ist("zurück auf der Startseite: Zahnrad nicht mehr markiert", await p.evaluate(() => document.querySelector("#zahnrad").classList.contains("an")), false);
 ist("Kopf in einer Zeile (390 px)", await p.evaluate(() => document.querySelector(".kopf").getBoundingClientRect().height < 50), true);
 
