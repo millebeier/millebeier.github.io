@@ -435,7 +435,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px}
 <script>
 /* Adresse des Cloudflare-Workers. Leer = Probe-Modus (alles nur auf diesem Handy). */
 const WORKER_URL = "https://millebeier.rjtp6r9s9h.workers.dev/";
-const FASSUNG = "22.11.2026 k";
+const FASSUNG = "22.11.2026 l";
 
 /* === Logik === (kein DOM; test/logik.mjs schneidet diesen Block aus) */
 const LAGER = "Lager";
@@ -3767,7 +3767,7 @@ function renderBuch() {
   ${BUCH_MELD ? `<div class="meldung ok">${esc(BUCH_MELD)}</div>` : ""}
   <div class="card" id="buInhalt">${B.sicht === "resume" ? `<h2>Résumé · ${esc(datumKurz(B.von))} – ${esc(datumKurz(B.bis))}</h2><div class="m">${esc(filterText(B))}</div>
       <div class="kz"><div><span class="m">Verkaaft</span><b>${euro(R.verkauft)}</b></div><div><span class="m">Agaangen</span><b class="gr">${euro(R.agaangen)}</b></div>
-        <div><span class="m">Nach op (${esc(datumKurz(B.bis))})</span><b class="gelb">${euro(R.op)}</b></div><div><span class="m">Rechnungen</span><b>${R.rechnungen}</b></div></div>
+        <div><span class="m">Nach op (${esc(datumKurz(B.bis))})</span><b class="gelb">${euro(R.op)}</b>${B.wie ? `<small class="m" id="buOpAll">gëllt fir all Zuelaarten</small>` : ""}</div><div><span class="m">Rechnungen</span><b>${R.rechnungen}</b></div></div>
       <h3>No Zuelaart</h3><table class="buchtab">${kv(R.jeWie, k => ZAHLARTEN[k] || "ouni Aart")}</table>
       <h3>No Béier</h3><table class="buchtab"><tr><th></th><th class="r">Fl.</th><th class="r">Fässer</th><th class="r">€</th><th class="r">Gratis</th></tr>
         ${Object.entries(R.jeBier).map(([k, b]) => `<tr><td>${esc(bierText(k))}</td><td class="r">${b.fl}</td><td class="r">${b.faesser}</td><td class="r">${geldT(b.euro)}</td><td class="r">${b.gratis}</td></tr>`).join("") || `<tr><td class="leer">–</td></tr>`}</table>
@@ -3800,7 +3800,7 @@ function buchDateiZeigen(datei) { const fid = "buch-" + datei.name; DATEN.set(fi
 async function buchPdf(B, D) {
   const meld = t => { const m = $("#buMeld"); if (m) m.innerHTML = t ? `<div class="meldung fehler">${esc(t)}</div>` : ""; };
   let jsPDF; try { jsPDF = await jspdfLaden(); } catch { return meld("D'PDF-Bibliothéik konnt net geluede ginn — Internet?"); }
-  const T = B.sicht === "resume" ? buchResumeTabelle(D) : buchTabelle(D, B.sicht);
+  const T = B.sicht === "resume" ? buchResumeTabelle(D, B) : buchTabelle(D, B.sicht);
   const quer = T.kopf.length >= 7;
   const doc = new jsPDF({ unit: "mm", format: "a4", orientation: quer ? "landscape" : "portrait" });
   const W = doc.internal.pageSize.getWidth(), H = doc.internal.pageSize.getHeight(), L = 14, Rr = W - 14;
@@ -3838,8 +3838,8 @@ async function buchPdf(B, D) {
   buchDateiZeigen(new File([doc.output("arraybuffer")], buchName(B, T.titel) + ".pdf", { type: "application/pdf" }));
 }
 // Résumé als Tabelle (für PDF/Excel)
-function buchResumeTabelle(D) {
-  const R = D.resume, z = [["Verkaaft", geldT(R.verkauft)], ["Agaangen", geldT(R.agaangen)], ["Nach op (Stand Enn)", geldT(R.op)], ["Rechnungen", String(R.rechnungen)], ["", ""]];
+function buchResumeTabelle(D, B = {}) {
+  const R = D.resume, z = [["Verkaaft", geldT(R.verkauft)], ["Agaangen", geldT(R.agaangen)], [B.wie ? "Nach op (Stand Enn, gëllt fir all Zuelaarten)" : "Nach op (Stand Enn)", geldT(R.op)], ["Rechnungen", String(R.rechnungen)], ["", ""]];
   for (const [k, w] of Object.entries(R.jeWie)) z.push(["Zuelaart: " + (ZAHLARTEN[k] || "ouni Aart"), geldT(w)]);
   z.push(["", ""]);
   for (const [k, b] of Object.entries(R.jeBier)) z.push([`Béier: ${bierText(k)} (${b.fl} Fl., ${b.faesser} Fässer, ${b.gratis} gratis)`, geldT(b.euro)]);
@@ -3850,7 +3850,7 @@ function buchResumeTabelle(D) {
 async function buchExcel(B, D) {
   const meld = t => { const m = $("#buMeld"); if (m) m.innerHTML = t ? `<div class="meldung fehler">${esc(t)}</div>` : ""; };
   let X; try { X = await sheetjsLaden(); } catch { return meld("Excel-Bibliothéik net geluede (Internet?)"); }
-  const T = B.sicht === "resume" ? buchResumeTabelle(D) : buchTabelle(D, B.sicht);
+  const T = B.sicht === "resume" ? buchResumeTabelle(D, B) : buchTabelle(D, B.sicht);
   const zahl = (c, i) => T.rechts.includes(i) && /^\(?-?[\d.]+,\d{2}\)?$|^-?\d+$/.test(String(c)) && !/^\(/.test(String(c)) ? +String(c).replace(",", ".") : c;
   const aoa = [[`${T.titel} · ${datumLang(B.von)} – ${datumLang(B.bis)} · ${filterText(B)}`], [], T.kopf, ...T.zeilen.map(z => z.map(zahl)), ...(T.summe ? [T.summe.map(zahl)] : [])];
   const wb = X.utils.book_new(); X.utils.book_append_sheet(wb, X.utils.aoa_to_sheet(aoa), T.titel.slice(0, 31));

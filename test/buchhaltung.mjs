@@ -72,7 +72,12 @@ await p.click("#buPdf"); await warte(2000);
 const pdf1 = await p.evaluate(async () => { const f = [...DATEN.entries()].filter(([k]) => k.startsWith("buch-")).pop()[1]; return [f.name, new TextDecoder("latin1").decode(await f.arrayBuffer())]; });
 ist("PDF der Liste: Name, Titel, Filter, Summe", pdf1, ([n, t]) => /^Millebeier_Zuelungen_/.test(n) && t.includes("Zuelungen") && t.includes("SumUp") && t.includes("54,00") && t.includes(`Z-${J}-001`) && !t.includes(`Z-${J}-003`));
 await p.click("#ansichtZu"); await warte(200);
+await p.click('[data-bus="resume"]'); await warte(200);
+ist("Résumé mit SumUp: Op mit Hinweis „all Zuelaarten“", await p.evaluate(() => { const e = document.querySelector("#buOpAll"); return e && e.textContent; }), "gëllt fir all Zuelaarten");
+ist("Résumé-Tabelle (PDF/Excel) mit Hinweis", await p.evaluate(() => JSON.stringify(buchResumeTabelle(buchDaten(Z, BUCH), BUCH))), t => t.includes("gëllt fir all Zuelaarten"));
 await p.selectOption("#buWie", ""); await warte(200);
+ist("Résumé ohne Zuelaart: kein Hinweis", await p.evaluate(() => !document.querySelector("#buOpAll") && !JSON.stringify(buchResumeTabelle(buchDaten(Z, BUCH), BUCH)).includes("all Zuelaarten")), true);
+await p.click('[data-bus="zuelungen"]'); await warte(200);
 // Verkéf mit Bier-Filter: nur der Anteil
 await p.click('[data-bus="verkeef"]'); await warte(200);
 await p.selectOption("#buBier", "White IPA"); await warte(300);

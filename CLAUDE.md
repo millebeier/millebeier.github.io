@@ -309,7 +309,7 @@ beim Verkaufen/Livraison und „Fläsche beweegen“ an, solange jemand welche h
   (`TAB = "buch"`, `#t-buch`, `renderBuch`, Zustand `BUCH`), gedacht auch für den Computer (Browser, drucken). Einmal im Jahr wird abgelegt;
   Ziel „alles wiederfinden“. Oben **Zeitraum** (Dëst Joer / Lescht Joer / Dëse Mount / Fräi, vum–bis) und **Filter** Béier, Zuelaart,
   Verkeefer, Client, Status; acht Ansichten (`BUCH_SICHTEN`): **Résumé** (verkauft, agaangen, op zum Stichtag, Rechnungen; je Zahlart, je Bier
-  mit Fl./Fässer/€/gratis, je Verkäufer) · **Zuelungen** = Kassenbuch mit **fester Nummer Z-JJJJ-NNN** (`zahlNummern`, nach Eintragszeit,
+  mit Fl./Fässer/€/gratis, je Verkäufer; „Nach op“ kennt keine Zahlart — mit Zuelaart-Filter steht darunter „gëllt fir all Zuelaarten“, auch in PDF/Excel, vom Nutzer, Fassung 22.11. l) · **Zuelungen** = Kassenbuch mit **fester Nummer Z-JJJJ-NNN** (`zahlNummern`, nach Eintragszeit,
   auch gelöschte behalten ihre Nummer und stehen durchgestrichen als STORNIERT, nicht im Total) · **Verkéf** (mit Bier-Filter nur der Anteil
   des Biers) · **Rechnungen** lückenlos inkl. stornierter (storniert = Verkauf gelöscht **oder** Rechnung selbst im Verlauf
   gelöscht — Fassung 22.11. b, vom Nutzer gemeldet: 001–003 nur als Rechnung gelöscht, standen noch als gültig da) · **Ausstoend zum Stichtag „bis“** (Zahlungen bis dahin, auch aus Vorjahren) ·
