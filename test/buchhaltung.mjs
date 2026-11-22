@@ -162,6 +162,19 @@ await p.locator("#t-offen .kunde").nth(kM2).locator("[data-alles]").click(); awa
 await p.click('#zahlWahl [data-wie="bar"]'); await warte(500);
 ist("Alles bezuelt mit Bar: bezahlt, Ankündigung weg (keine 💡)", await p.evaluate(() => [Z.verkaeufe.find(v => v.kaeufer === "Muller").offen, Z.wartend.some(W => W.v && W.v.kaeufer === "Muller"),
   autoAufgaben(Z, tagPlus(heuteLux(), 10)).some(a => a.typ === "iwwerweisung" && a.text.includes("Muller"))]), [0, false, false]);
+// Käufer mit zwei offenen Verkäufen (Fassung i): je Verkauf ein roter Knopf mit Betrag, unten „Béid zesummen“; bei einem Verkauf nur „36 € bezuelt“
+await p.evaluate(() => eintragen([{ art: "verkauf", verkaeufer: "Laurent", kaeufer: "Zwee", posten: [{ sorte: "NEIPA", n: 24 }], betrag: 72, aus: "Lager" },
+  { art: "verkauf", verkaeufer: "Laurent", kaeufer: "Zwee", posten: [{ sorte: "NEIPA", n: 6 }], betrag: 18, aus: "Lager" },
+  { art: "verkauf", verkaeufer: "Laurent", kaeufer: "Eent", posten: [{ sorte: "NEIPA", n: 12 }], betrag: 36, aus: "Lager" }]));
+await warte(600); await p.click('[data-tab="offen"]'); await warte(300);
+const karte = name => p.locator("#t-offen .kunde", { hasText: name });
+ist("Zwee: zwei rote Einzelknöpfe + Béid zesummen", [await karte("Zwee").locator(".knopf.akt.vbez").allInnerTexts(), await karte("Zwee").locator("[data-alles]").innerText()],
+  [["72 € bezuelt ✓", "18 € bezuelt ✓"], "Béid zesummen: 90 € bezuelt ✓"]);
+ist("Eent: kein Einzelknopf, unten „36 € bezuelt ✓“", [await karte("Eent").locator(".vbez").count(), await karte("Eent").locator("[data-alles]").innerText()], [0, "36 € bezuelt ✓"]);
+await karte("Zwee").locator(".vbez", { hasText: "18 €" }).click(); await warte(200);
+await p.click('#zahlWahl [data-wie="bar"]'); await warte(500);
+ist("Einzelknopf bezahlt nur diesen Verkauf", await p.evaluate(() => Z.verkaeufe.filter(v => v.kaeufer === "Zwee").map(v => v.offen).sort((a, b) => a - b)), [0, 72]);
+ist("Danach nur noch ein Verkauf: Knopf „72 € bezuelt ✓“", await karte("Zwee").locator("[data-alles]").innerText(), "72 € bezuelt ✓");
 await p.click("#zahnrad"); await warte(200); await p.click("#eVerlauf"); await warte(300);
 await p.fill("#vlSuche", "hoffmann"); await warte(200);
 ist("Verlauf-Suche: nur Hoffmann", await p.locator("#vlListe").innerText(), t => t.includes("fonnt") && t.includes("Hoffmann") && !t.includes("Kalbusch"));

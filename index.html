@@ -274,7 +274,7 @@ textarea.adr{min-height:64px}
 .prk{background:none;border:1px dashed #777;border-radius:8px;padding:1px 7px;color:var(--text);font:inherit;font-weight:700;cursor:pointer}
 .prk.an{border:1px solid var(--gelb);color:var(--gelb)}
 .prfeld{width:72px!important;display:inline-block!important;padding:3px 7px!important;border:1px solid var(--gelb)!important;font-size:15px}
-.knopf.klein{padding:5px 10px;font-size:13px;margin-top:6px} .knopf.klein.kaufrech{margin:0 0 0 4px;padding:2px 8px}
+.knopf.klein{padding:5px 10px;font-size:13px;margin-top:6px} .knopf.vbez{margin-top:8px} .vbtrenn{border-top:1.5px solid #555;margin-top:2px} .knopf.klein.kaufrech{margin:0 0 0 4px;padding:2px 8px}
 .chip.rgef{border:1px dashed #8a7a3a;background:none;padding:2px 8px;color:#f4e2a0} /* Rechnung gewünscht, Bestellung noch geplant (vom Nutzer, 20.11.) */
 button.chip.lvor{border:0;font-family:inherit;cursor:pointer;color:#f4e2a0} button.chip.lvor.nb{border:1px dashed #8a7a3a;background:none;padding:2px 8px}
 /* Dreieck links fest, Name darf umbrechen (lange Namen wie „Brown Porter 01/2026 Keg 30l“ sprengten sonst die Tabelle) */
@@ -435,7 +435,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px}
 <script>
 /* Adresse des Cloudflare-Workers. Leer = Probe-Modus (alles nur auf diesem Handy). */
 const WORKER_URL = "https://millebeier.rjtp6r9s9h.workers.dev/";
-const FASSUNG = "22.11.2026 h";
+const FASSUNG = "22.11.2026 i";
 
 /* === Logik === (kein DOM; test/logik.mjs schneidet diesen Block aus) */
 const LAGER = "Lager";
@@ -3053,15 +3053,22 @@ function renderOffen() {
   </div>
   ${liste.length ? liste.map((K, i) => `<div class="card kunde">
     <div class="kopfz"><h2 style="margin:0">${esc(K.name)}</h2><span class="betrag">${euro(K.sichtOffen)}</span></div>
-    ${K.sicht.map(v => `<div class="vk"><span>${v.livraison ? `🚚 Bestellung ${esc(datumKurz(v.livraison.datum))}` : datumText(v.zeit)} · ${esc(postenText(v.posten))}${v.betrag > v.ware ? ` + ${euro(v.betrag - v.ware)} fräi Positiounen` : ""}<br><small class="muted">${esc(beim(v.verkaeufer))}${v.bezahlt ? ` · ${euro(v.bezahlt)} scho bezuelt` : ""}${v.rech ? ` · Rechnung ${tageVon(v.rech.datum, heuteLux()) ? `zënter ${tageVon(v.rech.datum, heuteLux())} Deeg` : "vun haut"}` : ""}</small>${rechChip(v) ? `<div style="margin-top:4px">${rechChip(v)}</div>` : ""}${rechNachKnopf(v) ? `<div>${rechNachKnopf(v)}</div>` : ""}${(v.wart || []).map(wartHtml).join("")}</span><span>${euro(v.offen)}</span></div>`).join("")}
+    ${K.sicht.map(v => `<div class="vk"><span>${v.livraison ? `🚚 Bestellung ${esc(datumKurz(v.livraison.datum))}` : datumText(v.zeit)} · ${esc(postenText(v.posten))}${v.betrag > v.ware ? ` + ${euro(v.betrag - v.ware)} fräi Positiounen` : ""}<br><small class="muted">${esc(beim(v.verkaeufer))}${v.bezahlt ? ` · ${euro(v.bezahlt)} scho bezuelt` : ""}${v.rech ? ` · Rechnung ${tageVon(v.rech.datum, heuteLux()) ? `zënter ${tageVon(v.rech.datum, heuteLux())} Deeg` : "vun haut"}` : ""}</small>${rechChip(v) ? `<div style="margin-top:4px">${rechChip(v)}</div>` : ""}${rechNachKnopf(v) ? `<div>${rechNachKnopf(v)}</div>` : ""}${(v.wart || []).map(wartHtml).join("")}${K.sicht.length > 1 ? `<div><button class="knopf akt klein vbez" data-vbez="${esc(v.id)}">${euro(v.offen)} bezuelt ✓</button></div>` : ""}</span><span>${euro(v.offen)}</span></div>`).join("")}
+    ${K.sicht.length > 1 ? `<div class="vbtrenn"></div>` : ""}
     <div class="knopfe">
-      <button class="knopf akt" data-alles="${i}">Alles bezuelt ✓</button>
+      <button class="knopf akt" data-alles="${i}">${K.sicht.length === 2 ? "Béid zesummen: " : K.sicht.length > 2 ? `All ${K.sicht.length} zesummen: ` : ""}${euro(K.sichtOffen)} bezuelt ✓</button>
       <button class="knopf" data-teil="${i}">Deelbetrag…</button>
       <button class="knopf" data-erinnern="${i}">Erënneren 💬</button>
-    </div></div>`).join("") : `<div class="card leer">Alles bezuelt. 🎉</div>`}`;
+    </div>${K.sicht.length > 1 ? `<div class="hinweis" style="margin-top:6px">Deelbetrag geet op deen eelsten Verkaf zuerst.</div>` : ""}</div>`).join("") : `<div class="card leer">Alles bezuelt. 🎉</div>`}`;
   box.querySelectorAll("[data-meine]").forEach(b => b.onclick = () => { NUR_MEINE = b.dataset.meine === "1"; renderOffen(); });
   rechKnoepfe(box);
   wartBinden(box);
+  // Einzelner Verkauf eines Käufers mit mehreren offenen (vom Nutzer, 22.11., Fassung i: Betrag steht auf dem Knopf, rot)
+  box.querySelectorAll("[data-vbez]").forEach(b => b.onclick = async () => {
+    const v = Z.vkNachId.get(b.dataset.vbez); if (!v || !(v.offen > 0)) return;
+    const wie = await zahlartWaehlen(`${v.kaeufer}: ${euro(v.offen)} bezuelt — wéi?`);
+    if (wie) eintragen([...wartWeg([v]), { art: "zahlung", ref: v.id, betrag: v.offen, wie, ...zd(), ...zw(wie) }]);
+  });
   box.querySelectorAll("[data-alles]").forEach(b => b.onclick = async () => {
     const K = liste[+b.dataset.alles];
     const wie = await zahlartWaehlen(`${K.name}: ${euro(K.sichtOffen)} bezuelt — wéi?`);
