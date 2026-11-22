@@ -326,7 +326,7 @@ beim Verkaufen/Livraison und „Fläsche beweegen“ an, solange jemand welche h
 - **Überweisung erst angekündigt** (vom Nutzer, 22.11.2026, Fassung d: „sonst würde verpasst, dass einer nicht zahlt“): Zahlart „Iwwerweisung“
   (Verkafen, Ausstoend, Bestellung/Vorauszahlung, Deelbetrag) speichert `zahlung` mit `wart: true` (`zw()`) — zählt **nicht** als bezahlt und nicht in
   der Kasse (`rechne`: `Z.wartend`, `v.wart`, `L.vorWart`). **Kein eigener Kasten** (vom Nutzer, Fassung 22.11. f): direkt am
-  Verkauf unter „Nach net bezuelt“ bzw. an der geplanten Bestellung (`wartHtml`/`wartBinden`): Hinweis „🏦 … Iwwerweisung ugekënnegt“, Datum (heute
+  Verkauf unter „Nach net bezuelt“ bzw. an der geplanten Bestellung (`wartHtml`/`wartBinden`): Hinweis gestrichelt wie „Nach net bezuelt“: „🏦 Iwwerweisung vum <Datum> nach ausstoend · <Betrag>“ (vom Nutzer, Fassung g), „ukomm den“ + Datum (heute
   vorbelegt = Tag laut Kontoauszug), „✓ Ukomm“ → Eintrag `zbest` (ref = Zahlung, `datum` nur wenn nicht heute) → erst dann bezahlt; **„Aanescht
   bezuelt“** (statt ✕, vom Nutzer: bezahlt werden muss trotzdem) → Auswahl WERO/SumUp/Bar (`zahlartWaehlen(…, ohne)`) → storno der Ankündigung + neue
   Zahlung mit gleichem Betrag in einem `eintragen`. 💡 nach 7 Tagen „Iwwerweisung vu X

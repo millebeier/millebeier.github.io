@@ -142,7 +142,7 @@ await p.fill("#vName", "Hoffmann"); await p.fill("#vN0", "1"); await p.click('[d
 if (await p.locator("#frageWahl:not(.versteckt)").count()) { await p.click('#frageWahl [data-wahl^="q:"]'); await warte(500); }
 ist("Verkafen Überweisung: Meldung", await p.locator("#vMeldung").innerText(), t => t.includes("Iwwerweisung") && t.includes("bis se ukomm ass"));
 await p.click('[data-tab="offen"]'); await warte(300);
-ist("Ausstoend: Hoffmann mit Hinweis und Knöpfen am Verkauf", await p.locator("#t-offen").innerText(), t => t.includes("Hoffmann") && t.includes("Iwwerweisung ugekënnegt") && t.includes("Aanescht bezuelt") && !t.includes("Iwwerweisunge kucken"));
+ist("Ausstoend: Hoffmann mit Hinweis und Knöpfen am Verkauf", await p.locator("#t-offen").innerText(), t => t.includes("Hoffmann") && t.includes("nach ausstoend") && t.includes("Aanescht bezuelt") && !t.includes("Iwwerweisunge kucken"));
 const hW = await p.evaluate(() => Z.wartend.find(W => W.v && W.v.kaeufer === "Hoffmann").e.id);
 await p.click(`[data-bkand="${hW}"]`); await warte(300);
 ist("Aanescht bezuelt: Auswahl ohne Iwwerweisung", await p.evaluate(() => [...document.querySelectorAll("#zahlWahl [data-wie]")].map(b => b.dataset.wie)), ["wero", "sumup", "bar"]);

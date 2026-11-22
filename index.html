@@ -435,7 +435,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px}
 <script>
 /* Adresse des Cloudflare-Workers. Leer = Probe-Modus (alles nur auf diesem Handy). */
 const WORKER_URL = "https://millebeier.rjtp6r9s9h.workers.dev/";
-const FASSUNG = "22.11.2026 f";
+const FASSUNG = "22.11.2026 g";
 
 /* === Logik === (kein DOM; test/logik.mjs schneidet diesen Block aus) */
 const LAGER = "Lager";
@@ -3010,8 +3010,8 @@ async function rechnungZeigen(vid) {
    Datum (Tag laut Kontoauszug) + „✓ Ukomm“, oder „Aanescht bezuelt“ (doch WERO/SumUp/Bar → ersetzt die Ankündigung). */
 function wartHtml(W) {
   const d = tageVon(tagVon(W.e.zeit), heuteLux());
-  return `<div class="wartb"><div class="chip warn">🏦 ${euro(W.e.betrag)} Iwwerweisung ugekënnegt ${esc(datumText(W.e.zeit))}${d >= 7 ? ` · ${d} Deeg` : ""}</div>
-    <div class="bankk"><input type="date" data-bkd="${esc(W.e.id)}" value="${heuteLux()}" aria-label="Ukomm den"><button class="knopf akt" data-bk="${esc(W.e.id)}">✓ Ukomm</button>
+  return `<div class="wartb"><span class="chip rgef">🏦 Iwwerweisung vum ${esc(datumText(W.e.zeit))} nach ausstoend · ${euro(W.e.betrag)}${d >= 7 ? ` · zënter ${d} Deeg` : ""}</span>
+    <div class="bankk"><small class="muted">ukomm den</small><input type="date" data-bkd="${esc(W.e.id)}" value="${heuteLux()}" aria-label="Ukomm den"><button class="knopf akt" data-bk="${esc(W.e.id)}">✓ Ukomm</button>
     <button class="knopf" data-bkand="${esc(W.e.id)}">Aanescht bezuelt</button></div></div>`;
 }
 function wartBinden(root) {
