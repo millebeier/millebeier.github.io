@@ -305,6 +305,21 @@ beim Verkaufen/Livraison und „Fläsche beweegen“ an, solange jemand welche h
   geändert = gelb + „amplaz 3 €“, Betrag rechnet mit (`stueckPreis`). Gilt nur für diesen Verkauf/diese Bestellung, Listenpreis bleibt. Gespeichert
   als `posten[].preis` (nur wenn abweichend, `postenMitPreis`); Bestellung ändern holt ihn zurück, „Geliwwert“ übernimmt ihn. `anteil` gewichtet mit
   dem eigenen Preis; `rechnungZeilen` nimmt die Stückpreise **genau**, wenn der Betrag dazu passt (sonst anteilig wie bisher). `postenText` zeigt „à 2,50 €“.
+- **Buchhaltung** (vom Nutzer, 20.–22.11.2026, Entwurf als Bild gezeigt, „passt“; Fassung 22.11. a): Zahnrad ⚙️ → „📒 Buchhaltung“
+  (`TAB = "buch"`, `#t-buch`, `renderBuch`, Zustand `BUCH`), gedacht auch für den Computer (Browser, drucken). Einmal im Jahr wird abgelegt;
+  Ziel „alles wiederfinden“. Oben **Zeitraum** (Dëst Joer / Lescht Joer / Dëse Mount / Fräi, vum–bis) und **Filter** Béier, Zuelaart,
+  Verkeefer, Client, Status; acht Ansichten (`BUCH_SICHTEN`): **Résumé** (verkauft, agaangen, op zum Stichtag, Rechnungen; je Zahlart, je Bier
+  mit Fl./Fässer/€/gratis, je Verkäufer) · **Zuelungen** = Kassenbuch mit **fester Nummer Z-JJJJ-NNN** (`zahlNummern`, nach Eintragszeit,
+  auch gelöschte behalten ihre Nummer und stehen durchgestrichen als STORNIERT, nicht im Total) · **Verkéf** (mit Bier-Filter nur der Anteil
+  des Biers) · **Rechnungen** lückenlos inkl. stornierter · **Ausstoend zum Stichtag „bis“** (Zahlungen bis dahin, auch aus Vorjahren) ·
+  **Stock** je Artikel (Anfang vor „vum“, abgefüllt, verkauft, getrunken, verschenkt, futti/soss, Ende) · **Ännerungen** (Löschungen,
+  geänderte Bestellungen/Abfüllungen/Rechnungen mit wer/wann) · **Ausgaben** (Platzhalter, später). Logik `buchDaten(Z, F)` im Logik-Block,
+  Tabellen `buchTabelle` (gleich für Bildschirm, PDF, Excel). **Alte Excel-Verkäufe bleiben draußen** (ohne Geld). Unter jeder Liste
+  „🖨️ PDF vun dëser Lëscht“ (`buchPdf`, jsPDF, ab 7 Spalten quer, Kopf mit Zeitraum/Filter/erstellt von, Seitenzahlen) und „📊 Excel vun dëser
+  Lëscht“ (`buchExcel`); „📄 All Rechnungen als ee PDF“ zwischen zwei Daten (`rechnungenSammelPdf`, `rechnungPdf` hängt mit `vorher` Seiten an,
+  stornierte mit rotem „ANNULÉE“); „📊 Komplett Excel“ wie bisher. Ergebnis jeweils in `#ansicht` mit „⬆️ Deelen“ (`buchDateiZeigen`).
+  **Zahltag änderbar** (Abgleich mit dem Kontoauszug): Zahlungsfenster hat „Bezuelt den“ (heute vorbelegt, `#zahlDatum`, `ZAHL_DATUM`, `zd()`),
+  `zahlung.datum` nur wenn nicht heute; Buchhaltung nimmt `datum`, sonst den Eintragstag. Rechnungsnummer: weiter ab 001 (Frage nach 005 offen).
 - **Aktionsknöpfe rot, nicht grün** (vom Nutzer, Fassung 20.11. a): „Geliwwert ✓“, „Bezuelt ✓“, „Alles bezuelt ✓“ und Späicheren
   bei „+ Aufgab“ sind `.knopf.akt` (Millebéier-Rot, weiße Schrift) — grün sah aus, als wäre es schon erledigt. Grün bleibt nur
   für Erledigtes (✓ bezuelt, gewählte Zahlungsart).
@@ -340,8 +355,8 @@ einstellungen/`alt26-…`; Löschungen (storno) bleiben nur, wenn ihr Ziel bleib
 geprüft (Gegenprobe gemacht). Die Datenbank ist von der Cloud-Umgebung aus nicht erreichbar — ausführen kann nur der
 Nutzer. Rückweg: D1 Time Travel (Restore auf einen Zeitpunkt davor).
 
-## Testen — vor jedem Push alle dreizehn, jeder mit eigenem Rückgabewert
-**Push nur, wenn alle dreizehn 0 zurückgeben** — die Schleife gibt den Push erst danach frei (`ok`-Merker). Am 18.11.2026 (Fassung g) ging
+## Testen — vor jedem Push alle vierzehn, jeder mit eigenem Rückgabewert
+**Push nur, wenn alle vierzehn 0 zurückgeben** — die Schleife gibt den Push erst danach frei (`ok`-Merker). Am 18.11.2026 (Fassung g) ging
 ein Commit trotz roter Tests raus: ein `//`-Kommentar mitten in einer einzeiligen Anweisung schnitt den Rest der Zeile ab, das ganze
 Script lief nicht, und damit auch kein automatisches Update. In Code auf einer Zeile nur `/* … */`-Kommentare.
 - `node test/logik.mjs` — schneidet `Logik`…`Oberfläche` aus der HTML (Gegenprobe gemacht).
@@ -370,20 +385,14 @@ Script lief nicht, und damit auch kein automatisches Update. In Code auf einer Z
 - `JSPDF_JS=…/jspdf/dist/jspdf.umd.min.js node test/rechnungen.mjs` — Rechnungen: Haken aus, Fenster, Kopieren, freie Position, PDF-Inhalt
   (Rohtext der PDF-Datei), Deelen = verschickt / Abbruch nicht, Ändern behält Nummer, zweites Handy JJJJ-002, offline keine Nummer, Ausstoend,
   Startseite, Hinweis an geplanter Bestellung, eigener Stückpreis (Verkafen/Bestellung/Ändern), „Rechnung nodréiglech“, Client-Akeef, Lieferdatum, 🧾 in der Iwwersiicht (Gegenprobe gemacht). jsPDF per `npm install jspdf@2.5.1` in den Scratchpad; ohne wird übersprungen.
+- `JSPDF_JS=… XLSX_JS=… node test/buchhaltung.mjs` — Buchhaltung: Résumé, Kassenbuch (feste Nummern, storniert sichtbar, nicht im Total),
+  Filter SumUp, Druck-PDF der Liste, Verkéf mit Bier-Anteil, Rechnungen inkl. storniert, Ausstoend zum Stichtag, Stock Anfang/Ende, Ännerungen,
+  Lescht Joer, Sammel-PDF (ANNULÉE), Excel der Liste, Zahltag im Zahlungsfenster (Gegenprobe gemacht).
 - `node test/biere.mjs` — Bier anlegen/ändern/archivieren/zurückholen/löschen (zwei Rückfragen, Gegenprobe gemacht),
   rotes ✕ im Verlauf, rotes Dreieck; Kasten „Fläschen“ (vier Absichten, Pfeil, ⇄, änneren, Vorschau, Gründe) und Abfüllen ändern beim Bier
   (48 → 60 → 50, Verlauf; Gegenprobe gemacht).
 
 ## Ideen, nicht gebaut
-**Vorgemerkt für So 22.11.2026 (vom Nutzer, 20.11.): Buchhaltung** — eigener Teil, „alles klar und zurückverfolgbar“: pro Bier, pro
-Zahlart, Rechnungen separat auflistbar und ausdruckbar. Erst Vorschlag (Ideen dem Nutzer am 20.11. genannt: Zeitraum wählbar, Kassenbuch aller
-Zahlungen mit laufender Nummer, Summen je Zahlart + Abgleich mit Konto/SumUp, pro Bier inkl. Eigenverbrauch/Geschenke, lückenloses
-Rechnungsjournal auch mit stornierten Nummern, offene Posten zum Stichtag, Druck-PDF + Excel, Sammel-PDF der Rechnungen, Monatsabschluss,
-Ausgaben mit Belegfoto), dann auf Okay warten.
-Antwort des Nutzers (20.11.): **jährlich** einmal ablegen, Ziel „alles wiederfinden“; xlsx macht das schon gut. Gewünscht: filtern pro Bier
-und pro Zahlart, Papier ausdrucken mit allen Transaktionen bzw. nur SumUp / nur WERO …, alle Rechnungs-PDFs. Zweite App oder eigener Teil —
-Claudes Empfehlung: eigener Teil „📒 Buchhaltung“ im Zahnrad (gleiche Daten, am Computer im Browser druckbar); Jahr + Filter (Bier, Zahlart, Art),
-Liste mit laufender Nummer und Summe, „🖨️ PDF fir ze drécken“ der gefilterten Liste, Sammel-PDF „All Rechnungen <Jahr>“ inkl. stornierter Nummern.
 **Durchsicht aus Brauer-Sicht (17.11.2026), Antwort des Nutzers:** **Startseite und Reiter unten gebaut** (Fassung 17.11. a, siehe
 Aufbau). Später vielleicht: +6/+24-Knöpfe, Packs/Sonderpreise. **Abgelehnt** (vom Nutzer): Stand-Verkauf ohne
 Namen (Stand wird am Ende gesammelt unter Firma eingetragen), „Bargeld bei wem“, Fässer als Leihgut (sind keins), Rückgängig-Leiste,

@@ -323,6 +323,7 @@ textarea{width:100%;font:16px/1.4 inherit;padding:10px;border-radius:10px;border
 #frageKnoepfe button.gut{border-color:var(--gruen)}
 #zahlWahl{position:fixed;inset:0;z-index:25;background:rgba(0,0,0,.75);display:flex;align-items:flex-end;justify-content:center;padding:16px}
 #zahlWahl .card{width:100%;max-width:520px;margin:0}
+.zdatum{margin:0 0 10px} .zdatum input{width:100%;box-sizing:border-box}
 .zbetrag{display:flex;gap:8px;align-items:center} .zbetrag input{flex:1;font-size:20px;font-weight:700;margin:0} .zbetrag b{font-size:18px}
 #zahlWahl .seg button{padding:16px 4px;font-size:17px}
 #ansicht{position:fixed;inset:0;z-index:20;background:#000;overflow:auto;-webkit-overflow-scrolling:touch}
@@ -350,6 +351,19 @@ textarea{width:100%;font:16px/1.4 inherit;padding:10px;border-radius:10px;border
 .rsumme{display:flex;justify-content:space-between;font-weight:800;font-size:17px;border-top:1.5px solid var(--text);margin-top:10px;padding-top:8px}
 .rklein{display:flex;justify-content:space-between;font-size:13px;color:#ccc;margin-top:4px}
 .haupt.grau{background:var(--card2);color:var(--text)}
+/* Buchhaltung (Fassung 22.11. a) */
+#t-buch .zeile>div{flex:1;min-width:0} #t-buch select,#t-buch input[type=date]{width:100%;box-sizing:border-box}
+.buchp button{font-size:13px;padding:8px 4px}
+.buchtabs{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-top:12px}
+.buchtabs button{padding:8px 2px;border-radius:9px;border:1px solid var(--line);background:var(--card2);color:var(--text);font-size:12.5px;font-weight:700;cursor:pointer}
+.buchtabs button.an{background:var(--akzent);border-color:var(--akzent);color:#fff}
+#t-buch .m{color:var(--muted);font-size:12.5px} #t-buch h3{font-size:15px;margin:14px 0 4px}
+#t-buch .kz{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}
+#t-buch .kz div{background:#0b0b0b;border:1px solid var(--line);border-radius:10px;padding:8px} #t-buch .kz b{display:block;font-size:18px}
+#t-buch .gr{color:var(--gruen)} #t-buch .gelb{color:var(--gelb)}
+table.buchtab{width:100%;border-collapse:collapse;font-size:13px} .buchtab td,.buchtab th{padding:5px 4px;border-bottom:1px solid #262626;text-align:left;vertical-align:top}
+.buchtab th{color:var(--muted);font-weight:600} .buchtab td:first-child,.buchtab td:nth-child(2){white-space:nowrap} #buInhalt .buchtab{font-size:12.5px} .buchtab .r{text-align:right;white-space:nowrap} .buchtab tr.summe td{font-weight:800;border-top:1.5px solid var(--text)}
+.buchtab tr.storno td{color:var(--muted);text-decoration:line-through}
 button.chip{cursor:pointer;font:inherit;font-size:12px}
 .rechz{display:flex;justify-content:space-between;align-items:center;gap:8px;border-top:1px solid var(--line);padding:9px 0}
 .rechz:first-of-type{border-top:0} .rechz small{display:block;color:var(--muted)}
@@ -394,6 +408,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px}
   <section id="t-offen" class="versteckt"></section>
   <section id="t-bestand" class="versteckt"><div id="bTabelle"></div><div id="bForm"></div><div id="bBiere"></div></section>
   <section id="t-verlauf" class="versteckt"></section>
+  <section id="t-buch" class="versteckt"></section>
   <section id="t-einst" class="versteckt"></section>
   <section id="t-kalender" class="versteckt"></section>
   <footer id="fuss"></footer>
@@ -406,6 +421,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px}
   <div id="zahlBetrag" class="versteckt"><label for="zahlWieviel">Wéivill?</label>
     <div class="zbetrag"><input id="zahlWieviel" inputmode="decimal" autocomplete="off"><b>€</b></div>
     <div class="hinweis" id="zahlBetragInfo" style="margin:4px 0 10px"></div></div>
+  <div class="zdatum"><label for="zahlDatum">Bezuelt den</label><input id="zahlDatum" type="date"></div>
   <div class="seg zahl"></div>
   <button class="haupt" id="zahlZu" style="background:var(--card2);color:var(--text)">Ofbriechen</button></div></div>
 <div id="rechWahl" class="versteckt"><div class="card" id="rechKarte"></div></div>
@@ -417,7 +433,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px}
 <script>
 /* Adresse des Cloudflare-Workers. Leer = Probe-Modus (alles nur auf diesem Handy). */
 const WORKER_URL = "https://millebeier.rjtp6r9s9h.workers.dev/";
-const FASSUNG = "20.11.2026 e";
+const FASSUNG = "22.11.2026 a";
 
 /* === Logik === (kein DOM; test/logik.mjs schneidet diesen Block aus) */
 const LAGER = "Lager";
@@ -518,7 +534,7 @@ function gueltig(e) {
         Number.isInteger(e.groesse) && e.groesse > 0 && Number.isInteger(e.teile) && e.teile >= 1 && e.teile <= 200 &&
         typeof e.bier === "string" && e.bier.length <= 30 && e.feld in FELDER;
     case "zahlung": return typeof e.ref === "string" && geld(e.betrag) && e.betrag > 0 && (e.wie === undefined || e.wie in ZAHLARTEN) &&
-      (e.vor === undefined || typeof e.vor === "boolean"); // vor: Vorauszahlung, ref = lid der Bestellung (Fassung h)
+      (e.vor === undefined || typeof e.vor === "boolean") && optDatum(e.datum); // vor: Vorauszahlung; datum: anderer Zahltag (Buchhaltung), ref = lid der Bestellung (Fassung h)
     case "einstellungen":
       return Array.isArray(e.sorten) && e.sorten.length > 0 && e.sorten.length <= 30 &&
         e.sorten.every(s => s && text(s.name, 30) && geld(s.preis)) &&
@@ -768,7 +784,7 @@ function beschreibe(e, Z) {
       if (e.vor) { const L = Z && ((Z.livraisons || []).find(x => x.lid === e.ref) || Z.nachId.get(e.ref));
         return `💶 Virauszuelung ${euro(e.betrag)}${e.wie ? " per " + ZAHLARTEN[e.wie] : ""}` + (L ? `: ${L.kunde}` : ""); }
       const v = Z && Z.nachId.get(e.ref);
-      return `✓ ${euro(e.betrag)} bezuelt${e.wie ? " per " + ZAHLARTEN[e.wie] : ""}` + (v ? `: ${v.kaeufer} (${beim(v.verkaeufer)})` : "");
+      return `✓ ${euro(e.betrag)} bezuelt${e.wie ? " per " + ZAHLARTEN[e.wie] : ""}${e.datum ? " den " + datumKurz(e.datum) : ""}` + (v ? `: ${v.kaeufer} (${beim(v.verkaeufer)})` : "");
     }
     case "livraison": return `🚚 Bestellung geplangt: ${((Z && Z.livraisons && Z.livraisons.find(L => L.id === e.id)) || e).kunde}, ${postenText(e.posten)}, ${datumKurz(e.datum)} · ${euro(e.betrag)}`;
     case "rechnung": {
@@ -1238,6 +1254,102 @@ function aufgabenStand(Z, heute, jetzt, extra = []) {
   return { op, erl: erl.filter(a => jetzt - a.zeit < 30 * 86400000) };
 }
 const aufFuerMich = (a, ich) => (a.fuer.includes(ich) || a.fuer.includes("All")) && !(a.jeder && a.gemacht.some(g => g.wer === ich));
+/* ---------- Buchhaltung (vom Nutzer, 21.11.2026; Entwurf gezeigt und abgesprochen) ----------
+   Alles aus den vorhandenen Einträgen, nichts Neues gespeichert. Alte Excel-Verkäufe (alt) bleiben draußen (vom Nutzer: ohne Geld).
+   Zahlungen bekommen eine feste laufende Nummer je Jahr (Z-JJJJ-NNN) nach Eintragszeit — auch gelöschte behalten ihre Nummer
+   („storniert“), damit nichts verschwindet. F = {von, bis, bier, wie, verk, kunde, status}; leere Felder = alle. */
+const zahlTag = e => e.datum || tagVon(e.zeit);
+function zahlNummern(Z) {
+  const m = new Map(), je = {};
+  for (const e of Z.liste) if (e.art === "zahlung") { const j = tagVon(e.zeit).slice(0, 4); je[j] = (je[j] || 0) + 1; m.set(e.id, `Z-${j}-${String(je[j]).padStart(3, "0")}`); }
+  return m;
+}
+function buchDaten(Z, F) {
+  const imZeit = d => d >= F.von && d <= F.bis;
+  const hatBier = posten => !F.bier || posten.some(p => zerlege(p.sorte).bier === F.bier);
+  const kundeOk = name => !F.kunde || String(name).trim().toLowerCase() === F.kunde.toLowerCase();
+  const nummern = zahlNummern(Z);
+  const rohVk = id => Z.vkNachId.get(id) || Z.nachId.get(id) || null;
+  // Verkäufe (ohne alte, ohne gelöschte); Betrag bei Bier-Filter nur der Anteil dieses Biers
+  const verkaeufe = Z.verkaeufe.filter(v => imZeit(tagVon(v.zeit)) && hatBier(v.posten) && (!F.verk || v.verkaeufer === F.verk) && kundeOk(v.kaeufer) &&
+    (!F.wie || (v.wie || []).includes(F.wie)) && (!F.status || (F.status === "op" ? v.offen > 0 : v.offen <= 0)))
+    .map(v => {
+      const posten = F.bier ? v.posten.filter(p => zerlege(p.sorte).bier === F.bier) : v.posten;
+      const betrag = F.bier ? runde(posten.reduce((a, p) => a + anteil(Z.cfg, v.posten, v.ware, p), 0)) : v.betrag;
+      return { v, datum: tagVon(v.zeit), posten, betrag, frei: F.bier ? 0 : runde(v.betrag - v.ware) };
+    }).sort((a, b) => a.v.zeit - b.v.zeit);
+  // Zahlungen (Kassenbuch) inkl. gelöschter
+  const zahlungen = [];
+  for (const e of Z.liste) if (e.art === "zahlung") {
+    const v = e.vor ? (Z.livraisons.find(L => L.lid === e.ref) || {}).verkauf || null : rohVk(e.ref);
+    const L = e.vor ? Z.livraisons.find(x => x.lid === e.ref) || null : v && v.livraison;
+    const posten = (v && v.posten) || (L && L.posten) || [];
+    const wer = (v && v.kaeufer) || (L && L.kunde) || "?";
+    const verk = (v && v.verkaeufer) || (L && L.kontakt) || e.durch;
+    const storniert = Z.storniert.has(e.id) || (!e.vor && !Z.vkNachId.has(e.ref)) || (e.vor && !L);
+    const d = zahlTag(e);
+    if (!imZeit(d) || !hatBier(posten) || (F.wie && e.wie !== F.wie) || (F.verk && verk !== F.verk) || !kundeOk(wer)) continue;
+    if (F.status && (!v || (F.status === "op" ? v.offen <= 0 : v.offen > 0))) continue;
+    zahlungen.push({ nr: nummern.get(e.id), e, datum: d, betrag: e.betrag, wie: e.wie || "", wer, verk, posten, vor: !!e.vor,
+      rech: v && v.rech ? v.rech.nr : "", storniert });
+  }
+  zahlungen.sort((a, b) => a.e.zeit - b.e.zeit);
+  // Rechnungen lückenlos: je Nummer die neueste Fassung, gelöschter Verkauf = storniert
+  const rn = new Map();
+  for (const e of Z.liste) if (e.art === "rechnung" && e.nr) rn.set(e.nr, e);
+  const rechnungen = [...rn.values()].map(e => {
+    const v = Z.vkNachId.get(e.ref), roh = v || Z.nachId.get(e.ref) || {};
+    const fr = runde((e.frei || []).reduce((a, f) => a + f.n * f.preis, 0));
+    return { nr: e.nr, datum: e.datum, e, v, storniert: !v, kunde: v ? v.kaeufer : roh.kaeufer || "?", posten: roh.posten || [],
+      betrag: v ? v.betrag : runde((roh.betrag || 0) + fr), offen: v ? v.offen : 0, verschickt: v && v.rech ? v.rech.verschickt : null,
+      verk: roh.verkaeufer || "", wie: v ? (v.wie || []) : [] };
+  }).filter(r => imZeit(r.datum) && hatBier(r.posten) && (!F.verk || r.verk === F.verk) && kundeOk(r.kunde) && (!F.wie || r.wie.includes(F.wie)) &&
+    (!F.status || (F.status === "op" ? r.offen > 0 : !r.storniert && r.offen <= 0))).sort((a, b) => a.nr.localeCompare(b.nr));
+  // Ausstoend zum Stichtag „bis“: verkauft bis dahin, bezahlt bis dahin
+  const ausstoend = Z.verkaeufe.filter(v => tagVon(v.zeit) <= F.bis && hatBier(v.posten) && (!F.verk || v.verkaeufer === F.verk) && kundeOk(v.kaeufer)).map(v => {
+    let bez = 0;
+    for (const e of Z.aktiv) if (e.art === "zahlung" && zahlTag(e) <= F.bis && (e.vor ? (v.livraison && v.livraison.lid === e.ref) : e.ref === v.id)) bez += e.betrag;
+    return { v, datum: tagVon(v.zeit), betrag: v.betrag, bezahlt: runde(bez), offen: runde(Math.max(0, v.betrag - bez)) };
+  }).filter(x => x.offen > 0).sort((a, b) => a.v.zeit - b.v.zeit);
+  // Stock je Artikel: Anfang (vor „von“), Bewegungen im Zeitraum, Ende
+  const stock = new Map();
+  const S = key => { if (!stock.has(key)) stock.set(key, { key, anfang: 0, abgefuellt: 0, verkauft: 0, getrunken: 0, verschenkt: 0, kaputt: 0, sonst: 0, ende: 0 }); return stock.get(key); };
+  for (const e of Z.aktiv) {
+    const d = e.datum && /^\d{4}-\d{2}-\d{2}$/.test(e.datum) ? e.datum : tagVon(e.zeit);
+    const vor = d < F.von, drin = imZeit(d);
+    const buch = (key, n, feld) => { if (F.bier && zerlege(key).bier !== F.bier) return; const x = S(key); if (vor) x.anfang += n; else if (drin) { if (feld) x[feld] += Math.abs(n); } if (d <= F.bis) x.ende += n; };
+    if (e.art === "abfuellung") buch(e.sorte, e.n, "abgefuellt");
+    else if (e.art === "verkauf") for (const p of e.posten) buch(p.sorte, -p.n, "verkauft");
+    else if (e.art === "abgang") buch(e.sorte, -e.n, e.grund);
+  }
+  const stockListe = [...stock.values()].filter(x => x.anfang || x.ende || x.abgefuellt || x.verkauft || x.getrunken || x.verschenkt || x.kaputt || x.sonst)
+    .sort((a, b) => zerlege(a.key).bier.localeCompare(zerlege(b.key).bier) || zerlege(a.key).l - zerlege(b.key).l);
+  // Änderungen im Zeitraum: Löschungen und geänderte Fassungen (wer, wann)
+  const aenderungen = [];
+  for (const e of Z.liste) {
+    if (!imZeit(tagVon(e.zeit))) continue;
+    if (e.art === "storno") { const z = Z.nachId.get(e.ref); if (z) aenderungen.push({ e, was: "geläscht", text: beschreibe(z, Z) }); }
+    else if ((e.art === "livraison" || e.art === "abfuellung") && e.vorher != null) aenderungen.push({ e, was: "geännert", text: beschreibe(e, Z) });
+    else if (e.art === "rechnung" && e.nr && Z.liste.some(x => x.art === "rechnung" && x.nr === e.nr && x.zeit < e.zeit)) aenderungen.push({ e, was: "geännert", text: beschreibe(e, Z) });
+  }
+  aenderungen.reverse();
+  // Résumé
+  const ok = zahlungen.filter(z => !z.storniert);
+  const jeWie = {}; for (const z of ok) jeWie[z.wie || "?"] = runde((jeWie[z.wie || "?"] || 0) + z.betrag);
+  const jeVerk = {}; for (const x of verkaeufe) jeVerk[x.v.verkaeufer] = runde((jeVerk[x.v.verkaeufer] || 0) + x.betrag);
+  const jeBier = {};
+  for (const x of verkaeufe) for (const p of x.v.posten) {
+    const { bier, l } = zerlege(p.sorte); if (F.bier && bier !== F.bier) continue;
+    const b = (jeBier[bier] ||= { fl: 0, faesser: 0, euro: 0, gratis: 0 });
+    if (l) b.faesser += p.n; else b.fl += p.n; b.euro = runde(b.euro + anteil(Z.cfg, x.v.posten, x.v.ware, p));
+  }
+  for (const s of stockListe) { const g = s.getrunken + s.verschenkt + s.kaputt + s.sonst; if (g) (jeBier[zerlege(s.key).bier] ||= { fl: 0, faesser: 0, euro: 0, gratis: 0 }).gratis += g; }
+  return {
+    verkaeufe, zahlungen, rechnungen, ausstoend, stock: stockListe, aenderungen,
+    resume: { verkauft: runde(verkaeufe.reduce((a, x) => a + x.betrag, 0)), agaangen: runde(ok.reduce((a, z) => a + z.betrag, 0)),
+      op: runde(ausstoend.reduce((a, x) => a + x.offen, 0)), rechnungen: rechnungen.filter(r => !r.storniert).length, jeWie, jeVerk, jeBier },
+  };
+}
 /* === Oberfläche === */
 
 const SP = "millebeier_v1";              // {code, ich, tab}
@@ -1388,7 +1500,7 @@ function render() {
   $("#hautBtn").classList.toggle("versteckt", !bereit());
   $("#hautBtn").classList.toggle("an", tab === "haut");
   $("#kalBtn").classList.toggle("an", tab === "kalender");
-  $("#zahnrad").classList.toggle("an", tab === "einst" || tab === "verlauf");
+  $("#zahnrad").classList.toggle("an", tab === "einst" || tab === "verlauf" || tab === "buch");
   const nKal = kalAnzahlBald(Z);
   // Kalenderblatt mit dem heutigen Tag statt 📅 (Apples Emoji zeigt immer „17“; vom Nutzer, Fassung g)
   const [, kM, kT] = heuteLux().split("-").map(Number);
@@ -1400,7 +1512,7 @@ function render() {
   const nGeplant = Z.livraisons.filter(L => !L.verkauf).length;
   $('#nav [data-tab="livraisons"]').innerHTML = "<i>🚚</i>Bestellungen" + (nGeplant ? `<span class="badge grau">${nGeplant}</span>` : "");
   ({ start: renderStart, uebersicht: renderUebersicht, verkaufen: renderVerkaufen, offen: renderOffen, livraisons: renderLivraisons,
-     bestand: renderBestand, verlauf: renderVerlauf, einst: renderEinst, kunden: renderKunden, kalender: renderKalender, haut: renderHaut })[tab]();
+     bestand: renderBestand, verlauf: renderVerlauf, buch: renderBuch, einst: renderEinst, kunden: renderKunden, kalender: renderKalender, haut: renderHaut })[tab]();
   $("#fuss").innerHTML = `Versioun ${esc(FASSUNG)}` + (EIN.ich ? ` · Du bass ${esc(de(EIN.ich))}` : "");
 }
 
@@ -2287,13 +2399,13 @@ function renderLListe() {
     const L = Z.livraisons.find(x => x.lid === b.dataset.lvor && !x.verkauf); if (!L) return;
     const rest = runde(L.betrag - L.vorbezahlt); if (!(rest > 0)) return;
     zahlartWaehlen(`${L.kunde}: ${L.vorbezahlt ? "Rescht " : ""}bezuelt?`, rest).then(r => {
-      if (r) eintragen([{ art: "zahlung", ref: L.lid, vor: true, betrag: r.betrag, wie: r.wie }]);
+      if (r) eintragen([{ art: "zahlung", ref: L.lid, vor: true, betrag: r.betrag, wie: r.wie, ...zd() }]);
     });
   });
   rechKnoepfe(box);
   box.querySelectorAll("[data-lbezuelt]").forEach(b => b.onclick = () => {
     const v = Z.vkNachId.get(b.dataset.lbezuelt); if (!v) return;
-    zahlartWaehlen(`${v.kaeufer}: ${euro(v.offen)} bezuelt — wéi?`).then(wie => { if (wie) eintragen([{ art: "zahlung", ref: v.id, betrag: v.offen, wie }]); });
+    zahlartWaehlen(`${v.kaeufer}: ${euro(v.offen)} bezuelt — wéi?`).then(wie => { if (wie) eintragen([{ art: "zahlung", ref: v.id, betrag: v.offen, wie, ...zd() }]); });
   });
 }
 // Formular-Anfang direkt unter den festen Kopf (vom Nutzer: Fassung i beim Ändern, Fassung k auch bei „Nei Bestellung“)
@@ -2546,6 +2658,9 @@ async function fehlendesHolen(wer, posten) {
   return brauch.map(p => ({ art: "bewegung", sorte: p.sorte, n: p.n, von, an: wer }));
 }
 
+let ZAHL_DATUM = "";
+// Anderer Zahltag aus dem Zahlungsfenster: nur mitschicken, wenn nicht heute (und gültig)
+const zd = () => /^\d{4}-\d{2}-\d{2}$/.test(ZAHL_DATUM) && ZAHL_DATUM !== heuteLux() ? { datum: ZAHL_DATUM } : {};
 /* Zahlungsart wählen (Ausstoend, Livraisons): Fenster mit WERO / SumUp / Iwwerweisung / Bar. Gibt die Art oder null.
    Mit `bis` (Vorauszahlung, Fassung h): oben „Wéivill?“, vorbelegt mit allem; weniger = Acompte. Gibt dann {wie, betrag}. */
 function zahlartWaehlen(titel, bis) {
@@ -2553,11 +2668,12 @@ function zahlartWaehlen(titel, bis) {
     const box = $("#zahlWahl");
     $("#zahlTitel").textContent = titel;
     const mitBetrag = typeof bis === "number", feld = $("#zahlWieviel");
+    $("#zahlDatum").value = heuteLux(); ZAHL_DATUM = ""; // Zahltag änderbar (Buchhaltung: Abgleich mit dem Kontoauszug, vom Nutzer 21.11.)
     $("#zahlBetrag").classList.toggle("versteckt", !mitBetrag);
     if (mitBetrag) { feld.value = String(bis).replace(".", ","); $("#zahlBetragInfo").textContent = `Alles = ${euro(bis)}. Manner = Acompte, de Rescht bleift op.`; }
     box.querySelector(".seg").innerHTML = Object.keys(ZAHLARTEN).map(k => `<button data-wie="${k}" class="zbtn">${zahlInhalt(k)}</button>`).join("");
     box.classList.remove("versteckt");
-    const zu = wie => { box.classList.add("versteckt"); if (document.activeElement === feld) feld.blur(); fertig(wie); };
+    const zu = wie => { box.classList.add("versteckt"); ZAHL_DATUM = wie ? $("#zahlDatum").value : ""; if (document.activeElement) document.activeElement.blur(); fertig(wie); };
     box.querySelectorAll("[data-wie]").forEach(b => b.onclick = () => {
       if (!mitBetrag) return zu(b.dataset.wie);
       const betrag = runde(Number(String(feld.value).replace(",", ".").replace(/[^\d.]/g, "")));
@@ -2593,8 +2709,10 @@ async function rechnungBilder() {
   return RBILDER;
 }
 /* Rechnung als PDF (jsPDF, Standardschrift Helvetica = WinAnsi: é, €, „“, – gehen). R aus rechnungDaten(), B = {logo, krug, qr} als data-URL. */
-function rechnungPdf(jsPDF, R, B) {
-  const doc = new jsPDF({ unit: "mm", format: "a4" });
+function rechnungPdf(jsPDF, R, B, vorher) { // vorher: bestehendes Dokument (Sammel-PDF der Buchhaltung) — dann neue Seite anhängen
+  const doc = vorher || new jsPDF({ unit: "mm", format: "a4" });
+  if (vorher) doc.addPage();
+  const erste = doc.getNumberOfPages();
   const L = 18, Rr = 192, grau = [102, 102, 102];
   const geldF = x => runde(x).toFixed(2).replace(".", ",") + " €";
   doc.setProperties({ title: `Facture ${R.nr}`, author: "Millebéier" });
@@ -2659,15 +2777,16 @@ function rechnungPdf(jsPDF, R, B) {
   y += 7; doc.setFontSize(10.5); doc.setFont("helvetica", "normal"); doc.text("MERCI pour votre commande !", L, y);
   if (B.krug) doc.addImage(B.krug, "PNG", L + doc.getTextWidth("MERCI pour votre commande !") + 3, y - 5.5, 7, 7);
   // Fuß auf jeder Seite
-  const n = doc.getNumberOfPages();
-  for (let s = 1; s <= n; s++) {
+  const letzte = doc.getNumberOfPages(), n = letzte - erste + 1;
+  for (let s = erste; s <= letzte; s++) {
     doc.setPage(s);
     if (B.qr) doc.addImage(B.qr, "PNG", L, 259, 22, 22);
     doc.setFont("helvetica", "normal"); doc.setFontSize(9.5); doc.setTextColor(17); doc.text("FOLLOW US ON FACEBOOK", L + 26, 271);
     doc.setFontSize(8.5); doc.setTextColor(85); doc.text("Millebéier · info@millebeier.lu · +352 621 194 478", Rr, 271, { align: "right" });
-    if (n > 1) doc.text(`${s} / ${n}`, Rr, 284, { align: "right" });
+    if (n > 1) doc.text(`${s - erste + 1} / ${n}`, Rr, 284, { align: "right" });
   }
-  return doc.output("arraybuffer");
+  doc.setPage(letzte);
+  return doc;
 }
 // Adresse zurück in Client-Felder: erste Zeile = Name, „À l'attention de …“ übersprungen, letzte Zeile = Uertschaft, dazwischen Adress
 function adresseTeile(text) {
@@ -2801,7 +2920,7 @@ async function rechnungFertig() {
     if (neu.length) eintragen(neu);
     v = Z.vkNachId.get(F.vid);
     const R = rechnungDaten(Z, v, e);
-    const daten = rechnungPdf(jsPDF, R, B);
+    const daten = rechnungPdf(jsPDF, R, B).output("arraybuffer");
     const name = rechnungDateiname(v, nr);
     const datei = new File([daten], name, { type: "application/pdf" });
     const fid = "rech-" + v.id;
@@ -2848,7 +2967,7 @@ async function rechnungZeigen(vid) {
   try {
     const [jsPDF, B] = await Promise.all([jspdfLaden(), rechnungBilder()]);
     const R = rechnungDaten(Z, v, v.rech), name = rechnungDateiname(v, v.rech.nr);
-    const datei = new File([rechnungPdf(jsPDF, R, B)], name, { type: "application/pdf" });
+    const datei = new File([rechnungPdf(jsPDF, R, B).output("arraybuffer")], name, { type: "application/pdf" });
     DATEN.set("rech-" + v.id, datei);
     dateiZeigen({ fid: "rech-" + v.id, name, typ: "application/pdf", groesse: datei.size, teile: 0, rech: { vid: v.id, mail: v.rech.mail } });
   } catch { alert("D'PDF-Bibliothéik konnt net geluede ginn — Internet? Nach eng Kéier probéieren."); }
@@ -2886,7 +3005,7 @@ function renderOffen() {
     const K = liste[+b.dataset.alles];
     const wie = await zahlartWaehlen(`${K.name}: ${euro(K.sichtOffen)} bezuelt — wéi?`);
     if (!wie) return;
-    eintragen(K.sicht.map(v => ({ art: "zahlung", ref: v.id, betrag: v.offen, wie })));
+    eintragen(K.sicht.map(v => ({ art: "zahlung", ref: v.id, betrag: v.offen, wie, ...zd() })));
   });
   box.querySelectorAll("[data-teil]").forEach(b => b.onclick = async () => {
     const K = liste[+b.dataset.teil];
@@ -2898,7 +3017,7 @@ function renderOffen() {
     if (rest > 0 && !confirm(`Dat sinn ${euro(rest)} méi wéi op. Agedroe ginn nëmmen ${euro(x - rest)}. Ok?`)) return;
     const wie = await zahlartWaehlen(`${K.name}: ${euro(x - rest)} bezuelt — wéi?`);
     if (!wie) return;
-    eintragen(zahlungen.map(z => ({ ...z, wie })));
+    eintragen(zahlungen.map(z => ({ ...z, wie, ...zd() })));
   });
   box.querySelectorAll("[data-erinnern]").forEach(b => b.onclick = async () => {
     const K = liste[+b.dataset.erinnern];
@@ -3504,6 +3623,180 @@ function flaschenForm(box, B, P, neu, o) {
   };
 }
 
+/* ---------- Buchhaltung (vom Nutzer, 21.11.2026, Entwurf gezeigt) — im Zahnrad, am Computer im Browser druckbar ---------- */
+const BUCH_SICHTEN = { resume: "Résumé", zuelungen: "Zuelungen", verkeef: "Verkéf", rechnungen: "Rechnungen", ausstoend: "Ausstoend", stock: "Stock", aenner: "Ännerungen", ausgaben: "Ausgaben" };
+let BUCH = null, BUCH_MELD = "";
+function buchStart() { const j = heuteLux().slice(0, 4); return { preset: "joer", von: j + "-01-01", bis: j + "-12-31", bier: "", wie: "", verk: "", kunde: "", status: "", sicht: "resume", rvon: j + "-01-01", rbis: j + "-12-31" }; }
+function buchPreset(B, p) {
+  const h = heuteLux(), j = +h.slice(0, 4), m = h.slice(0, 7);
+  B.preset = p;
+  if (p === "joer") { B.von = j + "-01-01"; B.bis = j + "-12-31"; }
+  if (p === "lescht") { B.von = (j - 1) + "-01-01"; B.bis = (j - 1) + "-12-31"; }
+  if (p === "mount") { const [y, mm] = m.split("-").map(Number); B.von = m + "-01"; B.bis = new Date(Date.UTC(y, mm, 0)).toISOString().slice(0, 10); }
+}
+const geldT = x => runde(x).toFixed(2).replace(".", ",");
+const filterText = B => [B.bier && "Béier: " + bierText(B.bier), B.wie && "Zuelaart: " + ZAHLARTEN[B.wie], B.verk && "Verkeefer: " + B.verk, B.kunde && "Client: " + B.kunde,
+  B.status && (B.status === "op" ? "nach op" : "bezuelt")].filter(Boolean).join(" · ") || "keen Filter";
+/* Tabelle je Sicht: {titel, kopf[], zeilen[][], rechts[] (Spalten-Index rechtsbündig), summe[]} — gleich für Bildschirm, PDF und Excel */
+function buchTabelle(D, sicht) {
+  const art = p => postenText(p);
+  if (sicht === "zuelungen") return { titel: "Zuelungen", kopf: ["Nr", "Datum", "Client", "Fir", "Zuelaart", "Verkeefer", "Betrag"], rechts: [6],
+    zeilen: D.zahlungen.map(z => [z.nr, datumKurz(z.datum), z.wer, (z.rech ? "Facture " + z.rech + " · " : "") + (z.vor ? "Virauszuelung · " : "") + art(z.posten) + (z.storniert ? " — STORNIERT" : ""),
+      ZAHLARTEN[z.wie] || "ouni Aart", z.verk, z.storniert ? "(" + geldT(z.betrag) + ")" : geldT(z.betrag)]),
+    summe: ["", "", "", `Total (${D.zahlungen.filter(z => !z.storniert).length} Zuelungen, ouni stornéiert)`, "", "", geldT(D.resume.agaangen)] };
+  if (sicht === "verkeef") return { titel: "Verkéf", kopf: ["Datum", "Client", "Wat", "Verkeefer", "Rechnung", "Bezuelt", "Betrag"], rechts: [6],
+    zeilen: D.verkaeufe.map(x => [datumKurz(x.datum), x.v.kaeufer, art(x.posten) + (x.frei ? ` + ${geldT(x.frei)} € fräi Pos.` : ""), x.v.verkaeufer, x.v.rech ? x.v.rech.nr : "",
+      x.v.offen <= 0 ? (wieListe(x.v) || "Jo") : x.v.bezahlt > 0 ? `Deelweis (${geldT(x.v.offen)} op)` : "Nee", geldT(x.betrag)]),
+    summe: ["", `Total (${D.verkaeufe.length})`, "", "", "", "", geldT(D.resume.verkauft)] };
+  if (sicht === "rechnungen") return { titel: "Rechnungen", kopf: ["Nr", "Datum", "Client", "Wat", "Verschéckt", "Bezuelt", "Betrag"], rechts: [6],
+    zeilen: D.rechnungen.map(r => [r.nr, datumKurz(r.datum), r.kunde, art(r.posten), r.storniert ? "" : r.verschickt ? datumText(r.verschickt) : "nach net",
+      r.storniert ? "STORNIERT" : r.offen <= 0 ? (r.wie.map(w => ZAHLARTEN[w]).join(", ") || "Jo") : `${geldT(r.offen)} op`, r.storniert ? "(" + geldT(r.betrag) + ")" : geldT(r.betrag)]),
+    summe: ["", "", `Total (${D.rechnungen.filter(r => !r.storniert).length}, ouni stornéiert)`, "", "", "", geldT(D.rechnungen.filter(r => !r.storniert).reduce((a, r) => a + r.betrag, 0))] };
+  if (sicht === "ausstoend") return { titel: "Ausstoend", kopf: ["Datum", "Client", "Wat", "Verkeefer", "Rechnung", "Bezuelt", "Op"], rechts: [5, 6],
+    zeilen: D.ausstoend.map(x => [datumKurz(x.datum), x.v.kaeufer, art(x.v.posten), x.v.verkaeufer, x.v.rech ? x.v.rech.nr : "", geldT(x.bezahlt), geldT(x.offen)]),
+    summe: ["", `Total (${D.ausstoend.length})`, "", "", "", "", geldT(D.resume.op)] };
+  if (sicht === "stock") return { titel: "Stock", kopf: ["Artikel", "Ufank", "Ofgefëllt", "Verkaaft", "Gedronk", "Verschenkt", "Futti/soss", "Enn"], rechts: [1, 2, 3, 4, 5, 6, 7],
+    zeilen: D.stock.map(s => [artikelText(s.key), s.anfang, s.abgefuellt, s.verkauft, s.getrunken, s.verschenkt, s.kaputt + s.sonst, s.ende]), summe: null };
+  if (sicht === "aenner") return { titel: "Ännerungen", kopf: ["Wéini", "Wien", "Wat", "Agab"], rechts: [],
+    zeilen: D.aenderungen.map(a => [zeitText(a.e.zeit), a.e.durch || "?", a.was, a.text]), summe: null };
+  return null;
+}
+function renderBuch() {
+  const box = $("#t-buch");
+  if (tipptIn(box)) return;
+  if (!BUCH) BUCH = buchStart();
+  const B = BUCH, D = buchDaten(Z, B), R = D.resume;
+  const opt = (liste, wert, txt = x => x) => liste.map(x => `<option value="${esc(x)}" ${x === wert ? "selected" : ""}>${esc(txt(x))}</option>`).join("");
+  const kunden = [...new Set([...Z.verkaeufe.map(v => v.kaeufer.trim())])].sort((a, b) => a.localeCompare(b, "de"));
+  const T = buchTabelle(D, B.sicht);
+  const tab = T => `<div class="tabwrap"><table class="buchtab"><tr>${T.kopf.map((k, i) => `<th class="${T.rechts.includes(i) ? "r" : ""}">${esc(k)}</th>`).join("")}</tr>
+    ${T.zeilen.length ? T.zeilen.map(z => `<tr class="${/STORNIERT/.test(z.join(" ")) ? "storno" : ""}">${z.map((c, i) => `<td class="${T.rechts.includes(i) ? "r" : ""}">${esc(c)}</td>`).join("")}</tr>`).join("")
+      : `<tr><td colspan="${T.kopf.length}" class="leer">Näischt an dësem Zäitraum.</td></tr>`}
+    ${T.summe ? `<tr class="summe">${T.summe.map((c, i) => `<td class="${T.rechts.includes(i) ? "r" : ""}">${esc(c)}</td>`).join("")}</tr>` : ""}</table></div>`;
+  const kv = (o, f = x => x) => Object.entries(o).map(([k, w]) => `<tr><td>${esc(f(k))}</td><td class="r">${geldT(w)}</td></tr>`).join("") || `<tr><td class="leer">–</td></tr>`;
+  const rechImZeit = buchDaten(Z, { ...B, von: B.rvon, bis: B.rbis, bier: "", wie: "", verk: "", kunde: "", status: "" }).rechnungen;
+  box.innerHTML = `<button class="knopf" id="buZurueck" style="margin-top:12px">← Zréck an d'Astellungen</button>
+  <div class="card"><h2>📒 Buchhaltung</h2>
+    <div class="seg buchp">${[["joer", "Dëst Joer"], ["lescht", "Lescht Joer"], ["mount", "Dëse Mount"], ["frai", "Fräi"]].map(([k, t]) => `<button data-bup="${k}" class="${B.preset === k ? "an" : ""}">${t}</button>`).join("")}</div>
+    <div class="zeile"><div><label for="buVon">vum</label><input id="buVon" type="date" value="${B.von}"></div><div><label for="buBis">bis</label><input id="buBis" type="date" value="${B.bis}"></div></div>
+    <div class="zeile"><div><label for="buBier">Béier</label><select id="buBier"><option value="">all</option>${opt(Z.sortenNamen, B.bier, bierText)}</select></div>
+      <div><label for="buWie">Zuelaart</label><select id="buWie"><option value="">all</option>${opt(Object.keys(ZAHLARTEN), B.wie, k => ZAHLARTEN[k])}</select></div></div>
+    <div class="zeile"><div><label for="buVerk">Verkeefer</label><select id="buVerk"><option value="">all</option>${opt(Z.cfg.leute, B.verk)}</select></div>
+      <div><label for="buKunde">Client</label><select id="buKunde"><option value="">all</option>${opt(kunden, B.kunde)}</select></div>
+      <div><label for="buStatus">Status</label><select id="buStatus">${opt(["", "bez", "op"], B.status, k => ({ "": "all", bez: "bezuelt", op: "nach op" })[k])}</select></div></div>
+    <div class="buchtabs">${Object.entries(BUCH_SICHTEN).map(([k, t]) => `<button data-bus="${k}" class="${B.sicht === k ? "an" : ""}">${t}</button>`).join("")}</div>
+  </div>
+  ${BUCH_MELD ? `<div class="meldung ok">${esc(BUCH_MELD)}</div>` : ""}
+  <div class="card" id="buInhalt">${B.sicht === "resume" ? `<h2>Résumé · ${esc(datumKurz(B.von))} – ${esc(datumKurz(B.bis))}</h2><div class="m">${esc(filterText(B))}</div>
+      <div class="kz"><div><span class="m">Verkaaft</span><b>${euro(R.verkauft)}</b></div><div><span class="m">Agaangen</span><b class="gr">${euro(R.agaangen)}</b></div>
+        <div><span class="m">Nach op (${esc(datumKurz(B.bis))})</span><b class="gelb">${euro(R.op)}</b></div><div><span class="m">Rechnungen</span><b>${R.rechnungen}</b></div></div>
+      <h3>No Zuelaart</h3><table class="buchtab">${kv(R.jeWie, k => ZAHLARTEN[k] || "ouni Aart")}</table>
+      <h3>No Béier</h3><table class="buchtab"><tr><th></th><th class="r">Fl.</th><th class="r">Fässer</th><th class="r">€</th><th class="r">Gratis</th></tr>
+        ${Object.entries(R.jeBier).map(([k, b]) => `<tr><td>${esc(bierText(k))}</td><td class="r">${b.fl}</td><td class="r">${b.faesser}</td><td class="r">${geldT(b.euro)}</td><td class="r">${b.gratis}</td></tr>`).join("") || `<tr><td class="leer">–</td></tr>`}</table>
+      <div class="m">Gratis = selwer gedronk, verschenkt, futti (Detail ënner „Stock“).</div>
+      <h3>No Verkeefer</h3><table class="buchtab">${kv(R.jeVerk)}</table>`
+    : B.sicht === "ausgaben" ? `<h2>Ausgaben</h2><div class="leer">Kënnt méi spéit (Malz, Hopfen, Fläschen … mat Foto vum Beleg).</div>`
+    : `<h2>${esc(T.titel)} · ${esc(datumKurz(B.von))} – ${esc(datumKurz(B.bis))}${B.sicht === "ausstoend" ? ` <small class="muted">(Stand ${esc(datumKurz(B.bis))})</small>` : ""}</h2><div class="m">${esc(filterText(B))}</div>${tab(T)}`}
+    ${B.sicht !== "ausgaben" ? `<button class="haupt" id="buPdf">🖨️ PDF vun dëser Lëscht</button><button class="haupt grau" id="buXls">📊 Excel vun dëser Lëscht</button>` : ""}
+    <div id="buMeld"></div></div>
+  <div class="card"><h2>🧾 Rechnungen drécken</h2>
+    <div class="zeile"><div><label for="buRvon">vum</label><input id="buRvon" type="date" value="${B.rvon}"></div><div><label for="buRbis">bis</label><input id="buRbis" type="date" value="${B.rbis}"></div></div>
+    <div class="m" style="margin-top:6px">${rechImZeit.length ? `${rechImZeit.length} Rechnung(en) · ${esc(rechImZeit[0].nr)} … ${esc(rechImZeit[rechImZeit.length - 1].nr)}${rechImZeit.some(r => r.storniert) ? ` · stornéiert: ${esc(rechImZeit.filter(r => r.storniert).map(r => r.nr).join(", "))}` : ""}` : "Keng Rechnung an dësem Zäitraum."}</div>
+    <button class="haupt" id="buRech" ${rechImZeit.length ? "" : "disabled"}>📄 All Rechnungen als ee PDF</button><div id="buRmeld"></div></div>
+  <div class="card"><h2>📊 Komplett Excel</h2><div class="m">Wéi bis elo — all Blieder.</div><button class="haupt grau" id="buXlsAll">📊 Excel (.xlsx)</button><div id="buXmeld"></div></div>`;
+  $("#buZurueck").onclick = () => { TAB = "einst"; render(); window.scrollTo(0, 0); };
+  box.querySelectorAll("[data-bup]").forEach(b => b.onclick = () => { if (b.dataset.bup === "frai") B.preset = "frai"; else buchPreset(B, b.dataset.bup); BUCH_MELD = ""; renderBuch(); });
+  box.querySelectorAll("[data-bus]").forEach(b => b.onclick = () => { B.sicht = b.dataset.bus; BUCH_MELD = ""; renderBuch(); });
+  const datum = (id, k) => { const el = $("#" + id); el.onchange = () => { if (/^\d{4}-\d{2}-\d{2}$/.test(el.value)) { B[k] = el.value; if (k === "von" || k === "bis") B.preset = "frai"; } el.blur(); renderBuch(); }; };
+  datum("buVon", "von"); datum("buBis", "bis"); datum("buRvon", "rvon"); datum("buRbis", "rbis");
+  for (const [id, k] of [["buBier", "bier"], ["buWie", "wie"], ["buVerk", "verk"], ["buKunde", "kunde"], ["buStatus", "status"]])
+    $("#" + id).onchange = e => { B[k] = e.target.value; e.target.blur(); renderBuch(); };
+  const pdfK = $("#buPdf"); if (pdfK) pdfK.onclick = () => buchPdf(B, D);
+  const xlsK = $("#buXls"); if (xlsK) xlsK.onclick = () => buchExcel(B, D);
+  $("#buRech").onclick = () => rechnungenSammelPdf(rechImZeit, B);
+  $("#buXlsAll").onclick = () => excelExport($("#buXmeld"));
+}
+const buchName = (B, was) => `Millebeier_${was}_${B.von}_${B.bis}`.replace(/[^A-Za-z0-9_-]/g, "_");
+function buchDateiZeigen(datei) { const fid = "buch-" + datei.name; DATEN.set(fid, datei); dateiZeigen({ fid, name: datei.name, typ: datei.type, groesse: datei.size, teile: 0 }); }
+// Liste als Druck-PDF: Kopf mit Zeitraum, Filter, wer/wann erstellt; Spalten verteilt, lange Texte umgebrochen; Querformat ab 7 Spalten
+async function buchPdf(B, D) {
+  const meld = t => { const m = $("#buMeld"); if (m) m.innerHTML = t ? `<div class="meldung fehler">${esc(t)}</div>` : ""; };
+  let jsPDF; try { jsPDF = await jspdfLaden(); } catch { return meld("D'PDF-Bibliothéik konnt net geluede ginn — Internet?"); }
+  const T = B.sicht === "resume" ? buchResumeTabelle(D) : buchTabelle(D, B.sicht);
+  const quer = T.kopf.length >= 7;
+  const doc = new jsPDF({ unit: "mm", format: "a4", orientation: quer ? "landscape" : "portrait" });
+  const W = doc.internal.pageSize.getWidth(), H = doc.internal.pageSize.getHeight(), L = 14, Rr = W - 14;
+  const kopf = () => {
+    doc.setFont("helvetica", "bold"); doc.setFontSize(15); doc.setTextColor(17); doc.text(`${T.titel}${B.wie ? " — " + ZAHLARTEN[B.wie] : ""}`, L, 18);
+    doc.setFontSize(10); doc.text("MILLEBÉIER", Rr, 18, { align: "right" });
+    doc.setFont("helvetica", "normal"); doc.setFontSize(8.5); doc.setTextColor(102);
+    doc.text(`Zäitraum ${datumLang(B.von)} – ${datumLang(B.bis)} · ${filterText(B)}`, L, 24);
+    doc.text(`Erstallt ${new Date().toLocaleString("de-LU", { timeZone: TZ })} vum ${EIN.ich}`, L, 28.5);
+    doc.setTextColor(17);
+  };
+  // Spaltenbreiten nach Inhalt (max. 60 mm), Rest auf die längste Textspalte
+  doc.setFontSize(8.5);
+  const alle = [T.kopf, ...T.zeilen, ...(T.summe ? [T.summe] : [])];
+  let br = T.kopf.map((_, i) => Math.min(60, Math.max(...alle.map(z => doc.getTextWidth(String(z[i] ?? ""))) ) + 3));
+  const frei = (Rr - L) - br.reduce((a, b) => a + b, 0);
+  if (frei > 0) { const t = br.indexOf(Math.max(...br)); br[t] += frei; }
+  else { const f = (Rr - L) / br.reduce((a, b) => a + b, 0); br = br.map(b => b * f); }
+  const xs = br.map((_, i) => L + br.slice(0, i).reduce((a, b) => a + b, 0));
+  let y = 36;
+  const zeile = (z, fett, linie) => {
+    doc.setFont("helvetica", fett ? "bold" : "normal"); doc.setFontSize(8.5);
+    const teile = z.map((c, i) => doc.splitTextToSize(String(c ?? ""), br[i] - 2));
+    const h = Math.max(...teile.map(t => t.length)) * 3.8 + 1.5;
+    if (y + h > H - 14) { doc.addPage(); kopf(); y = 36; zeile(T.kopf, true, true); doc.setFont("helvetica", fett ? "bold" : "normal"); }
+    teile.forEach((t, i) => T.rechts.includes(i) ? doc.text(t, xs[i] + br[i] - 1, y, { align: "right" }) : doc.text(t, xs[i] + 0.5, y));
+    y += h - 1.5; doc.setDrawColor(linie ? 17 : 210); doc.setLineWidth(linie ? 0.4 : 0.15); doc.line(L, y - 2.6, Rr, y - 2.6); y += 1.5;
+  };
+  kopf(); zeile(T.kopf, true, true);
+  for (const z of T.zeilen) zeile(z, false, false);
+  if (T.summe) zeile(T.summe, true, true);
+  if (!T.zeilen.length) { doc.setFont("helvetica", "normal"); doc.text("Näischt an dësem Zäitraum.", L, y + 4); }
+  const n = doc.getNumberOfPages();
+  for (let s = 1; s <= n; s++) { doc.setPage(s); doc.setFontSize(8); doc.setTextColor(102); doc.text(`Säit ${s} / ${n}`, Rr, H - 8, { align: "right" }); }
+  buchDateiZeigen(new File([doc.output("arraybuffer")], buchName(B, T.titel) + ".pdf", { type: "application/pdf" }));
+}
+// Résumé als Tabelle (für PDF/Excel)
+function buchResumeTabelle(D) {
+  const R = D.resume, z = [["Verkaaft", geldT(R.verkauft)], ["Agaangen", geldT(R.agaangen)], ["Nach op (Stand Enn)", geldT(R.op)], ["Rechnungen", String(R.rechnungen)], ["", ""]];
+  for (const [k, w] of Object.entries(R.jeWie)) z.push(["Zuelaart: " + (ZAHLARTEN[k] || "ouni Aart"), geldT(w)]);
+  z.push(["", ""]);
+  for (const [k, b] of Object.entries(R.jeBier)) z.push([`Béier: ${bierText(k)} (${b.fl} Fl., ${b.faesser} Fässer, ${b.gratis} gratis)`, geldT(b.euro)]);
+  z.push(["", ""]);
+  for (const [k, w] of Object.entries(R.jeVerk)) z.push(["Verkeefer: " + k, geldT(w)]);
+  return { titel: "Résumé", kopf: ["", "€"], rechts: [1], zeilen: z, summe: null };
+}
+async function buchExcel(B, D) {
+  const meld = t => { const m = $("#buMeld"); if (m) m.innerHTML = t ? `<div class="meldung fehler">${esc(t)}</div>` : ""; };
+  let X; try { X = await sheetjsLaden(); } catch { return meld("Excel-Bibliothéik net geluede (Internet?)"); }
+  const T = B.sicht === "resume" ? buchResumeTabelle(D) : buchTabelle(D, B.sicht);
+  const zahl = (c, i) => T.rechts.includes(i) && /^\(?-?[\d.]+,\d{2}\)?$|^-?\d+$/.test(String(c)) && !/^\(/.test(String(c)) ? +String(c).replace(",", ".") : c;
+  const aoa = [[`${T.titel} · ${datumLang(B.von)} – ${datumLang(B.bis)} · ${filterText(B)}`], [], T.kopf, ...T.zeilen.map(z => z.map(zahl)), ...(T.summe ? [T.summe.map(zahl)] : [])];
+  const wb = X.utils.book_new(); X.utils.book_append_sheet(wb, X.utils.aoa_to_sheet(aoa), T.titel.slice(0, 31));
+  const daten = X.write(wb, { type: "array", bookType: "xlsx" });
+  buchDateiZeigen(new File([daten], buchName(B, T.titel) + ".xlsx", { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }));
+}
+// Alle Rechnungen eines Zeitraums in einem PDF, nach Nummer; stornierte mit Stempel „ANNULÉE“
+async function rechnungenSammelPdf(liste, B) {
+  const meld = t => { const m = $("#buRmeld"); if (m) m.innerHTML = t ? `<div class="meldung ${t.startsWith("⏳") ? "ok" : "fehler"}">${esc(t)}</div>` : ""; };
+  meld("⏳ PDF gëtt gemaach …");
+  let jsPDF, Bi; try { [jsPDF, Bi] = await Promise.all([jspdfLaden(), rechnungBilder()]); } catch { return meld("D'PDF-Bibliothéik konnt net geluede ginn — Internet?"); }
+  let doc = null;
+  for (const r of liste) {
+    const v = r.v || { ...(Z.nachId.get(r.e.ref) || {}), ware: (Z.nachId.get(r.e.ref) || {}).betrag, bezahlt: 0, kaeufer: r.kunde, livraison: null };
+    if (!v.posten) continue;
+    const R = rechnungDaten(Z, v, r.e);
+    doc = rechnungPdf(jsPDF, R, Bi, doc);
+    if (r.storniert) { doc.setTextColor(227, 20, 27); doc.setFont("helvetica", "bold"); doc.setFontSize(60); doc.text("ANNULÉE", 105, 170, { align: "center", angle: 30 }); doc.setTextColor(17); }
+  }
+  meld("");
+  if (!doc) return meld("Keng Rechnung fonnt.");
+  buchDateiZeigen(new File([doc.output("arraybuffer")], `Millebeier_Rechnungen_${B.rvon}_${B.rbis}.pdf`, { type: "application/pdf" }));
+}
+
 /* ---------- Verlauf ---------- */
 let VERLAUF_MAX = 100;
 function renderVerlauf() {
@@ -3554,7 +3847,9 @@ function renderEinst() {
   if (tipptIn(box)) return;
   if (!EFORM) EFORM = { leute: [...Z.cfg.leute] };
   const E = EFORM;
-  box.innerHTML = `<div class="card"><h2>📜 Verlaf</h2><div class="hinweis" style="margin:0 0 8px">Wien wéini wat agedroen huet — hei kann een och Agaben läschen (rout ✕).</div>
+  box.innerHTML = `<div class="card"><h2>📒 Buchhaltung</h2><div class="hinweis" style="margin:0 0 8px">Zäitraum a Filter (Béier, Zuelaart, Verkeefer …), Lëschten als PDF fir ze drécken oder Excel, all Rechnungen als ee PDF. Am beschten um Computer.</div>
+    <button class="knopf" id="eBuch" style="width:100%">Buchhaltung opmaachen</button></div>
+  <div class="card"><h2>📜 Verlaf</h2><div class="hinweis" style="margin:0 0 8px">Wien wéini wat agedroen huet — hei kann een och Agaben läschen (rout ✕).</div>
     <button class="knopf" id="eVerlauf" style="width:100%">Verlaf opmaachen</button></div>
   <div class="card"><h2>Dësen Handy</h2>
     <label for="eIch">Ech sinn</label>
@@ -3597,6 +3892,7 @@ function renderEinst() {
   $("#eCsv").onclick = () => excelExport($("#eMeld"));
   $("#eNeu").onclick = () => abgleichen();
   $("#eVerlauf").onclick = () => { TAB = "verlauf"; render(); window.scrollTo(0, 0); };
+  $("#eBuch").onclick = () => { TAB = "buch"; BUCH_MELD = ""; render(); window.scrollTo(0, 0); };
   const ea = $("#eAlt"); if (ea) ea.onclick = altEinspielen;
   const ab = $("#eAbmelden"); if (ab) ab.onclick = () => { if (confirm("Code op dësem Handy läschen?")) { EIN.code = ""; merke(SP, EIN); render(); } };
   const pw = $("#eProbeWeg"); if (pw) pw.onclick = () => {
