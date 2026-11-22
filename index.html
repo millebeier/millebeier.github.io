@@ -433,7 +433,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px}
 <script>
 /* Adresse des Cloudflare-Workers. Leer = Probe-Modus (alles nur auf diesem Handy). */
 const WORKER_URL = "https://millebeier.rjtp6r9s9h.workers.dev/";
-const FASSUNG = "22.11.2026 a";
+const FASSUNG = "22.11.2026 b";
 
 /* === Logik === (kein DOM; test/logik.mjs schneidet diesen Block aus) */
 const LAGER = "Lager";
@@ -1295,13 +1295,15 @@ function buchDaten(Z, F) {
   }
   zahlungen.sort((a, b) => a.e.zeit - b.e.zeit);
   // Rechnungen lückenlos: je Nummer die neueste Fassung, gelöschter Verkauf = storniert
-  const rn = new Map();
-  for (const e of Z.liste) if (e.art === "rechnung" && e.nr) rn.set(e.nr, e);
-  const rechnungen = [...rn.values()].map(e => {
-    const v = Z.vkNachId.get(e.ref), roh = v || Z.nachId.get(e.ref) || {};
+  // Storniert = Verkauf gelöscht ODER die Rechnung selbst im Verlauf gelöscht (alle Fassungen dieser Nummer; vom Nutzer gemeldet, 22.11.)
+  const rn = new Map(), rnAktiv = new Map();
+  for (const e of Z.liste) if (e.art === "rechnung" && e.nr) { rn.set(e.nr, e); if (!Z.storniert.has(e.id)) rnAktiv.set(e.nr, e); }
+  const rechnungen = [...rn.keys()].map(nr => {
+    const e = rnAktiv.get(nr) || rn.get(nr), v = Z.vkNachId.get(e.ref), roh = v || Z.nachId.get(e.ref) || {};
+    const storniert = !v || !rnAktiv.has(nr) || !v.rech || v.rech.nr !== nr;
     const fr = runde((e.frei || []).reduce((a, f) => a + f.n * f.preis, 0));
-    return { nr: e.nr, datum: e.datum, e, v, storniert: !v, kunde: v ? v.kaeufer : roh.kaeufer || "?", posten: roh.posten || [],
-      betrag: v ? v.betrag : runde((roh.betrag || 0) + fr), offen: v ? v.offen : 0, verschickt: v && v.rech ? v.rech.verschickt : null,
+    return { nr, datum: e.datum, e, v: storniert ? null : v, vRoh: v || null, storniert, kunde: v ? v.kaeufer : roh.kaeufer || "?", posten: roh.posten || [],
+      betrag: storniert ? runde((v ? v.ware : roh.betrag || 0) + fr) : v.betrag, offen: storniert ? 0 : v.offen, verschickt: !storniert && v.rech ? v.rech.verschickt : null,
       verk: roh.verkaeufer || "", wie: v ? (v.wie || []) : [] };
   }).filter(r => imZeit(r.datum) && hatBier(r.posten) && (!F.verk || r.verk === F.verk) && kundeOk(r.kunde) && (!F.wie || r.wie.includes(F.wie)) &&
     (!F.status || (F.status === "op" ? r.offen > 0 : !r.storniert && r.offen <= 0))).sort((a, b) => a.nr.localeCompare(b.nr));
@@ -3786,7 +3788,7 @@ async function rechnungenSammelPdf(liste, B) {
   let jsPDF, Bi; try { [jsPDF, Bi] = await Promise.all([jspdfLaden(), rechnungBilder()]); } catch { return meld("D'PDF-Bibliothéik konnt net geluede ginn — Internet?"); }
   let doc = null;
   for (const r of liste) {
-    const v = r.v || { ...(Z.nachId.get(r.e.ref) || {}), ware: (Z.nachId.get(r.e.ref) || {}).betrag, bezahlt: 0, kaeufer: r.kunde, livraison: null };
+    const v = r.v || (r.vRoh ? { ...r.vRoh, bezahlt: 0 } : { ...(Z.nachId.get(r.e.ref) || {}), ware: (Z.nachId.get(r.e.ref) || {}).betrag, bezahlt: 0, kaeufer: r.kunde, livraison: null });
     if (!v.posten) continue;
     const R = rechnungDaten(Z, v, r.e);
     doc = rechnungPdf(jsPDF, R, Bi, doc);

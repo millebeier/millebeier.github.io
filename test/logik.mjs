@@ -4,7 +4,7 @@ const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
 const a = html.indexOf("/* === Logik ===");
 const b = html.indexOf("/* === Oberfläche ===");
 if (a < 0 || b < 0) { console.error("Marken nicht gefunden"); process.exit(1); }
-const L = new Function(html.slice(a, b) + "; return {rechne, gueltig, euro, verteile, erinnerung, csv, beschreibe, hat, LAGER, STANDARD, proSorte, exportBlaetter, anteil, dateienVon, altImport, altKorrekturen, bierText, postenText, frei, zuWenig, preisVon, fassKey, artikelVon, autoAufgaben, aufgabenStand, aidVon, aufFuerMich, naechsteNr, rechnungZeilen, rechnungDaten};")();
+const L = new Function(html.slice(a, b) + "; return {rechne, gueltig, euro, verteile, erinnerung, csv, beschreibe, hat, LAGER, STANDARD, proSorte, exportBlaetter, anteil, dateienVon, altImport, altKorrekturen, bierText, postenText, frei, zuWenig, preisVon, fassKey, artikelVon, autoAufgaben, aufgabenStand, aidVon, aufFuerMich, naechsteNr, rechnungZeilen, rechnungDaten, buchDaten};")();
 
 let fehler = 0, n = 0;
 const ist = (was, wert, soll) => { n++; const ok = JSON.stringify(wert) === JSON.stringify(soll); if (!ok) { fehler++; console.log(`✗ ${was}: ${JSON.stringify(wert)} statt ${JSON.stringify(soll)}`); } };
@@ -438,6 +438,13 @@ ist("CSV Zeilen", c.trim().split("\r\n").length, 4);
   const r2 = R("rechnung", { ref: v1.id, nr: "2026-001", datum: "2026-11-20", adresse: "Ferro", frei: [] });
   Y = L.rechne([ab, v1, v2, r1, z1, r2, R("storno", { ref: v1.id })]);
   ist("Storno: Nummer bleibt vergeben", [Y.rechnungen.length, L.naechsteNr(Y, "2026-11-22")], [0, "2026-002"]);
+  // Buchhaltung: Rechnung selbst gelöscht (Verkauf bleibt) = storniert; neue Rechnung für denselben Verkauf = neue Nummer, gilt
+  { const r3 = R("rechnung", { ref: v2.id, nr: "2026-003", datum: "2026-11-21", adresse: "Café" });
+    const s3 = R("storno", { ref: r3.id });
+    const r4 = R("rechnung", { ref: v2.id, nr: "2026-004", datum: "2026-11-21", adresse: "Café" });
+    const Yb = L.rechne([ab, v1, v2, r1, z1, r3, s3, r4]);
+    const Rb = L.buchDaten(Yb, { von: "2026-01-01", bis: "2026-12-31", bier: "", wie: "", verk: "", kunde: "", status: "" }).rechnungen;
+    ist("Buchhaltung: gelöschte Rechnung storniert, neue gilt", Rb.map(r => [r.nr, r.storniert]), [["2026-001", false], ["2026-003", true], ["2026-004", false]]); }
   ist("Gültig: falsche Nummer nein, ohne Nummer ja", [L.gueltig({ ...r1, nr: "26-1" }), L.gueltig({ id: "x", zeit: 1, art: "rechnung", ref: "a" })], [false, true]);
   // Eigener Stückpreis (Fassung d): genau auf der Rechnung, Anteil pro Bier danach gewichtet
   const v3 = R("verkauf", { verkaeufer: "Laurent", kaeufer: "Weber", posten: [{ sorte: "NEIPA", n: 12, preis: 2.5 }, { sorte: "NEIPA Keg 20l", n: 1 }], betrag: 180 });
