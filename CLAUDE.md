@@ -319,7 +319,7 @@ beim Verkaufen/Livraison und „Fläsche beweegen“ an, solange jemand welche h
   Lëscht“ (`buchExcel`); „📄 All Rechnungen als ee PDF“ zwischen zwei Daten (`rechnungenSammelPdf`, `rechnungPdf` hängt mit `vorher` Seiten an,
   stornierte mit rotem „ANNULÉE“); „📊 Komplett Excel“ wie bisher. Ergebnis jeweils in `#ansicht` mit „⬆️ Deelen“ (`buchDateiZeigen`).
   **Zahltag änderbar** (Abgleich mit dem Kontoauszug): Zahlungsfenster hat „Bezuelt den“ (heute vorbelegt, `#zahlDatum`, `ZAHL_DATUM`, `zd()`),
-  `zahlung.datum` nur wenn nicht heute; Buchhaltung nimmt `datum`, sonst den Eintragstag. Rechnungsnummer: weiter ab 001 (Frage nach 005 offen).
+  `zahlung.datum` nur wenn nicht heute; Buchhaltung nimmt `datum`, sonst den Eintragstag. Rechnungsnummer: bleibt wie es ist (vom Nutzer, 22.11.: die ersten Nummern waren Test-Rechnungen; echte zählen danach weiter).
 - **Aktionsknöpfe rot, nicht grün** (vom Nutzer, Fassung 20.11. a): „Geliwwert ✓“, „Bezuelt ✓“, „Alles bezuelt ✓“ und Späicheren
   bei „+ Aufgab“ sind `.knopf.akt` (Millebéier-Rot, weiße Schrift) — grün sah aus, als wäre es schon erledigt. Grün bleibt nur
   für Erledigtes (✓ bezuelt, gewählte Zahlungsart).
