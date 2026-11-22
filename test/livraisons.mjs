@@ -48,9 +48,9 @@ await p.click("[data-lbezuelt]"); await p.click("#zahlWahl [data-wie=\"bank\"]")
 // Überweisung ist erst angekündigt (vom Nutzer, 22.11.): zählt nicht, bis „✓ Ukomm“ unter Ausstoend
 ist("Überweisung angekündigt: Kasse 0, steht unter Ausstoend zum Kontrollieren", [await p.evaluate(() => Z.kasse), await p.evaluate(() => Z.wartend.length)], [0, 1]);
 await p.click('[data-tab="offen"]'); await warte(200);
-ist("Ausstoend: Bereich Iwwerweisunge kucken", await p.locator("#oBank").innerText(), t => t.includes("Ferro Forum") && t.includes("90 €"));
-await p.click("#oBank [data-bk]"); await warte(300);
-ist("✓ Ukomm: bezahlt, Bereich weg", [await p.evaluate(() => Z.kasse), await p.locator("#oBank").count()], [90, 0]);
+ist("Ausstoend: kein eigener Kasten, Hinweis + Ukomm direkt am Verkauf", [await p.locator("#oBank").count(), await p.locator("#t-offen .kunde").innerText()], v => v[0] === 0 && v[1].includes("Ferro Forum") && v[1].includes("Iwwerweisung ugekënnegt") && v[1].includes("Ukomm") && v[1].includes("Aanescht bezuelt"));
+await p.click("#t-offen [data-bk]"); await warte(300);
+ist("✓ Ukomm: bezahlt, Hinweis weg", [await p.evaluate(() => Z.kasse), await p.locator("#t-offen [data-bk]").count()], [90, 0]);
 await p.click('[data-tab="livraisons"]'); await warte(200);
 ist("Rechnung gemaach und bezuelt", await p.locator("#lListe").innerText(), s => s.includes("Rechnung gemaach") && s.includes("✓ bezuelt"));
 ist("Kasse", await p.evaluate(() => Z.kasse), 90);

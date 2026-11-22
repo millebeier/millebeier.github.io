@@ -367,8 +367,8 @@ table.buchtab{width:100%;border-collapse:collapse;font-size:13px} .buchtab td,.b
 button.chip{cursor:pointer;font:inherit;font-size:12px}
 .rechz{display:flex;justify-content:space-between;align-items:center;gap:8px;border-top:1px solid var(--line);padding:9px 0}
 .rechz:first-of-type{border-top:0}
-.bankk{display:flex;gap:5px;align-items:center;flex-shrink:0} .bankk input{width:128px;padding:6px;font-size:14px} .bankk .knopf{margin:0;white-space:nowrap}
-@media (max-width:420px){.bankz{flex-wrap:wrap}.bankk{width:100%;justify-content:flex-end}} .rechz small{display:block;color:var(--muted)}
+.wartb{margin-top:6px} .bankk{display:flex;flex-wrap:wrap;gap:5px;align-items:center;margin-top:6px}
+.bankk input{width:132px;padding:6px;font-size:14px;margin:0} .bankk .knopf{margin:0;white-space:nowrap;padding:7px 10px;font-size:13px} .rechz small{display:block;color:var(--muted)}
 #ansichtInhalt .tabelle{overflow:auto;-webkit-overflow-scrolling:touch;background:#fff;color:#111;border-radius:6px;margin-bottom:12px}
 #ansichtInhalt .tabelle table{border-collapse:collapse;font-size:12px;width:auto;min-width:100%}
 #ansichtInhalt .tabelle td{border:1px solid #ccc;padding:3px 6px;text-align:left;white-space:nowrap;color:#111}
@@ -435,7 +435,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px}
 <script>
 /* Adresse des Cloudflare-Workers. Leer = Probe-Modus (alles nur auf diesem Handy). */
 const WORKER_URL = "https://millebeier.rjtp6r9s9h.workers.dev/";
-const FASSUNG = "22.11.2026 e";
+const FASSUNG = "22.11.2026 f";
 
 /* === Logik === (kein DOM; test/logik.mjs schneidet diesen Block aus) */
 const LAGER = "Lager";
@@ -2380,7 +2380,7 @@ function renderLListe() {
         : L.vorbezahlt > 0 ? `<button class="chip warn lvor" data-lvor="${esc(L.lid)}">${euro(L.vorbezahlt)} Acompte${L.vorWie.length ? " · " + esc(L.vorWie.map(w => ZAHLARTEN[w]).join(", ")) : ""} — ${euro(runde(L.betrag - L.vorbezahlt))} op ›</button>`
         : `<button class="chip lvor nb" data-lvor="${esc(L.lid)}">💶 Nach net bezuelt ›</button>`) : ""}
       ${!v && L.rechnung ? `<span class="chip rgef">🧾 Rechnung nach net geschéckt</span>` : ""}
-      ${!v ? L.vorWart.map(W => `<span class="chip warn">🏦 ${euro(W.e.betrag)} Iwwerweisung ugekënnegt</span>`).join("") : ""}
+      ${!v ? L.vorWart.map(wartHtml).join("") : ""}
       ${L.anlass || L.notiz ? `<div class="hinweis" style="margin-top:4px">${esc([L.anlass, L.notiz].filter(Boolean).join(" · "))}</div>` : ""}
       ${status}<div class="knopfe ${!v ? "einz" : ""}">${knoepfe}</div>
       ${!v && A_INLINE && A_INLINE.wo === "liv:" + L.lid ? aufFormHtml(A_INLINE.F, `Nei Aufgab fir d'Bestellung ${L.kunde}`) : ""}</div>`;
@@ -2433,7 +2433,7 @@ function renderLListe() {
       if (r) eintragen([{ art: "zahlung", ref: L.lid, vor: true, betrag: r.betrag, wie: r.wie, ...zd(), ...zw(r.wie) }]);
     });
   });
-  rechKnoepfe(box);
+  rechKnoepfe(box); wartBinden(box);
   box.querySelectorAll("[data-lbezuelt]").forEach(b => b.onclick = () => {
     const v = Z.vkNachId.get(b.dataset.lbezuelt); if (!v) return;
     zahlartWaehlen(`${v.kaeufer}: ${euro(v.offen)} bezuelt — wéi?`).then(wie => { if (wie) eintragen([{ art: "zahlung", ref: v.id, betrag: v.offen, wie, ...zd(), ...zw(wie) }]); });
@@ -2696,7 +2696,7 @@ const zw = wie => wie === "bank" ? { wart: true } : {};
 const zd = () => /^\d{4}-\d{2}-\d{2}$/.test(ZAHL_DATUM) && ZAHL_DATUM !== heuteLux() ? { datum: ZAHL_DATUM } : {};
 /* Zahlungsart wählen (Ausstoend, Livraisons): Fenster mit WERO / SumUp / Iwwerweisung / Bar. Gibt die Art oder null.
    Mit `bis` (Vorauszahlung, Fassung h): oben „Wéivill?“, vorbelegt mit allem; weniger = Acompte. Gibt dann {wie, betrag}. */
-function zahlartWaehlen(titel, bis) {
+function zahlartWaehlen(titel, bis, ohne = []) {
   return new Promise(fertig => {
     const box = $("#zahlWahl");
     $("#zahlTitel").textContent = titel;
@@ -2704,7 +2704,7 @@ function zahlartWaehlen(titel, bis) {
     $("#zahlDatum").value = heuteLux(); ZAHL_DATUM = ""; // Zahltag änderbar (Buchhaltung: Abgleich mit dem Kontoauszug, vom Nutzer 21.11.)
     $("#zahlBetrag").classList.toggle("versteckt", !mitBetrag);
     if (mitBetrag) { feld.value = String(bis).replace(".", ","); $("#zahlBetragInfo").textContent = `Alles = ${euro(bis)}. Manner = Acompte, de Rescht bleift op.`; }
-    box.querySelector(".seg").innerHTML = Object.keys(ZAHLARTEN).map(k => `<button data-wie="${k}" class="zbtn">${zahlInhalt(k)}</button>`).join("");
+    box.querySelector(".seg").innerHTML = Object.keys(ZAHLARTEN).filter(k => !ohne.includes(k)).map(k => `<button data-wie="${k}" class="zbtn">${zahlInhalt(k)}</button>`).join("");
     box.classList.remove("versteckt");
     const zu = wie => { box.classList.add("versteckt"); ZAHL_DATUM = wie ? $("#zahlDatum").value : ""; if (document.activeElement) document.activeElement.blur(); fertig(wie); };
     box.querySelectorAll("[data-wie]").forEach(b => b.onclick = () => {
@@ -3006,25 +3006,42 @@ async function rechnungZeigen(vid) {
   } catch { alert("D'PDF-Bibliothéik konnt net geluede ginn — Internet? Nach eng Kéier probéieren."); }
 }
 
+/* Angekündigte Überweisung direkt am Verkauf / an der Bestellung (vom Nutzer, 22.11., Fassung f: kein eigener Kasten, kein ✕):
+   Datum (Tag laut Kontoauszug) + „✓ Ukomm“, oder „Aanescht bezuelt“ (doch WERO/SumUp/Bar → ersetzt die Ankündigung). */
+function wartHtml(W) {
+  const d = tageVon(tagVon(W.e.zeit), heuteLux());
+  return `<div class="wartb"><div class="chip warn">🏦 ${euro(W.e.betrag)} Iwwerweisung ugekënnegt ${esc(datumText(W.e.zeit))}${d >= 7 ? ` · ${d} Deeg` : ""}</div>
+    <div class="bankk"><input type="date" data-bkd="${esc(W.e.id)}" value="${heuteLux()}" aria-label="Ukomm den"><button class="knopf akt" data-bk="${esc(W.e.id)}">✓ Ukomm</button>
+    <button class="knopf" data-bkand="${esc(W.e.id)}">Aanescht bezuelt</button></div></div>`;
+}
+function wartBinden(root) {
+  root.querySelectorAll("[data-bkd]").forEach(i => i.onchange = () => i.blur());
+  root.querySelectorAll("[data-bk]").forEach(b => b.onclick = () => {
+    const i = root.querySelector(`[data-bkd="${CSS.escape(b.dataset.bk)}"]`), d = i && /^\d{4}-\d{2}-\d{2}$/.test(i.value) ? i.value : heuteLux();
+    eintragen([{ art: "zbest", ref: b.dataset.bk, ...(d !== heuteLux() ? { datum: d } : {}) }]);
+  });
+  root.querySelectorAll("[data-bkand]").forEach(b => b.onclick = async () => {
+    const W = (Z.wartend || []).find(x => x.e.id === b.dataset.bkand); if (!W) return;
+    const wer = W.v ? W.v.kaeufer : W.L ? W.L.kunde : "";
+    const wie = await zahlartWaehlen(`${wer}: ${euro(W.e.betrag)} — wéi dann bezuelt?`, undefined, ["bank"]);
+    if (!wie) return;
+    const { art, id, zeit, durch, wart, datum, ...rest } = W.e;
+    eintragen([{ art: "storno", ref: W.e.id }, { art: "zahlung", ...rest, wie, ...zd() }]);
+  });
+}
+
 /* ---------- Offen ---------- */
 let NUR_MEINE = false;
 function renderOffen() {
   const box = $("#t-offen");
   if (tipptIn(box)) return;
-  const meinW = W => !NUR_MEINE || (W.v ? W.v.verkaeufer : W.L ? W.L.kontakt : W.e.durch) === EIN.ich;
-  const wart = (Z.wartend || []).filter(meinW).sort((a, b) => a.e.zeit - b.e.zeit);
   const liste = Z.kaeufer.map(K => {
     const vs = K.verkaeufe.filter(v => v.offen > 0 && (!NUR_MEINE || v.verkaeufer === EIN.ich));
     return { ...K, sicht: vs, sichtOffen: runde(vs.reduce((a, v) => a + v.offen, 0)) };
   }).filter(K => K.sicht.length);
   // Rechnungen nach ze maachen (vom Nutzer, 20.11.2026): eigener Bereich oben, auch schon bezahlte Verkäufe
   const fehlt = Z.verkaeufe.filter(v => rechFehlt(v) && (!NUR_MEINE || v.verkaeufer === EIN.ich)).sort(ordnung);
-  const wartHtml = wart.length ? `<div class="card" id="oBank"><h2>🏦 Iwwerweisunge kucken (${wart.length})</h2>
-    <div class="m" style="color:var(--muted);font-size:13px;margin-bottom:6px">Ugekënnegt, awer nach net bestätegt. Um Kontoauszug kucken, dann „✓ Ukomm“.</div>
-    ${wart.map(W => { const wer = W.v ? W.v.kaeufer : W.L ? W.L.kunde : "?", verk = W.v ? W.v.verkaeufer : W.L ? W.L.kontakt : W.e.durch, d = tageVon(tagVon(W.e.zeit), heuteLux());
-      return `<div class="rechz bankz"><span><b>${esc(wer)}</b> · ${euro(W.e.betrag)}<small>ugekënnegt ${esc(datumText(W.e.zeit))}${d ? ` (virun ${d} Deeg)` : ""} · ${esc(beim(verk))}${W.e.vor ? " · Virauszuelung" : ""}</small></span>
-        <span class="bankk"><input type="date" data-bkd="${esc(W.e.id)}" value="${heuteLux()}" aria-label="Ukomm den"><button class="knopf akt" data-bk="${esc(W.e.id)}">✓ Ukomm</button><button class="knopf klein" data-bkweg="${esc(W.e.id)}" aria-label="Net komm">✕</button></span></div>`; }).join("")}</div>` : "";
-  box.innerHTML = `${wartHtml}${fehlt.length ? `<div class="card" id="oRech"><h2>🧾 Rechnung nach ze maachen (${fehlt.length})</h2>
+  box.innerHTML = `${fehlt.length ? `<div class="card" id="oRech"><h2>🧾 Rechnung nach ze maachen (${fehlt.length})</h2>
     ${fehlt.map(v => `<div class="rechz"><span><b>${esc(v.kaeufer)}</b> · ${euro(v.betrag)}<small>${v.livraison ? `🚚 geliwwert ${esc(datumText(v.zeit))}` : `verkaaft ${esc(datumText(v.zeit))}`} · ${esc(beim(v.verkaeufer))} · ${v.offen <= 0 ? "✓ bezuelt" : v.bezahlt > 0 ? euro(v.offen) + " op" : "nach net bezuelt"}</small></span>
       <button class="knopf akt" data-rech="${esc(v.id)}">🧾 Maachen</button></div>`).join("")}</div>` : ""}
   <div class="card">
@@ -3034,7 +3051,7 @@ function renderOffen() {
   </div>
   ${liste.length ? liste.map((K, i) => `<div class="card kunde">
     <div class="kopfz"><h2 style="margin:0">${esc(K.name)}</h2><span class="betrag">${euro(K.sichtOffen)}</span></div>
-    ${K.sicht.map(v => `<div class="vk"><span>${v.livraison ? `🚚 Bestellung ${esc(datumKurz(v.livraison.datum))}` : datumText(v.zeit)} · ${esc(postenText(v.posten))}${v.betrag > v.ware ? ` + ${euro(v.betrag - v.ware)} fräi Positiounen` : ""}<br><small class="muted">${esc(beim(v.verkaeufer))}${v.bezahlt ? ` · ${euro(v.bezahlt)} scho bezuelt` : ""}${v.rech ? ` · Rechnung ${tageVon(v.rech.datum, heuteLux()) ? `zënter ${tageVon(v.rech.datum, heuteLux())} Deeg` : "vun haut"}` : ""}</small>${rechChip(v) ? `<div style="margin-top:4px">${rechChip(v)}</div>` : ""}${rechNachKnopf(v) ? `<div>${rechNachKnopf(v)}</div>` : ""}${(v.wart || []).map(W => `<div style="margin-top:4px"><span class="chip warn">🏦 ${euro(W.e.betrag)} Iwwerweisung ugekënnegt ${esc(datumText(W.e.zeit))}</span></div>`).join("")}</span><span>${euro(v.offen)}</span></div>`).join("")}
+    ${K.sicht.map(v => `<div class="vk"><span>${v.livraison ? `🚚 Bestellung ${esc(datumKurz(v.livraison.datum))}` : datumText(v.zeit)} · ${esc(postenText(v.posten))}${v.betrag > v.ware ? ` + ${euro(v.betrag - v.ware)} fräi Positiounen` : ""}<br><small class="muted">${esc(beim(v.verkaeufer))}${v.bezahlt ? ` · ${euro(v.bezahlt)} scho bezuelt` : ""}${v.rech ? ` · Rechnung ${tageVon(v.rech.datum, heuteLux()) ? `zënter ${tageVon(v.rech.datum, heuteLux())} Deeg` : "vun haut"}` : ""}</small>${rechChip(v) ? `<div style="margin-top:4px">${rechChip(v)}</div>` : ""}${rechNachKnopf(v) ? `<div>${rechNachKnopf(v)}</div>` : ""}${(v.wart || []).map(wartHtml).join("")}</span><span>${euro(v.offen)}</span></div>`).join("")}
     <div class="knopfe">
       <button class="knopf akt" data-alles="${i}">Alles bezuelt ✓</button>
       <button class="knopf" data-teil="${i}">Deelbetrag…</button>
@@ -3042,14 +3059,7 @@ function renderOffen() {
     </div></div>`).join("") : `<div class="card leer">Alles bezuelt. 🎉</div>`}`;
   box.querySelectorAll("[data-meine]").forEach(b => b.onclick = () => { NUR_MEINE = b.dataset.meine === "1"; renderOffen(); });
   rechKnoepfe(box);
-  box.querySelectorAll("[data-bkd]").forEach(i => i.onchange = () => i.blur());
-  box.querySelectorAll("[data-bk]").forEach(b => b.onclick = () => {
-    const i = box.querySelector(`[data-bkd="${CSS.escape(b.dataset.bk)}"]`), d = i && /^\d{4}-\d{2}-\d{2}$/.test(i.value) ? i.value : heuteLux();
-    eintragen([{ art: "zbest", ref: b.dataset.bk, ...(d !== heuteLux() ? { datum: d } : {}) }]);
-  });
-  box.querySelectorAll("[data-bkweg]").forEach(b => b.onclick = () => {
-    if (confirm("Dës Iwwerweisung ass net komm? D'Ukënnegung gëtt geläscht — de Betrag steet dann nees als op.")) eintragen([{ art: "storno", ref: b.dataset.bkweg }]);
-  });
+  wartBinden(box);
   box.querySelectorAll("[data-alles]").forEach(b => b.onclick = async () => {
     const K = liste[+b.dataset.alles];
     const wie = await zahlartWaehlen(`${K.name}: ${euro(K.sichtOffen)} bezuelt — wéi?`);

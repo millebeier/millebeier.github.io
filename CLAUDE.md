@@ -325,9 +325,11 @@ beim Verkaufen/Livraison und „Fläsche beweegen“ an, solange jemand welche h
   `zahlung.datum` nur wenn nicht heute; Buchhaltung nimmt `datum`, sonst den Eintragstag. Rechnungsnummer: bleibt wie es ist (vom Nutzer, 22.11.: die ersten Nummern waren Test-Rechnungen; echte zählen danach weiter).
 - **Überweisung erst angekündigt** (vom Nutzer, 22.11.2026, Fassung d: „sonst würde verpasst, dass einer nicht zahlt“): Zahlart „Iwwerweisung“
   (Verkafen, Ausstoend, Bestellung/Vorauszahlung, Deelbetrag) speichert `zahlung` mit `wart: true` (`zw()`) — zählt **nicht** als bezahlt und nicht in
-  der Kasse (`rechne`: `Z.wartend`, `v.wart`, `L.vorWart`). Ausstoend oben „🏦 Iwwerweisunge kucken (n)“ mit Datum (heute vorbelegt = Tag laut
-  Kontoauszug) und „✓ Ukomm“ → Eintrag `zbest` (ref = Zahlung, `datum` nur wenn nicht heute) → erst dann bezahlt; „✕“ = nicht gekommen (storno der
-  Ankündigung, Betrag wieder offen). Chip „🏦 … Iwwerweisung ugekënnegt“ am Verkauf und an der geplanten Bestellung. 💡 nach 7 Tagen „Iwwerweisung vu X
+  der Kasse (`rechne`: `Z.wartend`, `v.wart`, `L.vorWart`). **Kein eigener Kasten** (vom Nutzer, Fassung 22.11. f): direkt am
+  Verkauf unter „Nach net bezuelt“ bzw. an der geplanten Bestellung (`wartHtml`/`wartBinden`): Hinweis „🏦 … Iwwerweisung ugekënnegt“, Datum (heute
+  vorbelegt = Tag laut Kontoauszug), „✓ Ukomm“ → Eintrag `zbest` (ref = Zahlung, `datum` nur wenn nicht heute) → erst dann bezahlt; **„Aanescht
+  bezuelt“** (statt ✕, vom Nutzer: bezahlt werden muss trotzdem) → Auswahl WERO/SumUp/Bar (`zahlartWaehlen(…, ohne)`) → storno der Ankündigung + neue
+  Zahlung mit gleichem Betrag in einem `eintragen`. 💡 nach 7 Tagen „Iwwerweisung vu X
   kucken — ukomm?“ für Verkäufer/Kontakt, abgehakt nach 7 Tagen wieder. Buchhaltung: angekündigte stehen als „UGEKËNNEGT, NACH NET UKOMM“ (nicht im
   Total), bestätigte mit dem Tag vom Kontoauszug. Alte Überweisungen ohne `wart` zählen wie bisher sofort. Reiterzahl Ausstoend zählt Wartende mit.
 - **Verlauf mit Suchfeld** (vom Nutzer, Fassung 22.11. d): `#vlSuche` bleibt beim Neuaufbau stehen (nur `#vlListe` wird neu gebaut, `renderVerlaufListe`),

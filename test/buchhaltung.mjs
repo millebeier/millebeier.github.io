@@ -142,10 +142,12 @@ await p.fill("#vName", "Hoffmann"); await p.fill("#vN0", "1"); await p.click('[d
 if (await p.locator("#frageWahl:not(.versteckt)").count()) { await p.click('#frageWahl [data-wahl^="q:"]'); await warte(500); }
 ist("Verkafen Überweisung: Meldung", await p.locator("#vMeldung").innerText(), t => t.includes("Iwwerweisung") && t.includes("bis se ukomm ass"));
 await p.click('[data-tab="offen"]'); await warte(300);
-ist("Ausstoend: Hoffmann zum Kontrollieren + Chip am Verkauf", [await p.locator("#oBank").innerText(), await p.locator("#t-offen").innerText()], v => v[0].includes("Hoffmann") && v[1].includes("Iwwerweisung ugekënnegt"));
+ist("Ausstoend: Hoffmann mit Hinweis und Knöpfen am Verkauf", await p.locator("#t-offen").innerText(), t => t.includes("Hoffmann") && t.includes("Iwwerweisung ugekënnegt") && t.includes("Aanescht bezuelt") && !t.includes("Iwwerweisunge kucken"));
 const hW = await p.evaluate(() => Z.wartend.find(W => W.v && W.v.kaeufer === "Hoffmann").e.id);
-await p.click(`#oBank [data-bkweg="${hW}"]`); await warte(300);
-ist("✕ Net komm: Ankündigung weg, Betrag offen", [await p.locator("#oBank").innerText().catch(() => ""), await p.evaluate(() => Z.verkaeufe.find(v => v.kaeufer === "Hoffmann").offen)], v => !v[0].includes("Hoffmann") && v[1] === 3);
+await p.click(`[data-bkand="${hW}"]`); await warte(300);
+ist("Aanescht bezuelt: Auswahl ohne Iwwerweisung", await p.evaluate(() => [...document.querySelectorAll("#zahlWahl [data-wie]")].map(b => b.dataset.wie)), ["wero", "sumup", "bar"]);
+await p.click('#zahlWahl [data-wie="sumup"]'); await warte(400);
+ist("Aanescht bezuelt: SumUp, bezahlt, nichts wartet mehr", await p.evaluate(() => { const v = Z.verkaeufe.find(v => v.kaeufer === "Hoffmann"); return [v.offen, v.wie, Z.wartend.some(W => W.v && W.v.kaeufer === "Hoffmann")]; }), [0, ["sumup"], false]);
 await p.click("#zahnrad"); await warte(200); await p.click("#eVerlauf"); await warte(300);
 await p.fill("#vlSuche", "hoffmann"); await warte(200);
 ist("Verlauf-Suche: nur Hoffmann", await p.locator("#vlListe").innerText(), t => t.includes("fonnt") && t.includes("Hoffmann") && !t.includes("Kalbusch"));
