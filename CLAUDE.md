@@ -329,9 +329,11 @@ beim Verkaufen/Livraison und „Fläsche beweegen“ an, solange jemand welche h
   Verkauf unter „Nach net bezuelt“ bzw. an der geplanten Bestellung (`wartHtml`/`wartBinden`): Hinweis gestrichelt wie „Nach net bezuelt“: „🏦 Iwwerweisung vum <Datum> nach ausstoend · <Betrag>“ (vom Nutzer, Fassung g), „ukomm den“ + Datum (heute
   vorbelegt = Tag laut Kontoauszug), „✓ Ukomm“ → Eintrag `zbest` (ref = Zahlung, `datum` nur wenn nicht heute) → erst dann bezahlt; **„Aanescht
   bezuelt“** (statt ✕, vom Nutzer: bezahlt werden muss trotzdem) → Auswahl WERO/SumUp/Bar (`zahlartWaehlen(…, ohne)`) → storno der Ankündigung + neue
-  Zahlung mit gleichem Betrag in einem `eintragen`. **Jede andere Zahlung ersetzt die Ankündigung** (vom Nutzer, Fassung h): „Alles bezuelt“,
-  „Deelbetrag“, „Bezuelt ✓“ an der Bestellung und Vorauszahlung stornieren vorher die angekündigten Überweisungen der betroffenen Verkäufe/Bestellung
-  (`wartWeg`) — sonst käme nach Bar-Zahlung trotzdem die 💡, oder mit „Iwwerweisung“ gäbe es zwei Ankündigungen. 💡 nach 7 Tagen „Iwwerweisung vu X
+  Zahlung mit gleichem Betrag in einem `eintragen`. **Bezahl-Knöpfe nur für den nicht angekündigten Rest** (vom Nutzer, Fassung k, ersetzt das
+  `wartWeg` aus Fassung h: „Ukomm/Aanescht bezuelt“ und „36 € bezuelt“ waren doppelt): `offenRest(v)` = offen − angekündigt (`wartSumme`). Ein Verkauf,
+  der ganz angekündigt ist, hat keinen Bezahl-Knopf; die Karte zählt unten nur die übrigen (`K.bez`, `K.bezOffen`): keiner → nur „Erënneren“, einer →
+  „<Rest> bezuelt ✓“, mehrere → Einzelknöpfe + „Béid/All n zesummen“. Zwei angekündigte Überweisungen = je eigenes „✓ Ukomm“. Deelbetrag verteilt nur
+  auf den Rest; gelieferte Bestellung „<Rest> bezuelt ✓“; Vorauszahlung/Acompte rechnet den Rest ohne Angekündigtes. Angekündigtes bleibt dabei stehen. 💡 nach 7 Tagen „Iwwerweisung vu X
   kucken — ukomm?“ für Verkäufer/Kontakt, abgehakt nach 7 Tagen wieder. Buchhaltung: angekündigte stehen als „UGEKËNNEGT, NACH NET UKOMM“ (nicht im
   Total), bestätigte mit dem Tag vom Kontoauszug. Alte Überweisungen ohne `wart` zählen wie bisher sofort. **Durchsicht** (vom Nutzer, Fassung 22.11. j): 🏦-Block auch an der
   **gelieferten** Bestellung; geplante Bestellung, deren Rest ganz als Überweisung angekündigt ist, zeigt nur den 🏦-Hinweis (kein „Nach net

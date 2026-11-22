@@ -148,20 +148,24 @@ await p.click(`[data-bkand="${hW}"]`); await warte(300);
 ist("Aanescht bezuelt: Auswahl ohne Iwwerweisung", await p.evaluate(() => [...document.querySelectorAll("#zahlWahl [data-wie]")].map(b => b.dataset.wie)), ["wero", "sumup", "bar"]);
 await p.click('#zahlWahl [data-wie="sumup"]'); await warte(400);
 ist("Aanescht bezuelt: SumUp, bezahlt, nichts wartet mehr", await p.evaluate(() => { const v = Z.verkaeufe.find(v => v.kaeufer === "Hoffmann"); return [v.offen, v.wie, Z.wartend.some(W => W.v && W.v.kaeufer === "Hoffmann")]; }), [0, ["sumup"], false]);
-// „Alles bezuelt“ ersetzt eine angekündigte Überweisung (Fassung h): keine falsche 💡, nie zwei Ankündigungen
+// Überweisung angekündigt (Fassung k): Verkauf ganz angekündigt → keine Bezahl-Knöpfe; zwei angekündigte → je eigenes Ukomm;
+// einer angekündigt + einer normal → Bezahl-Knopf nur für den normalen, die Ankündigung bleibt
 await p.evaluate(() => { const v = eintragen([{ art: "verkauf", verkaeufer: "Laurent", kaeufer: "Muller", posten: [{ sorte: "NEIPA", n: 2 }], betrag: 6, aus: "Lager" }])[0];
   setTimeout(() => eintragen([{ art: "zahlung", ref: v.id, betrag: 6, wie: "bank", wart: true }]), 50); });
-await warte(3200); /* länger als die 3-s-Sperre für gleichen Inhalt */ await p.click('[data-tab="offen"]'); await warte(300);
-const kM = await p.evaluate(() => [...document.querySelectorAll("#t-offen .kunde")].findIndex(c => c.textContent.includes("Muller")));
-await p.locator("#t-offen .kunde").nth(kM).locator("[data-alles]").click(); await warte(200);
-await p.click('#zahlWahl [data-wie="bank"]'); await warte(500);
-ist("Alles bezuelt mit Iwwerweisung: nur eine Ankündigung", await p.evaluate(() => Z.wartend.filter(W => W.v && W.v.kaeufer === "Muller").length), 1);
-await warte(900);
-const kM2 = await p.evaluate(() => [...document.querySelectorAll("#t-offen .kunde")].findIndex(c => c.textContent.includes("Muller")));
-await p.locator("#t-offen .kunde").nth(kM2).locator("[data-alles]").click(); await warte(200);
+await warte(700); await p.click('[data-tab="offen"]'); await warte(300);
+const mk = () => p.locator("#t-offen .kunde", { hasText: "Muller" });
+ist("Ganz angekündigt: kein „bezuelt“, kein Deelbetrag, aber Ukomm + Erënneren", [await mk().locator("[data-alles]").count(), await mk().locator("[data-teil]").count(), await mk().locator("[data-bk]").count(), await mk().locator("[data-erinnern]").count()], [0, 0, 1, 1]);
+await p.evaluate(() => { const v = eintragen([{ art: "verkauf", verkaeufer: "Laurent", kaeufer: "Muller", posten: [{ sorte: "NEIPA", n: 4 }], betrag: 12, aus: "Lager" }])[0];
+  setTimeout(() => eintragen([{ art: "zahlung", ref: v.id, betrag: 12, wie: "bank", wart: true }]), 50); });
+await warte(700);
+ist("Zwei angekündigt: zwei Ukomm, keine Bezahl-Knöpfe", [await mk().locator("[data-bk]").count(), await mk().locator("[data-alles], .vbez").count()], [2, 0]);
+await p.evaluate(() => eintragen([{ art: "verkauf", verkaeufer: "Laurent", kaeufer: "Muller", posten: [{ sorte: "NEIPA", n: 3 }], betrag: 9, aus: "Lager" }]));
+await warte(700);
+ist("Dazu ein normaler: unten nur „9 € bezuelt ✓“, keine Einzelknöpfe", [await mk().locator("[data-alles]").innerText(), await mk().locator(".vbez").count()], ["9 € bezuelt ✓", 0]);
+await warte(900); await mk().locator("[data-alles]").click(); await warte(200);
 await p.click('#zahlWahl [data-wie="bar"]'); await warte(500);
-ist("Alles bezuelt mit Bar: bezahlt, Ankündigung weg (keine 💡)", await p.evaluate(() => [Z.verkaeufe.find(v => v.kaeufer === "Muller").offen, Z.wartend.some(W => W.v && W.v.kaeufer === "Muller"),
-  autoAufgaben(Z, tagPlus(heuteLux(), 10)).some(a => a.typ === "iwwerweisung" && a.text.includes("Muller"))]), [0, false, false]);
+ist("Bar für den normalen: der bezahlt, die zwei Ankündigungen bleiben", await p.evaluate(() => [Z.verkaeufe.filter(v => v.kaeufer === "Muller").map(v => v.offen).sort((a, b) => a - b), Z.wartend.filter(W => W.v && W.v.kaeufer === "Muller").length]), [[0, 6, 12], 2]);
+ist("Danach: wieder keine Bezahl-Knöpfe", await mk().locator("[data-alles]").count(), 0);
 // Käufer mit zwei offenen Verkäufen (Fassung i): je Verkauf ein roter Knopf mit Betrag, unten „Béid zesummen“; bei einem Verkauf nur „36 € bezuelt“
 await p.evaluate(() => eintragen([{ art: "verkauf", verkaeufer: "Laurent", kaeufer: "Zwee", posten: [{ sorte: "NEIPA", n: 24 }], betrag: 72, aus: "Lager" },
   { art: "verkauf", verkaeufer: "Laurent", kaeufer: "Zwee", posten: [{ sorte: "NEIPA", n: 6 }], betrag: 18, aus: "Lager" },
