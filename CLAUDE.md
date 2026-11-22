@@ -239,7 +239,7 @@ beim Verkaufen/Livraison und „Fläsche beweegen“ an, solange jemand welche h
   **Automatische Aufgaben** (`autoAufgaben`, jedes Mal neu gerechnet, **immer gleich in der Liste**, 💡; Erklärung „💡 = Virschlag vun
   der App …“ unten nur, wenn eine da ist — vom Nutzer). Abhaken = „im Blick“, Eintrag `aufgabe` mit `auto` unter ihrer aid (`aidVon`):
   Rechnung maachen (Kontakt; weg mit Rechnung; abgehakt nach 14 Tagen wieder) · X erënneren ab 30 Tagen offen (Verkäufer; 14 Tage) ·
-  Gläich keen XY méi do < 24 frei zusammen (All; nie wieder, neue aid erst nach neuer Abfüllung) · Fir d'Bestellung … feelen (3 Tage
+  Gläich keen XY méi do < 24 frei zusammen (All; nie wieder, neue aid erst nach neuer Abfüllung) · „Dir feelen an dengem Stock doheem: 6 White IPA fir X“ bzw. „Am Lager feelen: …“ (Text vom Nutzer, Fassung 22.11. n; vorher „Fir d'Bestellung … feelen“/„Haut feelen fir …“) (3 Tage
   vorher, frühere Bestellungen zuerst bedient; „Huelen aus“ bzw. Kontakt beim Lager; am Liefertag eigene aid → kommt dann noch einmal) ·
   Bestellung nach net als geliwwert markéiert (Kontakt; 7 Tage) · Haltbar bis in 30 Tagen (All; nie) · Däin Handy huet n Agaben nach net
   geschéckt (> 24 h, nur dieses Handy, `aufExtra`, ohne Haken, Tipp öffnet den Sync-Text) · Afëllen fir XY plangen (Braudag > 7 Tage,

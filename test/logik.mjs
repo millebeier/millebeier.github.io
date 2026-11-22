@@ -293,7 +293,10 @@ ist("CSV Zeilen", c.trim().split("\r\n").length, 4);
   // Lager 24 (31 reserviert), Jeff 8, Laurent −2 → zusammen −1 frei
   ist("Leer: nichts mehr frei", [von("leer").text, von("leer").sub, von("leer").fuer], ["Keen NEIPA méi do", "just nach 0 fräi", ["All"]]);
   ist("Leer: unter 24 frei", L.autoAufgaben(L.rechne([...ein, A("abfuellung", { sorte: "NEIPA", n: 10 })]), H).find(a => a.typ === "leer").text, "Gläich keen NEIPA méi do");
-  ist("Fehlt: Bestellung in 2 Tagen, Rock Solid (früher) zuerst bedient", [von("fehlt").text, von("fehlt").fuer, von("fehlt").bis], ["Fir d'Bestellung BEST feelen 7 NEIPA", ["Laurent"], "2026-11-19"]);
+  ist("Fehlt: Bestellung in 2 Tagen, Rock Solid (früher) zuerst bedient", [von("fehlt").text, von("fehlt").fuer, von("fehlt").bis], ["Am Lager feelen: 7 NEIPA fir BEST", ["Laurent"], "2026-11-19"]);
+  { const Y2 = L.rechne([...ein, A("livraison", { kunde: "Wilwert Marc", kontakt: "Jeff", aus: "Jeff", datum: H, posten: [{ sorte: "NEIPA", n: 20 }], betrag: 60, rechnung: false })]);
+    const f = L.autoAufgaben(Y2, H).filter(a => a.typ === "fehlt" && a.fuer[0] === "Jeff");
+    ist("Fehlt aus eigenem Stock: „Dir feelen an dengem Stock doheem …“ (vom Nutzer, Fassung n)", f.map(a => a.text), ["Dir feelen an dengem Stock doheem: 12 NEIPA fir Wilwert Marc"]); }
   ist("Nicht geliefert: gestern", [von("geliwwert").text, von("geliwwert").fuer, von("geliwwert").wieder], ["Bestellung Rock Solid (16.11.) nach net als geliwwert markéiert", ["Claude"], 7]);
   ist("Haltbar bis", von("mhd").text, "NEIPA nach haltbar bis 1.12. · 30 Fläschen do");
   ist("Afëllen plangen", [von("afuellen").text, von("afuellen").ref], ["Afëllen fir IPA plangen", { typ: "termin", id: "t-brau-01" }]);

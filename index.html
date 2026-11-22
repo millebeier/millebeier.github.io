@@ -434,7 +434,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px}
 <script>
 /* Adresse des Cloudflare-Workers. Leer = Probe-Modus (alles nur auf diesem Handy). */
 const WORKER_URL = "https://millebeier.rjtp6r9s9h.workers.dev/";
-const FASSUNG = "22.11.2026 m";
+const FASSUNG = "22.11.2026 n";
 
 /* === Logik === (kein DOM; test/logik.mjs schneidet diesen Block aus) */
 const LAGER = "Lager";
@@ -1218,7 +1218,7 @@ function autoAufgaben(Z, heute) {
     }
     if (!fehlt.length || L.datum < heute || L.datum > tagPlus(heute, AUF_GRENZE.fehlt)) continue;
     const haut = L.datum === heute;
-    out.push({ aid: aidVon(haut ? "fehlthaut" : "fehlt", L.lid), typ: "fehlt", text: haut ? `Haut feelen fir ${L.kunde}: ${fehlt.join(", ")}` : `Fir d'Bestellung ${L.kunde} feelen ${fehlt.join(", ")}`,
+    out.push({ aid: aidVon(haut ? "fehlthaut" : "fehlt", L.lid), typ: "fehlt", text: `${L.aus === LAGER ? "Am Lager feelen" : "Dir feelen an dengem Stock doheem"}: ${fehlt.join(", ")} fir ${L.kunde}` /* vom Nutzer, Fassung 22.11. n */,
       sub: `${L.aus === LAGER ? "vum Lager" : "vum " + L.aus}`, bis: L.datum, fuer: [L.aus === LAGER ? L.kontakt : L.aus], ref: { typ: "liv", id: L.lid }, wieder: null });
   }
   // Schon bezahlt (ganz oder Acompte), noch nicht geliefert (vom Nutzer, Fassung h): sofort, für den Kontakt; abgehakt nach 7 Tagen
