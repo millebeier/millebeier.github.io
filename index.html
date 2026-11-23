@@ -107,7 +107,7 @@ nav .badge.grau{background:var(--card2);border:1px solid var(--line)}
 .kgross{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0 0}
 .kgross button{border-radius:14px;border:1px solid var(--line);background:var(--card2);color:var(--text);padding:11px 4px;cursor:pointer;text-align:center}
 .kgross button b{display:block;font-size:17px} .kgross button small{display:block;font-size:12px;color:var(--muted);margin-top:2px}
-.hzd{padding:0 0 10px;font-size:14px;color:var(--muted)} .hzd .z{margin-bottom:6px} .liv.leucht{outline:2px solid var(--akzent);outline-offset:2px;transition:outline-color .3s} .kgross b.zbn{font-size:15px;margin-top:2px} .kgross button.an{background:var(--akzent);border-color:var(--akzent)} .kgross button.an small{color:#fdd}
+.hkopf + .ter{border-top:0} .liv.leucht{outline:2px solid var(--akzent);outline-offset:2px;transition:outline-color .3s} .kgross b.zbn{font-size:15px;margin-top:2px} .kgross button.an{background:var(--akzent);border-color:var(--akzent)} .kgross button.an small{color:#fdd}
 .aufz{display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-top:1px solid #262626}
 .aufz:first-of-type{border-top:0}
 .abox{width:26px;height:26px;flex:none;border:2px solid #888;border-radius:7px;background:none;color:#10200f;font-weight:900;font-size:15px;padding:0;cursor:pointer;line-height:1}
@@ -434,7 +434,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px}
 <script>
 /* Adresse des Cloudflare-Workers. Leer = Probe-Modus (alles nur auf diesem Handy). */
 const WORKER_URL = "https://millebeier.rjtp6r9s9h.workers.dev/";
-const FASSUNG = "23.11.2026 b";
+const FASSUNG = "23.11.2026 c";
 
 /* === Logik === (kein DOM; test/logik.mjs schneidet diesen Block aus) */
 const LAGER = "Lager";
@@ -1586,13 +1586,6 @@ function renderHaut() {
   const fuerMich = p => p.quelle === "bestellung" ? (p.liv.kontakt === ich || p.liv.aus === ich) : !(p.wer || []).length || p.wer.includes(ich);
   const bald = kalenderPunkte(Z).filter(p => p.datum >= h && p.datum <= plusTage(h, 7) && fuerMich(p)).slice(0, 5);
   const meineAuf = aufStand().op.filter(a => aufFuerMich(a, ich));
-  /* „Deng nächst Deeg“: antippen klappt auf wie im Kalender, darunter der Knopf (vom Nutzer, Fassung 23.11. b) */
-  const hKalZeile = p => { const auf = H_KAL_AUF.has(p.tid), best = p.quelle === "bestellung";
-    const det = best ? `${postenText(p.liv.posten)} · ${p.liv.kontakt}` : [p.uhr ? p.uhr + (p.bis ? "–" + p.bis : "") : "ganzen Dag", p.wou].filter(Boolean).join(" · ");
-    const wer = !best && (p.wer || []).length ? p.wer.map(w => `<span class="chip">${esc(w)}</span>`).join("") : "";
-    return `<div class="hz hklick" data-hkauf="${esc(p.tid)}"><span>${terminIc(best ? "bestellung" : p.typ)} ${esc(p.titel)}${p.bier ? " · " + esc(p.bier) : ""}</span><span class="muted">${esc(wann(p))}</span></div>`
-      + (auf ? `<div class="hzd"><div class="z">${esc(det)}</div>${wer}${best ? `<span class="chip auto">aus de Bestellungen</span>` : ""}${!best && p.notiz ? `<div class="hinweis" style="margin:6px 0 0">${esc(p.notiz)}</div>` : ""}
-        <div class="knopfe" style="margin-top:8px"><button class="knopf" data-alink="${best ? "liv:" + esc(p.liv.lid) : "termin:" + esc(p.tid)}">${best ? "→ Bei d'Bestellung" : "→ Am Kalenner"}</button></div></div>` : ""); };
   const wann = p => { const [, mm, tt] = p.datum.split("-").map(Number); const tag = p.datum === h ? "Haut" : p.datum === plusTage(h, 1) ? "Muer" : `${WOCHENTAG[new Date(Date.UTC(+p.datum.slice(0, 4), mm - 1, tt)).getUTCDay()]} ${tt}.${mm}.`;
     return tag + (p.uhr ? " · " + p.uhr : ""); };
   box.innerHTML = `<div class="hallo">Moien ${esc(ich)} 👋<small>${WOCHENTAG_LANG[new Date(Date.UTC(j, m - 1, t)).getUTCDay()]}, ${t}. ${MONATE[m - 1]}</small></div>
@@ -1604,13 +1597,13 @@ function renderHaut() {
     <div class="card" id="hAuf"><h2 class="hkopf">✅ Fir dech ze maachen<button class="hmehr" data-hgeh="aufgaben">Alles ›</button></h2>
       ${meineAuf.length ? meineAuf.slice(0, 5).map(a => aufZeile(a, h, true)).join("") + (meineAuf.length > 5 ? `<div class="muted" style="font-size:14px;margin-top:6px">+ ${meineAuf.length - 5} weider</div>` : "")
         + (meineAuf.slice(0, 5).some(a => a.auto) ? AUF_LEGENDE : "") : `<div class="leer">✓ Näischt ze maachen.</div>`}</div>
-    <div class="card" id="hKal"><h2 class="hkopf">📅 Deng nächst Deeg<button class="hmehr" data-hgeh="kalender">Alles ›</button></h2>${bald.length ? bald.map(hKalZeile).join("")
+    <div class="card" id="hKal"><h2 class="hkopf">📅 Deng nächst Deeg<button class="hmehr" data-hgeh="kalender">Alles ›</button></h2>${bald.length ? bald.map(p => kalZeile(p, h, true)).join("")
       : `<div class="leer">Näischt fir dech an de nächste 7 Deeg.</div>`}</div>
     <div class="card" id="hOp"><h2 class="hkopf">💶 Nach op bei dir<button class="hmehr" data-hgeh="offen">Alles ›</button></h2>${meineRech.map(v => `<div class="hz"><span>🧾 Rechnung maachen: ${esc(v.kaeufer)}</span><button class="chip warn" data-rech="${esc(v.id)}">Maachen ›</button></div>`).join("")}${meineOffen.size || meineRech.length ? [...meineOffen].sort((a, b) => b[1] - a[1]).map(([n, b]) => `<div class="hz"><span>${esc(n)}${Z.verkaeufe.some(v => v.kaeufer === n && v.verkaeufer === ich && v.offen > 0 && v.wart && v.wart.length) ? ` <small class="muted">🏦 Iwwerweisung ugekënnegt</small>` : ""}</span><b class="gelb">${euro(b)}</b></div>`).join("")
       : `<div class="leer">✓ Keen ass dir eppes schëlleg.</div>`}</div>
     <div class="card" id="hStock"><h2 class="hkopf">🍺 Du hues zur Verfügung<button class="hmehr" data-hgeh="bestand">Alles ›</button></h2>${zeilen.join("") || `<div class="leer">Du hues momentan keng Fläschen.</div>`}</div>`;
   aufListeBinden($("#hAuf")); aufListeBinden($("#hKal"));
-  box.querySelectorAll("[data-hkauf]").forEach(el => el.onclick = () => { const k = el.dataset.hkauf; if (H_KAL_AUF.has(k)) H_KAL_AUF.delete(k); else H_KAL_AUF.add(k); renderHaut(); });
+  $("#hKal").querySelectorAll("[data-ter]").forEach(d => d.onclick = ev => { if (ev.target.closest("button")) return; const k = d.dataset.ter; if (H_KAL_AUF.has(k)) H_KAL_AUF.delete(k); else H_KAL_AUF.add(k); renderHaut(); });
   rechKnoepfe($("#hOp"));
   // „Fläschen“ auf der Startseite (vom Nutzer, Fassung k): erst die vier Absichten, dann das Formular — alles ohne Seitenwechsel
   const hZu = `<button class="zurueck" id="hZu">✕ Zoumaachen</button>`;
@@ -2028,10 +2021,10 @@ function kalAnzahlBald(Z) {
   const h = heuteLux(), m = plusTage(h, 1);
   return kalenderPunkte(Z).filter(p => p.datum === h || p.datum === m).length;
 }
-function kalZeile(p, heute) {
+function kalZeile(p, heute, haut = false) { /* haut: Startseite „Deng nächst Deeg“ (vom Nutzer, Fassung 23.11. c) — gleiche Zeile, aufgeklappt nur der Knopf */
   const morgen = plusTage(heute, 1), [j, mo, t] = p.datum.split("-").map(Number);
   const wt = WOCHENTAG[new Date(Date.UTC(j, mo - 1, t)).getUTCDay()];
-  const auf = KAL_AUF.has(p.tid), vorbei = p.datum < heute;
+  const auf = (haut ? H_KAL_AUF : KAL_AUF).has(p.tid), vorbei = p.datum < heute;
   const ic = terminIc(p.quelle === "bestellung" ? "bestellung" : p.typ);
   const zeit = p.quelle === "bestellung" ? `${postenText(p.liv.posten)} · ${p.liv.kontakt}` :
     [p.uhr ? p.uhr + (p.bis ? "–" + p.bis : "") : "ganzen Dag", p.wou].filter(Boolean).join(" · ");
@@ -2041,7 +2034,9 @@ function kalZeile(p, heute) {
     <div class="tinh"><b>${ic} ${esc(p.titel)}${p.bier ? " · " + esc(p.bier) : ""}</b><div class="z">${esc(zeit)}</div>
       ${wer}${p.quelle === "bestellung" ? `<span class="chip auto">aus de Bestellungen</span>` : ""}
       ${auf ? `${p.notiz ? `<div class="hinweis" style="margin:6px 0 0">${esc(p.notiz)}</div>` : ""}
-        <div class="knopfe ${p.quelle === "termin" ? "einz t" : ""}" style="margin-top:8px">${p.quelle === "termin"
+        <div class="knopfe ${p.quelle === "termin" && !haut ? "einz t" : ""}" style="margin-top:8px">${haut
+          ? `<button class="knopf" data-alink="${p.quelle === "bestellung" ? "liv:" + esc(p.liv.lid) : "termin:" + esc(p.tid)}">${p.quelle === "bestellung" ? "→ Bei d'Bestellung" : "→ Am Kalenner"}</button>`
+          : p.quelle === "termin"
           ? `<button class="knopf" data-ted="${esc(p.tid)}">✎ Änneren</button><button class="knopf rot" data-tweg="${esc(p.tid)}">✕ Läschen</button><button class="knopf gelbk" data-tauf="${esc(p.tid)}">+ Aufgab</button>`
           : `<button class="knopf" data-tliv="${esc(p.liv.lid)}">→ Bei d'Bestellung</button>`}</div>
         ${p.quelle === "termin" && A_INLINE && A_INLINE.wo === "termin:" + p.tid ? aufFormHtml(A_INLINE.F, `Nei Aufgab fir ${p.titel} ${tagKurz(p.datum)}`) : ""}` : ""}
@@ -2262,7 +2257,7 @@ function aufGehe(z) {
   if (typ === "termin") {
     const t = Z.termine.find(x => x.tid === id); if (!t) return;
     TAB = "kalender"; KAL_BEREICH = "kalender"; KALFORM = null; KAL_FILTER.clear(); KAL_AUF.add(id); if (t.datum < heuteLux()) KAL_SICHT = "alles";
-    render(); const el = document.querySelector(`[data-ter="${CSS.escape(id)}"]`); if (el) el.scrollIntoView({ block: "center" }); return;
+    render(); const el = document.querySelector(`#t-kalender [data-ter="${CSS.escape(id)}"]`); if (el) el.scrollIntoView({ block: "center" }); return;
   }
   TAB = typ === "liv" ? "livraisons" : typ; EIN.tab = TAB; merke(SP, EIN);
   if (typ === "liv") L_NUR_MEINE = false;

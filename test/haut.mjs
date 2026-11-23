@@ -35,7 +35,7 @@ await p.evaluate(() => {
 const txt = await p.locator("#t-haut").innerText();
 ist("Du hues fräi: 30 − 4 verkauft − 10 reserviert = 16, 🚚 10", txt, t => /NEIPA\s+16\s*🚚 10/.test(t));
 ist("Deng nächst Deeg: nur meine — Braudag, meine Bestellung; nicht Jeffs Stand/Bestellung, nichts in 20 Tagen", await p.locator("#hKal").innerText(),
-  t => t.includes("Deng nächst Deeg") && t.includes("Braudag · NEIPA") && t.includes("Muer · 09:00") && t.includes("Bestellung Reimen David") && !t.includes("Stand Jeff") && !t.includes("Fremd") && !t.includes("Reunioun"));
+  t => t.includes("Deng nächst Deeg") && t.includes("Braudag · NEIPA") && t.includes("MUER") && t.includes("09:00") && t.includes("Bestellung Reimen David") && !t.includes("Stand Jeff") && !t.includes("Fremd") && !t.includes("Reunioun"));
 ist("Nach op bei dir: nur meine Käufer", txt, t => t.includes("Paul Weber") && t.includes("12 €") && !t.includes("Anne"));
 ist("Reihenfolge der Karten (vom Nutzer, Fassung e)", await p.evaluate(() => [...document.querySelectorAll("#t-haut .card h2")].map(h => h.firstChild.textContent.trim())),
   ["✅ Fir dech ze maachen", "📅 Deng nächst Deeg", "💶 Nach op bei dir", "🍺 Du hues zur Verfügung"]);
@@ -77,20 +77,21 @@ ist("Verkafen offen", await p.locator("#t-verkaufen").isVisible(), true);
 await p.click("#zurHaut"); await warte(900);
 await p.click('#hKal [data-hgeh="kalender"]');
 ist("„Alles ›“ bei Deng nächst Deeg → Kalender", await p.evaluate(() => [TAB, KAL_BEREICH]), ["kalender", "kalender"]);
-// „Deng nächst Deeg“ klappt auf wie im Kalender, darunter der Knopf (vom Nutzer, Fassung 23.11. b)
+// „Deng nächst Deeg“ sieht aus wie der Kalender und klappt auf mit Knopf (vom Nutzer, Fassung 23.11. c)
 await p.click("#zurHaut"); await warte(900);
-ist("zu: kein Knopf", await p.locator("#hKal .hzd").count(), 0);
-await p.locator("#hKal [data-hkauf]", { hasText: "Bestellung Reimen David" }).click(); await warte(300);
-ist("Bestellung aufgeklappt: Details, aus de Bestellungen, Knopf", await p.locator("#hKal .hzd").innerText(), t => t.includes("10 × NEIPA") && t.includes("aus de Bestellungen") && t.includes("→ Bei d'Bestellung"));
+ist("wie im Kalender: Datum davor, Leute, „aus de Bestellungen“", await p.evaluate(() => { const k = document.querySelector("#hKal"); return [k.querySelectorAll(".ter .tdat").length > 0, k.innerText.includes("aus de Bestellungen"), [...k.querySelectorAll('.ter')].some(t => t.innerText.includes("Braudag") && t.querySelector(".chip"))]; }), [true, true, true]);
+ist("zu: kein Knopf", await p.locator("#hKal [data-alink]").count(), 0);
+await p.locator("#hKal [data-ter]", { hasText: "Bestellung Reimen David" }).click(); await warte(300);
+ist("Bestellung aufgeklappt: → Bei d'Bestellung, keine Kalender-Knöpfe", await p.evaluate(() => [[...document.querySelectorAll("#hKal [data-alink]")].map(b => b.textContent), document.querySelectorAll("#hKal [data-ted], #hKal [data-tweg], #hKal [data-tliv]").length]), [["→ Bei d'Bestellung"], 0]);
 ist("noch auf der Startseite", await p.evaluate(() => TAB), "haut");
-await p.click("#hKal .hzd [data-alink]"); await warte(400);
+await p.click("#hKal [data-alink]"); await warte(400);
 ist("→ Bei d'Bestellung: genau diese, leuchtet", await p.evaluate(() => { const el = document.querySelector(".liv.leucht"); return [TAB, el && el.innerText.includes("Reimen David")]; }), ["livraisons", true]);
 await p.click("#zurHaut"); await warte(900);
-await p.locator("#hKal [data-hkauf]", { hasText: "Bestellung Reimen David" }).click(); await warte(900);
-ist("nochmal antippen klappt zu", await p.locator("#hKal .hzd").count(), 0);
-await p.locator("#hKal [data-hkauf]", { hasText: "Braudag" }).click(); await warte(300);
-ist("Termin aufgeklappt: Uhrzeit, Leute, → Am Kalenner", await p.locator("#hKal .hzd").innerText(), t => t.includes("09:00") && t.includes("Laurent") && t.includes("→ Am Kalenner"));
-await p.click("#hKal .hzd [data-alink]"); await warte(400);
+await p.locator("#hKal [data-ter]", { hasText: "Bestellung Reimen David" }).click(); await warte(900);
+ist("nochmal antippen klappt zu", await p.locator("#hKal [data-alink]").count(), 0);
+await p.locator("#hKal [data-ter]", { hasText: "Braudag" }).click(); await warte(300);
+ist("Termin aufgeklappt: → Am Kalenner", await p.locator("#hKal [data-alink]").innerText(), "→ Am Kalenner");
+await p.click("#hKal [data-alink]"); await warte(400);
 ist("→ Am Kalenner: Termin aufgeklappt", await p.evaluate(() => [TAB, KAL_AUF.has("t-haut-01")]), ["kalender", true]);
 await p.click("#zurHaut"); await warte(900);
 ist("Aufgaben: nur der blaue Link führt hin, nicht der Text", await p.evaluate(() => !document.querySelector("#hAuf .atx.hklick")), true);

@@ -75,12 +75,12 @@ await p.keyboard.type("Hazy Pale (Test)");
 await setze("#tDatum", plus(5)); await warte(900); await p.click("#tOk"); await warte(200);
 ist("Stand ohne mich, mit eingetipptem Bier", await p.evaluate(() => { const t = Z.termine.find(t => t.typ === "stand"); return [t.wer, t.bier]; }), [["Marc"], "Hazy Pale (Test)"]);
 const stand = await p.evaluate(() => Z.termine.find(t => t.typ === "stand").tid);
-await p.click(`[data-ter="${stand}"]`); await p.click(`[data-ted="${stand}"]`);
+await p.click(`#t-kalender [data-ter="${stand}"]`); await p.click(`[data-ted="${stand}"]`);
 ist("Ändern: eingetipptes Bier steht im Feld", [await p.inputValue("#tBier"), await p.inputValue("#tBierNeu")], ["__neu", "Hazy Pale (Test)"]);
 await p.selectOption("#tBier", "NEIPA");
 ist("Auswahl statt Eintippen: Feld weg", await p.locator("#tBierNeu").count(), 0);
 await p.click("#tZu");
-await p.click(`[data-ter="${stand}"]`);
+await p.click(`#t-kalender [data-ter="${stand}"]`);
 
 // Filter mit kleinen Symbolen
 ist("Filterleiste: All + 8 Arten + Bestellungen", await p.locator(".tfilter button").count(), 10);
@@ -107,7 +107,7 @@ await p.click('[data-ksicht="kommend"]');
 
 // Aufklappen, ändern, löschen
 const brau = await p.evaluate(() => Z.termine.find(t => t.typ === "braudag").tid);
-await p.click(`[data-ter="${brau}"]`);
+await p.click(`#t-kalender [data-ter="${brau}"]`);
 ist("aufgeklappt: Ännern/Läschen", await p.locator(`[data-ted="${brau}"]`).count(), 1);
 await p.click(`[data-ted="${brau}"]`);
 ist("Ännern vorbelegt, kein Vorschlag", [await p.inputValue("#tTitel"), await p.inputValue("#tUhr"), await p.locator(".tfolge").count()], ["Braudag", "10:00", 0]);
@@ -120,7 +120,7 @@ ist("gelöscht", await p.evaluate(b => Z.termine.some(t => t.tid === b), brau), 
 
 // Bestellung: Knopf führt zu den Bestellungen
 const lid = await p.evaluate(() => "liv-" + Z.livraisons[0].id);
-await p.click(`[data-ter="${lid}"]`); await p.click("[data-tliv]");
+await p.click(`#t-kalender [data-ter="${lid}"]`); await p.click("[data-tliv]");
 ist("→ genau diese Bestellung (leuchtet)", await p.evaluate(() => [TAB, !!document.querySelector(`.liv.leucht[data-lid="${Z.livraisons[0].lid}"]`)]), ["livraisons", true]);
 
 // Abo-Link

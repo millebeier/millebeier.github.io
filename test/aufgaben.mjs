@@ -75,8 +75,8 @@ ist("Link führt zur Bestellung", await p.evaluate(() => [TAB, !!document.queryS
 
 // „+ Aufgab“ am Termin
 await p.click("#kalBtn");
-await p.click('[data-ter="t-auf-01"]');
-ist("Termin: Knöpfe in einer Zeile", await p.evaluate(() => { const z = document.querySelector(".ter .knopfe.einz"); return [...z.children].map(c => c.textContent).join("|") + "|" + [...z.children].every(c => c.getBoundingClientRect().top === z.children[0].getBoundingClientRect().top); }), "✎ Änneren|✕ Läschen|+ Aufgab|true");
+await p.click('#t-kalender [data-ter="t-auf-01"]');
+ist("Termin: Knöpfe in einer Zeile", await p.evaluate(() => { const z = document.querySelector("#t-kalender .ter .knopfe.einz"); return [...z.children].map(c => c.textContent).join("|") + "|" + [...z.children].every(c => c.getBoundingClientRect().top === z.children[0].getBoundingClientRect().top); }), "✎ Änneren|✕ Läschen|+ Aufgab|true");
 await p.click('[data-tauf="t-auf-01"]');
 await p.locator(".ter .aform input").type("Hopfen mathuelen");
 await p.click('.ter .aform [data-afuer="All"]');
