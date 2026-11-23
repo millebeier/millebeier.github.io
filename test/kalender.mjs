@@ -121,7 +121,7 @@ ist("gelöscht", await p.evaluate(b => Z.termine.some(t => t.tid === b), brau), 
 // Bestellung: Knopf führt zu den Bestellungen
 const lid = await p.evaluate(() => "liv-" + Z.livraisons[0].id);
 await p.click(`[data-ter="${lid}"]`); await p.click("[data-tliv]");
-ist("→ Bestellungen", await p.evaluate(() => TAB), "livraisons");
+ist("→ genau diese Bestellung (leuchtet)", await p.evaluate(() => [TAB, !!document.querySelector(`.liv.leucht[data-lid="${Z.livraisons[0].lid}"]`)]), ["livraisons", true]);
 
 // Abo-Link
 await p.click("#kalBtn"); await warte(300);

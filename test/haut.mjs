@@ -77,6 +77,19 @@ ist("Verkafen offen", await p.locator("#t-verkaufen").isVisible(), true);
 await p.click("#zurHaut"); await warte(900);
 await p.click('#hKal [data-hgeh="kalender"]');
 ist("„Alles ›“ bei Deng nächst Deeg → Kalender", await p.evaluate(() => [TAB, KAL_BEREICH]), ["kalender", "kalender"]);
+// Einträge auf der Startseite führen direkt hin (vom Nutzer, Fassung 23.11. a)
+await p.click("#zurHaut"); await warte(900);
+await p.locator("#hKal .hklick", { hasText: "Bestellung Reimen David" }).click(); await warte(400);
+ist("Deng nächst Deeg: Bestellung antippen → genau diese Bestellung, leuchtet", await p.evaluate(() => { const el = document.querySelector(".liv.leucht"); return [TAB, el && el.innerText.includes("Reimen David")]; }), ["livraisons", true]);
+await p.click("#zurHaut"); await warte(900);
+await p.locator("#hKal .hklick", { hasText: "Braudag" }).click(); await warte(400);
+ist("Deng nächst Deeg: Termin antippen → Kalender, Termin aufgeklappt", await p.evaluate(() => [TAB, KAL_AUF.has("t-haut-01")]), ["kalender", true]);
+await p.click("#zurHaut"); await warte(900);
+await p.evaluate(() => { const L = Z.livraisons.find(x => x.kunde === "Reimen David"); eintragen([{ art: "aufgabe", aid: "a-haut-link", text: "Flaschen fir Reimen ofhuelen", fuer: ["Laurent"], ref: { typ: "liv", id: L.lid } }]); render(); });
+{ const t = p.locator("#hAuf .atx.hklick", { hasText: "Flaschen fir Reimen" });
+  ist("Aufgabe mit Link: ganzer Text antippbar", await t.count(), 1);
+  await t.click({ position: { x: 20, y: 8 } }); await warte(400);
+  ist("Aufgabentext antippen → Bestellung", await p.evaluate(() => TAB), "livraisons"); }
 
 // Reiter unten
 ist("Reiter unten am Bildschirm, alle Namen passen", await p.evaluate(() => { const n = document.querySelector("#nav"), r = n.getBoundingClientRect();

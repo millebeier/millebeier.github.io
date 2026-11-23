@@ -107,7 +107,7 @@ nav .badge.grau{background:var(--card2);border:1px solid var(--line)}
 .kgross{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0 0}
 .kgross button{border-radius:14px;border:1px solid var(--line);background:var(--card2);color:var(--text);padding:11px 4px;cursor:pointer;text-align:center}
 .kgross button b{display:block;font-size:17px} .kgross button small{display:block;font-size:12px;color:var(--muted);margin-top:2px}
-.kgross b.zbn{font-size:15px;margin-top:2px} .kgross button.an{background:var(--akzent);border-color:var(--akzent)} .kgross button.an small{color:#fdd}
+.hklick{cursor:pointer} .liv.leucht{outline:2px solid var(--akzent);outline-offset:2px;transition:outline-color .3s} .kgross b.zbn{font-size:15px;margin-top:2px} .kgross button.an{background:var(--akzent);border-color:var(--akzent)} .kgross button.an small{color:#fdd}
 .aufz{display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-top:1px solid #262626}
 .aufz:first-of-type{border-top:0}
 .abox{width:26px;height:26px;flex:none;border:2px solid #888;border-radius:7px;background:none;color:#10200f;font-weight:900;font-size:15px;padding:0;cursor:pointer;line-height:1}
@@ -434,7 +434,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px}
 <script>
 /* Adresse des Cloudflare-Workers. Leer = Probe-Modus (alles nur auf diesem Handy). */
 const WORKER_URL = "https://millebeier.rjtp6r9s9h.workers.dev/";
-const FASSUNG = "22.11.2026 n";
+const FASSUNG = "23.11.2026 a";
 
 /* === Logik === (kein DOM; test/logik.mjs schneidet diesen Block aus) */
 const LAGER = "Lager";
@@ -1596,12 +1596,12 @@ function renderHaut() {
     <div class="card" id="hAuf"><h2 class="hkopf">✅ Fir dech ze maachen<button class="hmehr" data-hgeh="aufgaben">Alles ›</button></h2>
       ${meineAuf.length ? meineAuf.slice(0, 5).map(a => aufZeile(a, h, true)).join("") + (meineAuf.length > 5 ? `<div class="muted" style="font-size:14px;margin-top:6px">+ ${meineAuf.length - 5} weider</div>` : "")
         + (meineAuf.slice(0, 5).some(a => a.auto) ? AUF_LEGENDE : "") : `<div class="leer">✓ Näischt ze maachen.</div>`}</div>
-    <div class="card" id="hKal"><h2 class="hkopf">📅 Deng nächst Deeg<button class="hmehr" data-hgeh="kalender">Alles ›</button></h2>${bald.length ? bald.map(p => `<div class="hz"><span>${terminIc(p.quelle === "bestellung" ? "bestellung" : p.typ)} ${esc(p.titel)}${p.bier ? " · " + esc(p.bier) : ""}</span><span class="muted">${esc(wann(p))}</span></div>`).join("")
+    <div class="card" id="hKal"><h2 class="hkopf">📅 Deng nächst Deeg<button class="hmehr" data-hgeh="kalender">Alles ›</button></h2>${bald.length ? bald.map(p => `<div class="hz hklick" data-alink="${p.quelle === "bestellung" ? "liv:" + esc(p.liv.lid) : "termin:" + esc(p.tid)}"><span>${terminIc(p.quelle === "bestellung" ? "bestellung" : p.typ)} ${esc(p.titel)}${p.bier ? " · " + esc(p.bier) : ""}</span><span class="muted">${esc(wann(p))} ›</span></div>`).join("")
       : `<div class="leer">Näischt fir dech an de nächste 7 Deeg.</div>`}</div>
     <div class="card" id="hOp"><h2 class="hkopf">💶 Nach op bei dir<button class="hmehr" data-hgeh="offen">Alles ›</button></h2>${meineRech.map(v => `<div class="hz"><span>🧾 Rechnung maachen: ${esc(v.kaeufer)}</span><button class="chip warn" data-rech="${esc(v.id)}">Maachen ›</button></div>`).join("")}${meineOffen.size || meineRech.length ? [...meineOffen].sort((a, b) => b[1] - a[1]).map(([n, b]) => `<div class="hz"><span>${esc(n)}${Z.verkaeufe.some(v => v.kaeufer === n && v.verkaeufer === ich && v.offen > 0 && v.wart && v.wart.length) ? ` <small class="muted">🏦 Iwwerweisung ugekënnegt</small>` : ""}</span><b class="gelb">${euro(b)}</b></div>`).join("")
       : `<div class="leer">✓ Keen ass dir eppes schëlleg.</div>`}</div>
     <div class="card" id="hStock"><h2 class="hkopf">🍺 Du hues zur Verfügung<button class="hmehr" data-hgeh="bestand">Alles ›</button></h2>${zeilen.join("") || `<div class="leer">Du hues momentan keng Fläschen.</div>`}</div>`;
-  aufListeBinden($("#hAuf"));
+  aufListeBinden($("#hAuf")); aufListeBinden($("#hKal")); /* Einträge führen direkt zur Bestellung bzw. zum Termin (vom Nutzer, Fassung 23.11. a) */
   rechKnoepfe($("#hOp"));
   // „Fläschen“ auf der Startseite (vom Nutzer, Fassung k): erst die vier Absichten, dann das Formular — alles ohne Seitenwechsel
   const hZu = `<button class="zurueck" id="hZu">✕ Zoumaachen</button>`;
@@ -2034,7 +2034,7 @@ function kalZeile(p, heute) {
       ${auf ? `${p.notiz ? `<div class="hinweis" style="margin:6px 0 0">${esc(p.notiz)}</div>` : ""}
         <div class="knopfe ${p.quelle === "termin" ? "einz t" : ""}" style="margin-top:8px">${p.quelle === "termin"
           ? `<button class="knopf" data-ted="${esc(p.tid)}">✎ Änneren</button><button class="knopf rot" data-tweg="${esc(p.tid)}">✕ Läschen</button><button class="knopf gelbk" data-tauf="${esc(p.tid)}">+ Aufgab</button>`
-          : `<button class="knopf" data-tliv>→ Bei d'Bestellungen</button>`}</div>
+          : `<button class="knopf" data-tliv="${esc(p.liv.lid)}">→ Bei d'Bestellung</button>`}</div>
         ${p.quelle === "termin" && A_INLINE && A_INLINE.wo === "termin:" + p.tid ? aufFormHtml(A_INLINE.F, `Nei Aufgab fir ${p.titel} ${tagKurz(p.datum)}`) : ""}` : ""}
     </div></div>`;
 }
@@ -2100,7 +2100,7 @@ function renderKalender() {
     const t = Z.termine.find(x => x.tid === b.dataset.tweg); if (!t) return;
     if (confirm(`${t.titel} (${datumKurz(t.datum)}) läschen?`)) { eintragen([{ art: "termin", tid: t.tid, weg: true }]); KAL_MELD = ""; }
   });
-  box.querySelectorAll("[data-tliv]").forEach(b => b.onclick = () => { TAB = "livraisons"; EIN.tab = TAB; merke(SP, EIN); render(); window.scrollTo(0, 0); });
+  box.querySelectorAll("[data-tliv]").forEach(b => b.onclick = () => aufGehe("liv:" + b.dataset.tliv));
   $("#tNeu").onclick = () => { KALFORM = leererTermin(); KAL_MELD = ""; renderKalender(); window.scrollTo(0, 0); };
   const kop = $("#tKop"); if (kop) kop.onclick = () => {
     const inp = $("#tUrl");
@@ -2258,12 +2258,14 @@ function aufGehe(z) {
   TAB = typ === "liv" ? "livraisons" : typ; EIN.tab = TAB; merke(SP, EIN);
   if (typ === "liv") L_NUR_MEINE = false;
   render(); window.scrollTo(0, 0);
-  if (typ === "liv") { const el = document.querySelector(`[data-lid="${CSS.escape(id)}"]`); if (el) el.scrollIntoView({ block: "center" }); }
+  if (typ === "liv") { const el = document.querySelector(`[data-lid="${CSS.escape(id)}"]`); if (el) { el.scrollIntoView({ block: "center" }); el.classList.add("leucht"); setTimeout(() => el.classList.remove("leucht"), 2000); } }
 }
 function aufListeBinden(root) {
   root.querySelectorAll("[data-ahak]").forEach(b => b.onclick = ev => { ev.stopPropagation(); aufHaken(b.dataset.ahak, true); });
   root.querySelectorAll("[data-azrk]").forEach(b => b.onclick = ev => { ev.stopPropagation(); aufHaken(b.dataset.azrk, false); });
   root.querySelectorAll("[data-alink]").forEach(b => b.onclick = ev => { ev.stopPropagation(); aufGehe(b.dataset.alink); });
+  /* der ganze Text einer Aufgabe mit Link führt dorthin, nicht nur der kleine blaue Link (vom Nutzer, Fassung 23.11. a) */
+  root.querySelectorAll(".aufz .atx").forEach(t => { const l = t.querySelector("[data-alink]"); if (l) { t.classList.add("hklick"); t.onclick = () => aufGehe(l.dataset.alink); } });
 }
 // Formular: oben in der Aufgaben-Ansicht und eingeklappt unter Bestellung/Termin („+ Aufgab“)
 function aufFormHtml(F, titel) {
