@@ -77,19 +77,23 @@ ist("Verkafen offen", await p.locator("#t-verkaufen").isVisible(), true);
 await p.click("#zurHaut"); await warte(900);
 await p.click('#hKal [data-hgeh="kalender"]');
 ist("„Alles ›“ bei Deng nächst Deeg → Kalender", await p.evaluate(() => [TAB, KAL_BEREICH]), ["kalender", "kalender"]);
-// Einträge auf der Startseite führen direkt hin (vom Nutzer, Fassung 23.11. a)
+// „Deng nächst Deeg“ klappt auf wie im Kalender, darunter der Knopf (vom Nutzer, Fassung 23.11. b)
 await p.click("#zurHaut"); await warte(900);
-await p.locator("#hKal .hklick", { hasText: "Bestellung Reimen David" }).click(); await warte(400);
-ist("Deng nächst Deeg: Bestellung antippen → genau diese Bestellung, leuchtet", await p.evaluate(() => { const el = document.querySelector(".liv.leucht"); return [TAB, el && el.innerText.includes("Reimen David")]; }), ["livraisons", true]);
+ist("zu: kein Knopf", await p.locator("#hKal .hzd").count(), 0);
+await p.locator("#hKal [data-hkauf]", { hasText: "Bestellung Reimen David" }).click(); await warte(300);
+ist("Bestellung aufgeklappt: Details, aus de Bestellungen, Knopf", await p.locator("#hKal .hzd").innerText(), t => t.includes("10 × NEIPA") && t.includes("aus de Bestellungen") && t.includes("→ Bei d'Bestellung"));
+ist("noch auf der Startseite", await p.evaluate(() => TAB), "haut");
+await p.click("#hKal .hzd [data-alink]"); await warte(400);
+ist("→ Bei d'Bestellung: genau diese, leuchtet", await p.evaluate(() => { const el = document.querySelector(".liv.leucht"); return [TAB, el && el.innerText.includes("Reimen David")]; }), ["livraisons", true]);
 await p.click("#zurHaut"); await warte(900);
-await p.locator("#hKal .hklick", { hasText: "Braudag" }).click(); await warte(400);
-ist("Deng nächst Deeg: Termin antippen → Kalender, Termin aufgeklappt", await p.evaluate(() => [TAB, KAL_AUF.has("t-haut-01")]), ["kalender", true]);
+await p.locator("#hKal [data-hkauf]", { hasText: "Bestellung Reimen David" }).click(); await warte(900);
+ist("nochmal antippen klappt zu", await p.locator("#hKal .hzd").count(), 0);
+await p.locator("#hKal [data-hkauf]", { hasText: "Braudag" }).click(); await warte(300);
+ist("Termin aufgeklappt: Uhrzeit, Leute, → Am Kalenner", await p.locator("#hKal .hzd").innerText(), t => t.includes("09:00") && t.includes("Laurent") && t.includes("→ Am Kalenner"));
+await p.click("#hKal .hzd [data-alink]"); await warte(400);
+ist("→ Am Kalenner: Termin aufgeklappt", await p.evaluate(() => [TAB, KAL_AUF.has("t-haut-01")]), ["kalender", true]);
 await p.click("#zurHaut"); await warte(900);
-await p.evaluate(() => { const L = Z.livraisons.find(x => x.kunde === "Reimen David"); eintragen([{ art: "aufgabe", aid: "a-haut-link", text: "Flaschen fir Reimen ofhuelen", fuer: ["Laurent"], ref: { typ: "liv", id: L.lid } }]); render(); });
-{ const t = p.locator("#hAuf .atx.hklick", { hasText: "Flaschen fir Reimen" });
-  ist("Aufgabe mit Link: ganzer Text antippbar", await t.count(), 1);
-  await t.click({ position: { x: 20, y: 8 } }); await warte(400);
-  ist("Aufgabentext antippen → Bestellung", await p.evaluate(() => TAB), "livraisons"); }
+ist("Aufgaben: nur der blaue Link führt hin, nicht der Text", await p.evaluate(() => !document.querySelector("#hAuf .atx.hklick")), true);
 
 // Reiter unten
 ist("Reiter unten am Bildschirm, alle Namen passen", await p.evaluate(() => { const n = document.querySelector("#nav"), r = n.getBoundingClientRect();
