@@ -434,7 +434,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px}
 <script>
 /* Adresse des Cloudflare-Workers. Leer = Probe-Modus (alles nur auf diesem Handy). */
 const WORKER_URL = "https://millebeier.rjtp6r9s9h.workers.dev/";
-const FASSUNG = "24.11.2026 a";
+const FASSUNG = "24.11.2026 b";
 
 /* === Logik === (kein DOM; test/logik.mjs schneidet diesen Block aus) */
 const LAGER = "Lager";
@@ -814,7 +814,7 @@ function beschreibe(e, Z) {
     case "bier": return `🍺 Béier: ${e.name}` + [e.stil, e.alk != null ? String(e.alk).replace(".", ",") + " %" : "", euro(e.preis), e.braudatum ? "gebraut " + datumKurz(e.braudatum) : ""].filter(Boolean).map(x => " · " + x).join("");
     case "bierstatus": return { archiv: "📦 Archivéiert: ", aktiv: "↩️ Aus dem Archiv zréck: ", weg: "✕ Béier geläscht: " }[e.status] + bierText(e.name);
     case "termin": return e.weg ? `📅 Termin geläscht` : `📅 ${(TERMIN_ARTEN[e.typ] || {}).ic || ""} ${e.titel}${e.bier ? " · " + e.bier : ""}, ${datumKurz(e.datum)}${e.uhr ? " " + e.uhr : ""}`;
-    case "aufgabe": return e.weg ? `✅ Aufgab geläscht` : e.erledigt ? `☑️ Ofgehaakt: ${e.auto ? "💡 " : ""}${e.text}` : e.erledigt === false ? `↩️ Erëm op: ${e.text}`
+    case "aufgabe": return e.weg ? `✅ Aufgab geläscht${e.text ? ": " + e.text : ""}` : e.geaendert ? `✎ Aufgab geännert: ${e.text} · fir ${e.fuer.join(", ")}${e.bis ? " · bis " + datumKurz(e.bis) : ""}` : e.erledigt ? `☑️ Ofgehaakt: ${e.auto ? "💡 " : ""}${e.text}` : e.erledigt === false ? `↩️ Erëm op: ${e.text}`
       : `✅ Aufgab: ${e.text} · fir ${e.fuer.join(", ")}${e.bis ? " · bis " + datumKurz(e.bis) : ""}`;
     case "aufhak": { const a = Z && Z.aufgaben && Z.aufgaben.find(x => x.aid === e.aid); const t = a ? a.text : "Aufgab";
       return e.an === false ? `↩️ ${e.durch}: erëm op — ${t}` : `☑️ ${e.durch} huet ofgehaakt: ${t}`; }
@@ -2207,6 +2207,7 @@ function renderKalForm(box, egal) {
    Hinter dem Kalender-Knopf: zwei große Kästen „📅 Kalenner“ (Vorgabe) und „✅ Aufgaben“ — kein neuer Reiter. Anlegen nur dort
    und per „+ Aufgab“ an Bestellung/Termin (Link dorthin); die Startseite zeigt nur, was mich betrifft. Keine Zahl irgendwo. */
 let KAL_BEREICH = "kalender", AUF_SICHT = "op", AFORM = null, A_INLINE = null, A_MELD = "";
+let A_AUF = new Set(), A_EDIT = null; /* Aufgabe aufgeklappt / in Bearbeitung (vom Nutzer, Fassung 24.11. b: ändern und löschen wie Kalender-Termine) */
 const leereAufgabe = ref => ({ text: "", fuer: [EIN.ich], bisAuf: false, bis: "", ref: ref || null, jeder: false });
 const mehrere = F => F.fuer.includes("All") || F.fuer.length > 1;
 // „Däin Handy huet n Agaben nach net geschéckt“: kennt nur dieses Handy, darum nicht in autoAufgaben
@@ -2231,7 +2232,7 @@ function bisText(d, h) {
   if (d < h) return `<span class="rot">⚠️ war bis ${d === plusTage(h, -1) ? "gëschter" : `${wt} ${t}.${m}.`}</span>`;
   return d === h ? `<span class="gelb">bis haut</span>` : `bis ${d === plusTage(h, 1) ? "muer" : `${wt} ${t}.${m}.`}`;
 }
-function aufZeile(a, h, start) {
+function aufZeile(a, h, start, bearb = false) {
   const teile = [];
   if (a.erledigt) teile.push(`✓ vum ${esc(a.durch)}, ${esc(datumText(a.zeit).replace(/\.\d{4}$/, "."))}`);
   else {
@@ -2250,7 +2251,10 @@ function aufZeile(a, h, start) {
     : a.erledigt ? `<button class="abox an" data-azrk="${esc(a.aid)}" aria-label="Erëm op">✓</button>` : `<button class="abox" data-ahak="${esc(a.aid)}" aria-label="Ofhaken"></button>`;
   const stand = a.jeder ? `<div class="astand"><span>${a.gemacht.length} vu ${a.noetig.length}</span>${a.noetig.map(p => a.gemacht.some(g => g.wer === p)
     ? `<span class="ok">✓ ${esc(p)}</span>` : `<span>${esc(p)}</span>`).join("")}</div>` : "";
-  return `<div class="aufz ${a.erledigt ? "erl" : ""}" ${a.ohneHaken ? `data-alink="sync:"` : ""}>${box}<div class="atx">${a.auto ? "💡 " : ""}${a.jeder ? "👥 " : ""}${esc(a.text)}${teile.length ? `<small>${teile.join(" · ")}</small>` : ""}${stand}</div></div>`;
+  const kann = bearb && !a.auto && !a.ohneHaken, auf = kann && A_AUF.has(a.aid);
+  const unten = !auf ? "" : A_EDIT && A_EDIT.aid === a.aid ? aufFormHtml(A_EDIT.F, "Aufgab änneren")
+    : `<div class="knopfe einz" style="margin-top:8px"><button class="knopf" data-aed="${esc(a.aid)}">✎ Änneren</button><button class="knopf rot" data-aweg="${esc(a.aid)}">✕ Läschen</button></div>`;
+  return `<div class="aufz ${a.erledigt ? "erl" : ""}" ${a.ohneHaken ? `data-alink="sync:"` : ""}>${box}<div class="atx${kann ? " hklick" : ""}" ${kann ? `data-aauf="${esc(a.aid)}"` : ""}>${a.auto ? "💡 " : ""}${a.jeder ? "👥 " : ""}${esc(a.text)}${teile.length ? `<small>${teile.join(" · ")}</small>` : ""}${stand}${unten}</div></div>`;
 }
 const AUF_LEGENDE = `<div class="aleg">💡 = Virschlag vun der App. Si verschwënnt vu selwer, soubal et erleedegt ass. Ofhaken heescht „ech hunn et am A“.</div>`;
 // Abhaken / zurückholen: derselbe Inhalt neu, mit erledigt (gilt für alle)
@@ -2316,7 +2320,7 @@ function aufFormBinden(root, F, neuBauen, fertig, zu) {
     const text = String(F.text || "").trim().replace(/\s+/g, " ");
     if (!text) return meld("Wat ass ze maachen?");
     if (F.bisAuf && F.bis && !/^\d{4}-\d{2}-\d{2}$/.test(F.bis)) return meld("Datum stëmmt net.");
-    const e = { art: "aufgabe", aid: "a-" + neueId().replace(/[^A-Za-z0-9-]/g, "").slice(0, 40), text, fuer: [...F.fuer],
+    const e = { art: "aufgabe", aid: F.aid || "a-" + neueId().replace(/[^A-Za-z0-9-]/g, "").slice(0, 40), text, fuer: [...F.fuer], ...(F.aid ? { geaendert: true } : {}), ...(F.aid && F.erledigt ? { erledigt: true } : {}),
       ...(F.bisAuf && F.bis ? { bis: F.bis } : {}), ...(F.ref ? { ref: { ...F.ref } } : {}), ...(F.jeder && mehrere(F) ? { jeder: true } : {}) };
     if (!gueltig({ ...e, id: "x", zeit: 0 })) return meld("Eppes ass ze laang oder net richteg.");
     if (document.activeElement) document.activeElement.blur();
@@ -2346,12 +2350,29 @@ function renderAufgaben(box) {
       <button data-asicht="op" class="${AUF_SICHT === "op" ? "an" : ""}">Op</button>
       <button data-asicht="meng" class="${AUF_SICHT === "meng" ? "an" : ""}">Just meng</button>
       <button data-asicht="erl" class="${AUF_SICHT === "erl" ? "an" : ""}">Erleedegt</button></div>
-      ${liste.length ? liste.map(a => aufZeile(a, h, false)).join("") : `<div class="leer">${AUF_SICHT === "erl" ? "Déi lescht 30 Deeg näischt ofgehaakt." : "✓ Näischt ze maachen."}</div>`}
+      ${liste.length ? liste.map(a => aufZeile(a, h, false, true)).join("") : `<div class="leer">${AUF_SICHT === "erl" ? "Déi lescht 30 Deeg näischt ofgehaakt." : "✓ Näischt ze maachen."}</div>`}
       ${AUF_SICHT !== "erl" && liste.some(a => a.auto) ? AUF_LEGENDE : ""}</div>`;
   kalKaestenBinden(box);
   aufFormBinden($("#aNeu"), AFORM, () => renderKalender(), text => { A_MELD = `✓ Agedroen: ${text}`; AFORM = leereAufgabe(); renderKalender(); });
   box.querySelectorAll("[data-asicht]").forEach(b => b.onclick = () => { AUF_SICHT = b.dataset.asicht; A_MELD = ""; renderKalender(); });
   aufListeBinden(box);
+  box.querySelectorAll("[data-aauf]").forEach(t => t.onclick = ev => {
+    if (ev.target.closest("button, input, .aform, [data-alink]")) return;
+    const k = t.dataset.aauf; if (A_AUF.has(k)) { A_AUF.delete(k); if (A_EDIT && A_EDIT.aid === k) A_EDIT = null; } else A_AUF.add(k); A_MELD = ""; renderKalender();
+  });
+  box.querySelectorAll("[data-aed]").forEach(b => b.onclick = () => {
+    const a = Z.aufgaben.find(x => x.aid === b.dataset.aed); if (!a) return;
+    A_EDIT = { aid: a.aid, F: { aid: a.aid, text: a.text, fuer: [...a.fuer], bisAuf: !!a.bis, bis: a.bis || "", ref: a.ref ? { ...a.ref } : null, jeder: !!a.jeder, erledigt: !!a.erledigt } };
+    renderKalender();
+  });
+  box.querySelectorAll("[data-aweg]").forEach(b => b.onclick = () => {
+    const a = Z.aufgaben.find(x => x.aid === b.dataset.aweg); if (!a) return;
+    if (!confirm(`Dës Aufgab läschen?\n\n„${a.text}“`)) return;
+    eintragen([{ art: "aufgabe", aid: a.aid, weg: true, text: a.text, fuer: [...a.fuer] }]);
+    A_AUF.delete(a.aid); A_MELD = `✓ Geläscht: ${a.text}`; renderKalender();
+  });
+  if (A_EDIT) { const f = box.querySelector(`[data-aauf="${CSS.escape(A_EDIT.aid)}"] .aform`);
+    if (f) aufFormBinden(f, A_EDIT.F, () => renderKalender(), text => { A_EDIT = null; A_MELD = `✓ Geännert: ${text}`; renderKalender(); }, () => { A_EDIT = null; renderKalender(); }); }
 }
 
 /* ---------- Livraisons ---------- */
@@ -4070,6 +4091,7 @@ function mittenImEintrag() {
   const a = document.activeElement;
   if (a && /^(INPUT|SELECT|TEXTAREA)$/.test(a.tagName)) return true;
   if (TAB === "einst" && EFORM) return true;
+  if (TAB === "kalender" && A_EDIT) return true;
   if (FORM && (kundeLabel(FORM.k) || Object.values(FORM.n).some(n => n > 0) || FORM.betrag != null)) return true;
   if (BFORM && String(BFORM.n).trim()) return true;
   if (KFORM) return true;

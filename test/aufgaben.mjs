@@ -133,6 +133,25 @@ await p.click('[data-asicht="op"]');
 // Excel-Blatt
 ist("Excel: Blatt Ze maachen", await p.evaluate(() => { const bl = exportBlaetter(Z, zeitText).find(x => x.name === "Ze maachen"); return bl.zeilen.map(r => r[0] + "|" + r[3]); }),
   z => z.includes("Hopfen kafen|op") && z.includes("Etiketten bestellen|erleedegt") && z.some(x => x.startsWith("💡 Rechnung maachen")));
+// Ändern und löschen wie Kalender-Termine (vom Nutzer, Fassung 24.11. b)
+await p.evaluate(() => { TAB = "kalender"; KAL_BEREICH = "aufgaben"; AUF_SICHT = "op"; render(); });
+const zeile = t => p.locator("#t-kalender [data-aauf]", { hasText: t });
+ist("💡-Aufgaben sind nicht bearbeitbar", await p.evaluate(() => [...document.querySelectorAll("#t-kalender .atx")].filter(x => x.textContent.includes("💡")).every(x => !x.dataset.aauf)), true);
+ist("zu: keine Knöpfe", await p.locator("#t-kalender [data-aed]").count(), 0);
+await zeile("Hopfen kafen").click({ position: { x: 30, y: 8 } }); await warte(300);
+ist("antippen klappt auf: ✎ Änneren / ✕ Läschen", await zeile("Hopfen kafen").locator("button").allInnerTexts(), ["✎ Änneren", "✕ Läschen"]);
+const aidH = await p.evaluate(() => Z.aufgaben.find(a => a.text === "Hopfen kafen").aid), anzahl = await p.evaluate(() => Z.aufgaben.length);
+await zeile("Hopfen kafen").locator("[data-aed]").click(); await warte(300);
+ist("Änneren: Formular vorbelegt", await p.evaluate(() => { const f = document.querySelector("#t-kalender [data-aauf] .aform"); return [f.querySelector('[data-af="text"]').value, [...f.querySelectorAll("[data-afuer].an")].map(x => x.dataset.afuer), !!f.querySelector('[data-af="bis"]')]; }), ["Hopfen kafen", ["Marc"], true]);
+{ const f = p.locator("#t-kalender [data-aauf] .aform");
+  await f.locator('[data-af="text"]').fill("Hopfen a Malz kafen");
+  await f.locator('[data-afuer="Jeff"]').click(); await f.locator('[data-af="ok"]').click(); await warte(300); }
+ist("gespeichert: gleiche Aufgabe (aid), neuer Text, Fir Marc + Jeff, keine neue Aufgabe", await p.evaluate(id => { const a = Z.aufgaben.find(x => x.aid === id); return [a.text, a.fuer, Z.aufgaben.length]; }, aidH), ["Hopfen a Malz kafen", ["Marc", "Jeff"], anzahl]);
+ist("Meldung „Geännert“", await txt("#t-kalender"), t => t.includes("✓ Geännert: Hopfen a Malz kafen"));
+ist("Verlauf: Aufgab geännert", await p.evaluate(() => beschreibe(SERVER.concat(AUSGANG).filter(e => e.art === "aufgabe" && e.geaendert).pop())), t => t.startsWith("✎ Aufgab geännert: Hopfen a Malz kafen"));
+await zeile("Hopfen a Malz kafen").locator("[data-aweg]").click(); await warte(300);
+ist("Läschen (nach Rückfrage): weg aus der Liste und aus Z", await p.evaluate(id => [Z.aufgaben.some(x => x.aid === id), [...document.querySelectorAll("#t-kalender .aufz")].some(z => z.innerText.includes("Hopfen a Malz")), document.querySelector("#t-kalender").innerText.includes("✓ Geläscht: Hopfen a Malz kafen")], aidH), [false, false, true]);
+ist("Verlauf: Aufgab geläscht mit Text", await p.evaluate(() => beschreibe(SERVER.concat(AUSGANG).filter(e => e.art === "aufgabe" && e.weg).pop())), "✅ Aufgab geläscht: Hopfen a Malz kafen");
 ist("keine Seitenfehler", seitenfehler, []);
 await b.close();
 console.log(fehler ? `${fehler} Fehler` : "Aufgaben: alles bestanden");
