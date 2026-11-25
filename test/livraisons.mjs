@@ -95,6 +95,16 @@ ist("All: alle Bestellungen", await kunden(), t => t.includes("Rock Solid") && t
 await p.click('[data-lmeine="1"]');
 ist("Just meng (Marc): ohne Jeffs Bestellung", await kunden(), t => !t.includes("Rock Solid") && t.includes("BEST") && t.includes("Ferro Forum"));
 await p.click('[data-lmeine="0"]');
+// Suchfeld unter All / Just meng (vom Nutzer, Fassung 25.11. b)
+{ const namen = () => p.evaluate(() => [...document.querySelectorAll("#lListe .liv b")].map(b => b.textContent));
+  const alle = await namen();
+  await p.locator("#lSuche").type(alle[0].slice(0, 4).toLowerCase()); await warte(300);
+  ist("Suche filtert, Tastatur bleibt (Feld behält Fokus)", [await namen(), await p.evaluate(() => document.activeElement && document.activeElement.id)], ([n, f]) => n.length >= 1 && n.length <= alle.length && n.every(x => x.toLowerCase().includes(alle[0].slice(0, 4).toLowerCase())) && f === "lSuche");
+  ist("„n fonnt“", await p.locator("#lListe").innerText(), t => /\d+ fonnt/.test(t));
+  await p.fill("#lSuche", "zzzqqq"); await warte(300);
+  ist("nichts passt: Näischt fonnt", await p.locator("#lListe").innerText(), t => t.includes("Näischt fonnt") && t.includes("0 fonnt"));
+  await p.fill("#lSuche", ""); await warte(300);
+  ist("leer: wieder alle", await namen(), alle); }
 ist("zurück auf All", await kunden(), t => t.includes("Rock Solid"));
 await p.evaluate(() => eintragen([{ art: "storno", ref: Z.livraisons.find(L => L.kunde === "Rock Solid").id }])); await warte(200);
 

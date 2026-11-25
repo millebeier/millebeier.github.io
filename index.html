@@ -404,7 +404,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px}
   <section id="t-haut" class="versteckt"></section>
   <section id="t-uebersicht" class="versteckt"></section>
   <section id="t-verkaufen" class="versteckt"><div id="vForm"></div></section>
-  <section id="t-livraisons" class="versteckt"><div id="lForm"></div><div id="lListe"></div></section>
+  <section id="t-livraisons" class="versteckt"><div id="lForm"></div><div id="lKopf"></div><div id="lListe"></div></section>
   <section id="t-kunden" class="versteckt"><div class="zbk"></div><div class="card" style="padding:10px 14px"><input id="kSuche" type="search" autocomplete="off" placeholder="🔍 Client sichen"></div><div id="kListe"></div></section>
   <section id="t-offen" class="versteckt"></section>
   <section id="t-bestand" class="versteckt"><div id="bTabelle"></div><div id="bForm"></div><div id="bBiere"></div></section>
@@ -434,7 +434,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px}
 <script>
 /* Adresse des Cloudflare-Workers. Leer = Probe-Modus (alles nur auf diesem Handy). */
 const WORKER_URL = "https://millebeier.rjtp6r9s9h.workers.dev/";
-const FASSUNG = "25.11.2026 a";
+const FASSUNG = "25.11.2026 b";
 
 /* === Logik === (kein DOM; test/logik.mjs schneidet diesen Block aus) */
 const LAGER = "Lager";
@@ -2287,7 +2287,7 @@ function aufGehe(z) {
     render(); const el = document.querySelector(`#t-kalender [data-ter="${CSS.escape(id)}"]`); if (el) el.scrollIntoView({ block: "center" }); return;
   }
   TAB = typ === "liv" ? "livraisons" : typ; EIN.tab = TAB; merke(SP, EIN);
-  if (typ === "liv") L_NUR_MEINE = false;
+  if (typ === "liv") { L_NUR_MEINE = false; L_Q = ""; }
   render(); window.scrollTo(0, 0);
   if (typ === "liv") { const el = document.querySelector(`[data-lid="${CSS.escape(id)}"]`); if (el) { el.scrollIntoView({ block: "center" }); el.classList.add("leucht"); setTimeout(() => el.classList.remove("leucht"), 2000); } }
 }
@@ -2389,7 +2389,7 @@ function renderAufgaben(box) {
 }
 
 /* ---------- Livraisons ---------- */
-let LFORM = null, L_NEU = false, L_NUR_MEINE = false, L_MELD_AUF = "";
+let LFORM = null, L_NEU = false, L_NUR_MEINE = false, L_MELD_AUF = "", L_Q = "";
 function leereLivraison() {
   const morgen = new Date(Date.now() + 86400000).toLocaleDateString("sv-SE", { timeZone: TZ });
   // „Huelen aus“: Vorgabe ist, wer einträgt (vom Nutzer, Fassung x); ändern nur über den Knopf „Änneren“
@@ -2402,14 +2402,31 @@ function renderLivraisons() {
   renderLListe();
   renderLForm();
 }
+/* Kopf der Liste: All / Just meng und Suchfeld — wird nicht neu gebaut, damit beim Tippen die Tastatur offen bleibt */
+function lKopf() {
+  const k = $("#lKopf");
+  if (!$("#lSuche")) {
+    k.innerHTML = `<div class="card" style="padding:10px 14px"><div class="seg" style="margin:0"><button data-lmeine="0">All</button><button data-lmeine="1">Just meng</button></div>
+      <input id="lSuche" type="search" placeholder="🔍 Bestellung sichen (Numm, Béier, Datum …)" autocomplete="off" style="margin-top:10px"></div>`;
+    k.querySelectorAll("[data-lmeine]").forEach(b => b.onclick = () => { L_NUR_MEINE = b.dataset.lmeine === "1"; renderLListe(); });
+    $("#lSuche").oninput = e => { L_Q = e.target.value; renderLListe(); };
+  }
+  if ($("#lSuche").value !== L_Q && document.activeElement !== $("#lSuche")) $("#lSuche").value = L_Q;
+  k.querySelectorAll("[data-lmeine]").forEach(b => b.classList.toggle("an", (b.dataset.lmeine === "1") === L_NUR_MEINE));
+}
 function renderLListe() {
   const box = $("#lListe");
   if (tipptIn(box)) return; // „+ Aufgab“-Formular: nicht neu bauen, während getippt wird
   const heute = new Date().toLocaleDateString("sv-SE", { timeZone: TZ });
   // All / Just meng wie bei Ausstoend (vom Nutzer, Fassung y): „meng“ = ich bin Kontakt oder es kommt aus meinem Bestand
   const meine = L => !L_NUR_MEINE || L.kontakt === EIN.ich || L.aus === EIN.ich;
-  const geplant = Z.livraisons.filter(L => !L.verkauf && meine(L));
-  const fertig = Z.livraisons.filter(L => L.verkauf && meine(L)).reverse();
+  /* Suchfeld unter All / Just meng (vom Nutzer, Fassung 25.11. b): alle Wörter müssen vorkommen — Client, Kontakt, Biere, Datum, Betrag, Notiz */
+  lKopf();
+  const woerter = L_Q.trim().toLowerCase().split(/\s+/).filter(Boolean);
+  const passt = L => !woerter.length || (t => woerter.every(w => t.includes(w)))([L.kunde, L.kontakt, L.aus, postenText(L.posten), L.datum, datumKurz(L.datum),
+    euro(L.betrag), L.anlass || "", L.notiz || ""].join(" ").toLowerCase());
+  const geplant = Z.livraisons.filter(L => !L.verkauf && meine(L) && passt(L));
+  const fertig = Z.livraisons.filter(L => L.verkauf && meine(L) && passt(L)).reverse();
   const karte = L => {
     const v = L.verkauf;
     const status = v ? `<span class="chip ok">✓ geliwwert</span>
@@ -2434,9 +2451,9 @@ function renderLListe() {
       ${status}<div class="knopfe ${!v ? "einz" : ""}">${knoepfe}</div>
       ${!v && A_INLINE && A_INLINE.wo === "liv:" + L.lid ? aufFormHtml(A_INLINE.F, `Nei Aufgab fir d'Bestellung ${L.kunde}`) : ""}</div>`;
   };
-  box.innerHTML = `<div class="card" style="padding:10px 14px"><div class="seg" style="margin:0"><button data-lmeine="0" class="${L_NUR_MEINE ? "" : "an"}">All</button><button data-lmeine="1" class="${L_NUR_MEINE ? "an" : ""}">Just meng</button></div></div>
+  box.innerHTML = `${woerter.length ? `<div class="muted" style="margin:6px 4px 0;font-size:14px">${geplant.length + fertig.length} fonnt</div>` : ""}
     <div class="card"><h2>Geplangt (${geplant.length})</h2>${L_MELD_AUF ? `<div class="meldung ok">${esc(L_MELD_AUF)}</div>` : ""}
-      ${geplant.length ? geplant.map(karte).join("") : `<div class="leer">Keng Bestellung geplangt.</div>`}</div>
+      ${geplant.length ? geplant.map(karte).join("") : `<div class="leer">${woerter.length ? "Näischt fonnt." : "Keng Bestellung geplangt."}</div>`}</div>
     <div class="card"><h2>Geliwwert</h2>
       ${fertig.length ? fertig.slice(0, 40).map(karte).join("") : `<div class="leer">Nach keng.</div>`}</div>`;
   // Geplante Bestellung korrigieren (vom Nutzer, Fassung z): Formular mit allen Angaben; Späicheren = alte löschen + neue
@@ -2455,7 +2472,6 @@ function renderLListe() {
   const laf = box.querySelector(".liv .aform");
   if (laf && A_INLINE && A_INLINE.neu) { A_INLINE.neu = false; laf.querySelector("input").focus(); }
   if (laf && A_INLINE) aufFormBinden(laf, A_INLINE.F, () => renderLListe(), text => { A_INLINE = null; L_MELD_AUF = `✓ Aufgab agedroen: ${text}`; renderLListe(); }, () => { A_INLINE = null; renderLListe(); });
-  box.querySelectorAll("[data-lmeine]").forEach(b => b.onclick = () => { L_NUR_MEINE = b.dataset.lmeine === "1"; renderLListe(); });
   box.querySelectorAll("[data-geliwwert]").forEach(b => b.onclick = () => {
     const L = Z.livraisons.find(x => x.id === b.dataset.geliwwert); if (!L) return;
     const kurz = L.posten.filter(p => p.n > hat(Z, L.aus, p.sorte));

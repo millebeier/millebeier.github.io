@@ -99,6 +99,9 @@ beim Verkaufen/Livraison und „Fläsche beweegen“ an, solange jemand welche h
   **Bestellung planen: „Huelen aus“ = wer einträgt** (vom Nutzer, Fassung x), als Text mit Knopf „Änneren“ (`ausAendern`),
   erst dann die Auswahl Lager/Leute.
   **Bestellungen: All / Just meng** (vom Nutzer, Fassung y, wie bei Ausstoend): „meng“ = Kontakt oder `aus` ist man selbst.
+  **Suchfeld unter All / Just meng** (vom Nutzer, Fassung 25.11. b): `#lSuche` in `#lKopf` (wird nie neu gebaut, `lKopf()`), filtert Geplangt und
+  Geliwwert (`L_Q`; alle Wörter müssen in Client, Kontakt, Huelen aus, Bieren, Datum, Betrag, Anlass oder Notiz vorkommen), „n fonnt“ / „Näischt fonnt“.
+  Ein Sprung zu einer bestimmten Bestellung (`aufGehe`) leert die Suche.
   **Bestellung ändern** (vom Nutzer, Fassung z): nur geplante, Knopf „✎ Änneren“ → Formular vorbelegt (`LFORM.ersetzt`),
   scrollt den Formular-Anfang unter den festen Kopf (`lFormOben`; Fassung i beim Ändern, Fassung k auch bei „Nei Bestellung“),
   nach Späicheren/Ofbriechen ganz nach oben (Fassung l),
