@@ -4,7 +4,7 @@ const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
 const a = html.indexOf("/* === Logik ===");
 const b = html.indexOf("/* === Oberfläche ===");
 if (a < 0 || b < 0) { console.error("Marken nicht gefunden"); process.exit(1); }
-const L = new Function(html.slice(a, b) + "; return {rechne, gueltig, euro, verteile, erinnerung, csv, beschreibe, hat, LAGER, STANDARD, proSorte, exportBlaetter, anteil, dateienVon, altImport, altKorrekturen, bierText, postenText, frei, zuWenig, preisVon, fassKey, artikelVon, autoAufgaben, aufgabenStand, aidVon, aufFuerMich, naechsteNr, rechnungZeilen, rechnungDaten, buchDaten};")();
+const L = new Function(html.slice(a, b) + "; return {rechne, vomLagerBei, fuerAndereBei, reserviertBei, belegtBei, gueltig, euro, verteile, erinnerung, csv, beschreibe, hat, LAGER, STANDARD, proSorte, exportBlaetter, anteil, dateienVon, altImport, altKorrekturen, bierText, postenText, frei, zuWenig, preisVon, fassKey, artikelVon, autoAufgaben, aufgabenStand, aidVon, aufFuerMich, naechsteNr, rechnungZeilen, rechnungDaten, buchDaten};")();
 
 let fehler = 0, n = 0;
 const ist = (was, wert, soll) => { n++; const ok = JSON.stringify(wert) === JSON.stringify(soll); if (!ok) { fehler++; console.log(`✗ ${was}: ${JSON.stringify(wert)} statt ${JSON.stringify(soll)}`); } };
@@ -481,6 +481,25 @@ ist("CSV Zeilen", c.trim().split("\r\n").length, 4);
   ist("Alte Überweisung ohne wart zählt sofort", L.rechne([ab, v, U("zahlung", { ref: v.id, betrag: 30, wie: "bank" })]).kasse, 30);
   ist("Verlauf: Abgang mit Bemerkung", L.beschreibe(U("abgang", { sorte: "NEIPA", n: 2, wer: "Jeff", grund: "verschenkt", notiz: "Carlo" }), Y), "🗑️ 2 × NEIPA beim Jeff: verschenkt / Prouf — Carlo");
   ist("Verlauf", [L.beschreibe(zw, Y), L.beschreibe(b, Y)], ["🏦 Iwwerweisung ugekënnegt: 30 € · Hoffmann (beim Jeff)", "✓ Iwwerweisung ukomm: 30 € den 5.11.2026 · Hoffmann"]);
+}
+
+// Fehlendes für Bestellungen ist beim Lager vorgemerkt (vom Nutzer, Fassung 25.11. a)
+{
+  const basis = [E("abfuellung", { sorte: "NEIPA", n: 154 }), E("bewegung", { sorte: "NEIPA", n: 10, von: "Lager", an: "Jeff" })];
+  const best = n => E("livraison", { kunde: "X", kontakt: "Jeff", aus: "Jeff", datum: "2026-12-01", posten: [{ sorte: "NEIPA", n }], betrag: 3 * n, rechnung: false });
+  const stand = Y => [L.frei(Y, "Jeff", "NEIPA"), L.reserviertBei(Y, "Jeff", "NEIPA"), L.vomLagerBei(Y, "Jeff", "NEIPA"), L.frei(Y, "Lager", "NEIPA"), L.fuerAndereBei(Y, "NEIPA")];
+  ist("hat 10, braucht 9: fräi 1, 🚚 9, nichts vom Lager", stand(L.rechne([...basis, best(9)])), [1, 9, 0, 144, 0]);
+  ist("hat 10, braucht 12: fräi 0, 🚚 10, 📦 2; Lager fräi 142", stand(L.rechne([...basis, best(12)])), [0, 10, 2, 142, 2]);
+  const Y = L.rechne([...basis, best(12)]);
+  ist("Lager: Verkauf über fräi warnt mit belegt", L.zuWenig(Y, "Lager", [{ sorte: "NEIPA", n: 143 }]).map(p => [p.frei, p.res]), [[142, 2]]);
+  ist("Lager: genau fräi warnt nicht", L.zuWenig(Y, "Lager", [{ sorte: "NEIPA", n: 142 }]).length, 0);
+  ist("Bedarf bleibt vollständig (für den gelben Kasten)", Y.bedarf.Jeff.NEIPA, 12);
+  const Y2 = L.rechne([...basis, best(12), E("bewegung", { sorte: "NEIPA", n: 2, von: "Lager", an: "Jeff" })]);
+  ist("Jeff holt sich 2: Vormerkung beim Lager weg", stand(Y2), [0, 12, 0, 142, 0]);
+  const Y3 = L.rechne([...basis, best(54), E("livraison", { kunde: "Y", kontakt: "Marc", aus: "Marc", datum: "2026-12-02", posten: [{ sorte: "NEIPA", n: 6 }], betrag: 18, rechnung: false })]);
+  ist("zwei Leute: Lager fräi 144 − 44 − 6 = 94, für andere 50", [L.frei(Y3, "Lager", "NEIPA"), L.fuerAndereBei(Y3, "NEIPA")], [94, 50]);
+  const Y4 = L.rechne([...basis, E("livraison", { kunde: "Z", kontakt: "Jeff", aus: "Lager", datum: "2026-12-01", posten: [{ sorte: "NEIPA", n: 200 }], betrag: 600, rechnung: false })]);
+  ist("Bestellung aus dem Lager: Lager reserviert alles, darf rot werden", [L.reserviertBei(Y4, "Lager", "NEIPA"), L.frei(Y4, "Lager", "NEIPA")], [200, -56]);
 }
 
 console.log(fehler ? `${fehler} von ${n} Prüfungen fehlgeschlagen` : `Alle ${n} Prüfungen bestanden`);

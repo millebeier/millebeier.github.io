@@ -83,7 +83,7 @@ await p.fill(`#lN${iN}`, "4");
 ist("Betrag rechnet neu", await p.inputValue("#lBetrag"), "12");
 await p.click("#lOk"); await warte(300);
 ist("geändert: nur noch eine BEST, neue Werte", await p.evaluate(() => Z.livraisons.filter(L => L.kunde === "BEST").map(L => [L.datum, L.posten[0].n, L.betrag])), [["2026-12-21", 4, 12]]);
-ist("Reservierung angepasst", await p.evaluate(() => reserviertBei(Z, "Marc", "NEIPA")), 4);
+ist("Reservierung angepasst (Bedarf 4; Marc hat keine, also vom Lager)", await p.evaluate(() => [Z.bedarf.Marc.NEIPA, reserviertBei(Z, "Marc", "NEIPA") + vomLagerBei(Z, "Marc", "NEIPA")]), [4, 4]);
 ist("Meldung", await p.locator("#lMeld").innerText(), t => t.includes("Geännert: BEST"));
 ist("gelieferte Bestellung ohne Änneren", await p.evaluate(() => { const L = Z.livraisons.find(x => x.kunde === "Ferro Forum"); return !!document.querySelector(`[data-led="${L.id}"]`); }), false);
 

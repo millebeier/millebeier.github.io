@@ -107,7 +107,7 @@ nav .badge.grau{background:var(--card2);border:1px solid var(--line)}
 .kgross{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0 0}
 .kgross button{border-radius:14px;border:1px solid var(--line);background:var(--card2);color:var(--text);padding:11px 4px;cursor:pointer;text-align:center}
 .kgross button b{display:block;font-size:17px} .kgross button small{display:block;font-size:12px;color:var(--muted);margin-top:2px}
-.hkopf + .ter{border-top:0} .liv.leucht{outline:2px solid var(--akzent);outline-offset:2px;transition:outline-color .3s} .kgross b.zbn{font-size:15px;margin-top:2px} .kgross button.an{background:var(--akzent);border-color:var(--akzent)} .kgross button.an small{color:#fdd}
+.hkopf + .ter{border-top:0} .lz{display:block;font-size:12px;color:#7fb3ff} .stocktab tr.lzz td{color:#7fb3ff} .stocktab small.lg{font-size:10px;color:var(--muted)} .stocktab .lg.rz,.stocktab .lg.lz{font-size:10px} .stocktab td:first-child{vertical-align:top} .liv.leucht{outline:2px solid var(--akzent);outline-offset:2px;transition:outline-color .3s} .kgross b.zbn{font-size:15px;margin-top:2px} .kgross button.an{background:var(--akzent);border-color:var(--akzent)} .kgross button.an small{color:#fdd}
 .aufz{display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-top:1px solid #262626}
 .aufz:first-of-type{border-top:0}
 .abox{width:26px;height:26px;flex:none;border:2px solid #888;border-radius:7px;background:none;color:#10200f;font-weight:900;font-size:15px;padding:0;cursor:pointer;line-height:1}
@@ -434,7 +434,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px}
 <script>
 /* Adresse des Cloudflare-Workers. Leer = Probe-Modus (alles nur auf diesem Handy). */
 const WORKER_URL = "https://millebeier.rjtp6r9s9h.workers.dev/";
-const FASSUNG = "24.11.2026 b";
+const FASSUNG = "25.11.2026 a";
 
 /* === Logik === (kein DOM; test/logik.mjs schneidet diesen Block aus) */
 const LAGER = "Lager";
@@ -717,13 +717,22 @@ function rechne(eintraege) {
   for (const s of sortenNamen) st(s);
   const summe = f => sortenNamen.reduce((a, s) => a + sorten[s][f], 0);
   // Reserviert: geplante Livraisons belegen den Bestand dort, wo sie herkommen (vom Nutzer, 14.11.2026).
-  const reserviert = {};
+  const bedarf = {};
   for (const L of liv.values()) if (!L.verkauf) for (const p of L.posten) {
-    (reserviert[L.aus] ||= {}); reserviert[L.aus][p.sorte] = (reserviert[L.aus][p.sorte] || 0) + p.n;
+    (bedarf[L.aus] ||= {}); bedarf[L.aus][p.sorte] = (bedarf[L.aus][p.sorte] || 0) + p.n;
+  }
+  /* Was dem Halter für seine Bestellungen fehlt, ist beim Lager vorgemerkt (vom Nutzer, Fassung 25.11. a): reserviert = eigene
+     Flaschen (höchstens, was er hat), vomLager = der Rest, fuerAndere = Summe davon je Artikel (belegt das Lager). Das Lager selbst
+     reserviert immer alles (darf rot werden). */
+  const reserviert = {}, vomLager = {}, fuerAndere = {};
+  for (const [h, m] of Object.entries(bedarf)) for (const [k, n] of Object.entries(m)) {
+    const da = (bestand[h] && bestand[h][k]) || 0, eigen = h === LAGER ? n : Math.max(0, Math.min(n, da)), rest = n - eigen;
+    if (eigen) (reserviert[h] ||= {})[k] = eigen;
+    if (rest > 0) { (vomLager[h] ||= {})[k] = rest; fuerAndere[k] = (fuerAndere[k] || 0) + rest; }
   }
 
   return {
-    reserviert, kasseNach, zbest, wartend, cfg, basisSorten, geloescht, liste, aktiv, storniert, nachId, bestand, halter, sorten, sortenNamen, personen,
+    reserviert, bedarf, vomLager, fuerAndere, kasseNach, zbest, wartend, cfg, basisSorten, geloescht, liste, aktiv, storniert, nachId, bestand, halter, sorten, sortenNamen, personen,
     verkaeufe: [...vk.values()],
     rechnungen: [...vk.values()].filter(v => v.rech).sort((a, b) => a.rech.nr.localeCompare(b.rech.nr)),
     altVerkaeufe: altVk,
@@ -759,7 +768,11 @@ const de = h => h === LAGER ? "d'Lager" : "de " + h;
 const beim = h => h === LAGER ? "am Lager" : "beim " + h;
 const hat = (Z, wer, sorte) => (Z.bestand[wer] && Z.bestand[wer][sorte]) || 0;
 const reserviertBei = (Z, wer, sorte) => (Z.reserviert[wer] && Z.reserviert[wer][sorte]) || 0;
-const frei = (Z, wer, sorte) => hat(Z, wer, sorte) - reserviertBei(Z, wer, sorte);
+const vomLagerBei = (Z, wer, sorte) => (Z.vomLager && Z.vomLager[wer] && Z.vomLager[wer][sorte]) || 0;
+const fuerAndereBei = (Z, sorte) => (Z.fuerAndere && Z.fuerAndere[sorte]) || 0;
+/* belegt = was vom Bestand dieses Halters nicht mehr frei ist: eigene Reservierung, beim Lager zusätzlich das für andere Vorgemerkte */
+const belegtBei = (Z, wer, sorte) => reserviertBei(Z, wer, sorte) + (wer === LAGER ? fuerAndereBei(Z, sorte) : 0);
+const frei = (Z, wer, sorte) => hat(Z, wer, sorte) - belegtBei(Z, wer, sorte);
 const preisVon = (cfg, key) => {
   const { bier, l } = zerlege(key);
   const s = cfg.sorten.find(x => x.name === bier);
@@ -770,7 +783,7 @@ const preisVon = (cfg, key) => {
 const fassNamen = (Z, bier) => FAESSER.map(F => fassKey(bier, F.l)).filter(k => Z.sorten[k] && (Z.sorten[k].abgefuellt || Z.sorten[k].da || Z.sorten[k].verkauft || Z.sorten[k].abgang || Z.halter.some(h => reserviertBei(Z, h, k))));
 const artikelVon = (Z, bier) => [bier, ...fassNamen(Z, bier)];
 /* Was eine Menge braucht und was fehlt: [{sorte, n, frei}] für alle Posten mit n > frei. */
-const zuWenig = (Z, wer, posten) => posten.map(p => ({ ...p, frei: frei(Z, wer, p.sorte), hat: hat(Z, wer, p.sorte), res: reserviertBei(Z, wer, p.sorte) })).filter(p => p.n > p.frei);
+const zuWenig = (Z, wer, posten) => posten.map(p => ({ ...p, frei: frei(Z, wer, p.sorte), hat: hat(Z, wer, p.sorte), res: belegtBei(Z, wer, p.sorte) })).filter(p => p.n > p.frei);
 /* Name mit Braudatum in Klammern (vom Nutzer, Fassung r): „NEIPA (28.07.2026)“. Neue Biere tragen das Datum schon im
    Namen; ältere bekommen es nur angezeigt. Namen, die schon ein Datum oder „MM/JJJJ“ enthalten, bleiben wie sie sind. */
 let BRAUDATEN = new Map();
@@ -1686,13 +1699,13 @@ function kopfZweizeilig(t) {
   if (!m) return esc(t);
   return m.length === 5 ? `${esc(m[1])}<br><small>${m[2]}.${m[3]}.${m[4]}</small>` : `${esc(m[1])}<br><small>${m[2]}/${m[3]}</small>`;
 }
-const resAlle = k => Z.halter.reduce((a, h) => a + reserviertBei(Z, h, k), 0);
+const resAlle = k => Z.halter.reduce((a, h) => a + belegtBei(Z, h, k), 0);
 const resZeile = (r, fass) => r ? `<span class="rz">🚚 ${r}${fass ? ` + ${fass} F.` : ""}</span>` : fass ? `<span class="rz">🚚 ${fass} F.</span>` : "";
 function mengeText(h) {
   const fl = Z.sortenNamen.reduce((a, s) => a + hat(Z, h, s), 0);
   const fassK = Z.sortenNamen.flatMap(s => fassNamen(Z, s));
   const fa = fassK.reduce((a, k) => a + hat(Z, h, k), 0);
-  const rFl = Z.sortenNamen.reduce((a, s) => a + reserviertBei(Z, h, s), 0), rFa = fassK.reduce((a, k) => a + reserviertBei(Z, h, k), 0);
+  const rFl = Z.sortenNamen.reduce((a, s) => a + belegtBei(Z, h, s), 0), rFa = fassK.reduce((a, k) => a + belegtBei(Z, h, k), 0);
   const frei = fl - rFl, freiFa = fa - rFa;
   return `${frei < 0 ? `<span style="color:var(--rot)">${frei}</span>` : frei}${fa ? ` <small class="muted">+ ${freiFa} F.</small>` : ""}${resZeile(rFl, rFa)}`;
 }
@@ -2384,7 +2397,7 @@ function leereLivraison() {
 }
 const lArtikel = () => artikelListe(LFORM.aus, LFORM.n);
 function lAuto() { return runde(lArtikel().reduce((a, x) => a + (LFORM.n[x.key] || 0) * stueckPreis(LFORM, x), 0)); }
-const freiText = (wer, key) => { const r = reserviertBei(Z, wer, key), h = hat(Z, wer, key); return `fräi ${h - r}` + (r ? ` (${h} do, ${r} reservéiert)` : ""); };
+const freiText = (wer, key) => { const r = belegtBei(Z, wer, key), h = hat(Z, wer, key); return `fräi ${h - r}` + (r ? ` (${h} do, ${r} reservéiert)` : ""); };
 function renderLivraisons() {
   renderLListe();
   renderLForm();
@@ -2656,7 +2669,7 @@ const vMeldHtml = () => FORM.meldung ? `<div class="meldung ${FORM.meldung.art}"
 function vHinweise() {
   vArtikel().forEach((x, i) => {
     const el = $("#vHat" + i); if (!el) return;
-    const n = hat(Z, FORM.verkaeufer, x.key), r = reserviertBei(Z, FORM.verkaeufer, x.key);
+    const n = hat(Z, FORM.verkaeufer, x.key), r = belegtBei(Z, FORM.verkaeufer, x.key);
     el.textContent = ` · ${de(FORM.verkaeufer)} huet nach ${n}` + (r ? ` (${r} reservéiert)` : "");
     el.style.color = (FORM.n[x.key] || 0) > n - r ? "var(--gelb)" : "";
   });
@@ -3542,28 +3555,43 @@ function renderBierForm(box) {
   };
 }
 
+/* Stock-Zelle: fräi · 🚚 eigene Reservierung · 📦 vum Lager (bei Leuten) bzw. für andere vorgemerkt (beim Lager) — jede Zeile eigene
+   Flaschen, nichts doppelt (vom Nutzer, Fassung 25.11. a, Entwurf als Bild gezeigt) */
+const lagerZahl = (h, k) => h === LAGER ? fuerAndereBei(Z, k) : vomLagerBei(Z, h, k);
+function stockZelle(h, k) {
+  const n = hat(Z, h, k), r = reserviertBei(Z, h, k), l = lagerZahl(h, k), fr = frei(Z, h, k);
+  if (!n && !r && !l) return `<td>–</td>`;
+  return `<td style="${fr < 0 ? "color:var(--rot)" : ""}"><span class="${!fr ? "muted" : ""}">${fr}</span>${r ? `<span class="rz">🚚 ${r}</span>` : ""}${l ? `<span class="lz">📦 ${l}</span>` : ""}</td>`;
+}
+function stockLegende(h, rS, lS) {
+  const name = h === LAGER ? "📦 Lager" : esc(h);
+  if (!rS && !lS) return name;
+  return `${name} <small class="lg">fräi</small>${rS ? `<span class="rz lg">🚚 reservéiert</span>` : ""}${lS ? `<span class="lz lg">📦 ${h === LAGER ? "fir aner" : "vum Lager"}</span>` : ""}`;
+}
 function renderBestand() {
   renderBiere();
   const tab = $("#bTabelle");
   const sorten = Z.sortenNamen.filter(s => Z.halter.some(h => hat(Z, h, s) !== 0) || !(Z.cfg.sorten.find(c => c.name === s) || {}).aus);
   const faesser = Z.sortenNamen.flatMap(s => fassNamen(Z, s)).filter(k => Z.halter.some(h => hat(Z, h, k) !== 0 || reserviertBei(Z, h, k)));
-  const res = Z.halter.flatMap(h => Object.entries(Z.reserviert[h] || {}).filter(([, n]) => n > 0).map(([k, n]) => `${n} × ${postenText([{ sorte: k, n }]).replace(/^\d+ × /, "")} ${beim(h)}`));
+  const res = Z.halter.flatMap(h => Object.entries(Z.bedarf[h] || {}).filter(([, n]) => n > 0).map(([k, n]) => `${n} × ${postenText([{ sorte: k, n }]).replace(/^\d+ × /, "")} ${beim(h)}`));
+  /* „📦 Dovun vum Lager“: je Person, was aus dem Lager kommen muss (vom Nutzer, Fassung 25.11. a) */
+  const vomL = Z.halter.filter(h => h !== LAGER && Z.vomLager[h]).map(h => Object.entries(Z.vomLager[h]).map(([k, n]) => `${n} ${artikelText(k)}`).join(" + ") + ` fir ${de(h)}`);
   tab.innerHTML = `<div class="card stocktab"><h2>Wien huet wat?</h2><h3><svg class="flasche" viewBox="0 0 24 48" aria-hidden="true"><rect x="9" y="1" width="6" height="3" rx="1" fill="#c9c9c9"/><path d="M9.5 4h5v8c0 2 1 3 2.5 5s3 4 3 7.5V44a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3V24.5c0-3.5 1.5-5.5 3-7.5S9.5 14 9.5 12z" fill="#8a4b14"/><rect x="5" y="26" width="14" height="10" rx="1.5" fill="#f3ece2"/><rect x="7.5" y="29.5" width="9" height="3" rx="1" fill="#e3141b"/></svg> Fläschen</h3><div class="tabwrap"><table>
     <tr><th></th>${sorten.map(s => `<th>${kopfZweizeilig(bierText(s))}</th>`).join("")}<th>Σ</th></tr>
-    ${Z.halter.map(h => { const rS = sorten.reduce((a, s) => a + reserviertBei(Z, h, s), 0);
-      return `<tr><td>${h === LAGER ? "📦 Lager" : esc(h)}</td>${sorten.map(s => { const n = hat(Z, h, s), r = reserviertBei(Z, h, s), fr = n - r;
-        return `<td style="${fr < 0 ? "color:var(--rot)" : ""}">${!n && !r ? "–" : `<span class="${!fr ? "muted" : ""}">${fr}</span>`}${resZeile(r)}</td>`; }).join("")}<td><b>${sorten.reduce((a, s) => a + hat(Z, h, s), 0) - rS}</b>${resZeile(rS)}</td></tr>`; }).join("")}
-    ${(() => { const rT = sorten.map(s => resAlle(s)), rSum = rT.reduce((a, b) => a + b, 0);
-      return `<tr class="summe"><td>${rSum ? "Fräi" : "Total"}</td>${sorten.map((s, i) => `<td>${Z.sorten[s].da - rT[i]}</td>`).join("")}<td>${Z.flaschen.da - rSum}</td></tr>` + (rSum ?
-      `<tr class="resz"><td>+ 🚚 res.</td>${rT.map(r => `<td>${r}</td>`).join("")}<td>${rSum}</td></tr>
-       <tr class="totz"><td>= Total</td>${sorten.map(s => `<td>${Z.sorten[s].da}</td>`).join("")}<td>${Z.flaschen.da}</td></tr>` : ""); })()}
+    ${Z.halter.map(h => { const sum = f => sorten.reduce((a, s) => a + f(s), 0), fr = sum(s => frei(Z, h, s)), rS = sum(s => reserviertBei(Z, h, s)), lS = sum(s => lagerZahl(h, s));
+      return `<tr><td>${stockLegende(h, rS, lS)}</td>${sorten.map(s => stockZelle(h, s)).join("")}<td><b style="${fr < 0 ? "color:var(--rot)" : ""}">${fr}</b>${rS ? `<span class="rz">🚚 ${rS}</span>` : ""}${lS ? `<span class="lz">📦 ${lS}</span>` : ""}</td></tr>`; }).join("")}
+    ${(() => { const rT = sorten.map(s => Z.halter.reduce((a, h) => a + reserviertBei(Z, h, s), 0)), lT = sorten.map(s => fuerAndereBei(Z, s)),
+        rSum = rT.reduce((a, b) => a + b, 0), lSum = lT.reduce((a, b) => a + b, 0);
+      return `<tr class="summe"><td>${rSum || lSum ? "Fräi" : "Total"}</td>${sorten.map((s, i) => `<td>${Z.sorten[s].da - rT[i] - lT[i]}</td>`).join("")}<td>${Z.flaschen.da - rSum - lSum}</td></tr>`
+        + (rSum ? `<tr class="resz"><td>+ 🚚 res.</td>${rT.map(r => `<td>${r}</td>`).join("")}<td>${rSum}</td></tr>` : "")
+        + (lSum ? `<tr class="resz lzz"><td>+ 📦 vum Lager</td>${lT.map(r => `<td>${r}</td>`).join("")}<td>${lSum}</td></tr>` : "")
+        + (rSum || lSum ? `<tr class="totz"><td>= Total</td>${sorten.map(s => `<td>${Z.sorten[s].da}</td>`).join("")}<td>${Z.flaschen.da}</td></tr>` : ""); })()}
   </table></div>
   ${faesser.length ? `<h3>🛢️ Fässer</h3><div class="tabwrap"><table>
     <tr><th></th>${faesser.map(k => `<th>${kopfZweizeilig(bierText(zerlege(k).bier))}<br>${zerlege(k).l} l</th>`).join("")}</tr>
-    ${Z.halter.filter(h => faesser.some(k => hat(Z, h, k))).map(h => `<tr><td>${h === LAGER ? "📦 Lager" : esc(h)}</td>${faesser.map(k => { const n = hat(Z, h, k), r = reserviertBei(Z, h, k);
-      return `<td>${!n && !r ? "–" : n - r}${resZeile(r)}</td>`; }).join("")}</tr>`).join("")}
+    ${Z.halter.filter(h => faesser.some(k => hat(Z, h, k) || reserviertBei(Z, h, k) || lagerZahl(h, k))).map(h => `<tr><td>${stockLegende(h, faesser.reduce((a, k) => a + reserviertBei(Z, h, k), 0), faesser.reduce((a, k) => a + lagerZahl(h, k), 0))}</td>${faesser.map(k => stockZelle(h, k)).join("")}</tr>`).join("")}
   </table></div>` : ""}
-  ${res.length ? `<div class="meldung warn">🚚 Reservéiert fir geplangt Bestellungen: ${esc(res.join(" · "))}</div>` : ""}
+  ${res.length ? `<div class="meldung warn">🚚 Reservéiert fir geplangt Bestellungen: ${esc(res.join(" · "))}${vomL.length ? `<br><br>📦 <b>Dovun vum Lager:</b> ${esc(vomL.join(" · "))}` : ""}</div>` : ""}
   ${Z.halter.some(h => [...sorten, ...faesser].some(s => hat(Z, h, s) < 0)) ? `<div class="meldung warn">Rout Zuelen: Do gouf méi verkaaft oder weiderginn, wéi laut der App do war. Wahrscheinlech feelt eng Verdeelung.</div>` : ""}
   </div>`;
   renderBForm();
@@ -3679,7 +3707,7 @@ function flaschenForm(box, B, P, neu, o) {
   const nameH = h => h === LAGER ? "📦 Lager" : "👤 " + h;
   const opt = (liste, wert, txt = x => x) => liste.map(x => `<option value="${esc(x)}" ${x === wert ? "selected" : ""}>${esc(txt(x))}</option>`).join("");
   const sorteTxt = k => istFass(k) ? `${bierText(zerlege(k).bier)} · Fass ${zerlege(k).l} l` : bierText(k);
-  const standTxt = h => { const n = hat(Z, h, B.sorte), r = reserviertBei(Z, h, B.sorte); return r ? `${n - r} fräi · ${n} do` : `huet ${n}`; };
+  const standTxt = h => { const n = hat(Z, h, B.sorte), r = belegtBei(Z, h, B.sorte); return r ? `${n - r} fräi · ${n} do` : `huet ${n}`; };
   const kasten = (seite, h, titel = nameH(h)) => `<div class="pk"><b>${esc(titel)}</b><small>${esc(standTxt(h))}</small>
     ${B["aend" + seite] ? `<select data-hw="${seite}">${opt(halter, h, nameH)}</select>` : `<button class="aend" data-aend="${seite}">änneren</button>`}</div>`;
   const fort = B.absicht === "fort";

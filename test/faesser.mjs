@@ -104,6 +104,13 @@ await warte(900);
 await p.fill("#vVorname", "Tom"); await p.fill(`#vN${iH}`, "2"); await p.click('[data-bez="bar"]'); await warte(900);
 await p.click("#vSpeichern"); await p.waitForSelector("#frageWahl:not(.versteckt)"); await p.click("#frageZu"); await warte(200);
 ist("Ofbriechen: nichts verkauft", await p.evaluate(() => Z.kaeufer.some(k => k.name === "Tom")), false);
+// Fehlendes kommt vom Lager (vom Nutzer, Fassung 25.11. a): Claude hat nichts, Bestellung über 5 aus „Claude“
+await p.evaluate(() => { const b = Z.sortenNamen[0]; eintragen([{ art: "abfuellung", sorte: b, n: 50 }, { art: "livraison", kunde: "Vormerk", kontakt: "Claude", aus: "Claude", datum: "2026-12-30", posten: [{ sorte: b, n: 5 }], betrag: 15, rechnung: false }]); TAB = "bestand"; render(); });
+{ const zeile = wer => p.evaluate(w => { const tr = [...document.querySelectorAll("#bTabelle .stocktab table")][0].querySelectorAll("tr"); const z = [...tr].find(t => t.children[0].textContent.startsWith(w)); return z && [z.children[0].innerText.replace(/\s+/g, " ").trim(), z.children[1].innerText.replace(/\s+/g, " ").trim()]; }, wer);
+  ist("Claude: fräi 0, 📦 5 vum Lager, Legende", await zeile("Claude"), z => z && z[0] === "Claude fräi 📦 vum Lager" && z[1] === "0 📦 5");
+  ist("Lager: 📦 fir aner in der Legende und in der Zelle", await zeile("📦 Lager"), z => z && z[0].includes("📦 fir aner") && z[1].includes("📦 5"));
+  ist("Summenzeile + 📦 vum Lager, Total stimmt", await p.evaluate(() => { const t = document.querySelector("#bTabelle .stocktab").innerText; return t.includes("+ 📦 vum Lager"); }), true);
+  ist("gelber Kasten: Dovun vum Lager … fir de Claude", await p.locator("#bTabelle .meldung.warn").first().innerText(), t => t.includes("Dovun vum Lager:") && t.includes("fir de Claude")); }
 ist("keine Seitenfehler", seitenfehler, []);
 await p.screenshot({ path: process.env.BILD || "/dev/null", fullPage: true }).catch(() => {});
 await b.close();

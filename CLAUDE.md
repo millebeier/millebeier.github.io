@@ -182,6 +182,14 @@ beim Verkaufen/Livraison und „Fläsche beweegen“ an, solange jemand welche h
   **Reserviert** (vom Nutzer): geplante Livraisons belegen den Bestand bei `aus` (`Z.reserviert`, `frei()`); beim
   Planen, Verkaufen, Weitergeben und Fort Warnung mit „huet X, dovun Y reservéiert → fräi Z“ (`zuWenig`, `fehltText`),
   bestätigen geht trotzdem. Stock zeigt „🚚 Reservéiert fir geplangt Livraisons“.
+  **Fehlendes kommt vom Lager** (vom Nutzer, 25.11.2026, Fassung a; drei Entwürfe als Bild gezeigt): hat der Halter („Huelen aus“) weniger, als
+  seine Bestellungen brauchen, ist nur sein Bestand reserviert (`Z.reserviert`, höchstens was er hat), der Rest steht als **„📦 vum Lager“**
+  bei ihm (`Z.vomLager`) und belegt das Lager (`Z.fuerAndere`, „fir aner“). `Z.bedarf` = voller Bedarf (gelber Kasten). `belegtBei` =
+  reserviert + beim Lager das Vorgemerkte; `frei` rechnet damit (Warnungen beim Verkaufen/Weitergeben/Bestellen aus dem Lager, Pro Zort,
+  Pro Persoun). Das Lager selbst reserviert immer alles (darf rot werden). Holt sich der Halter Flaschen, verschwindet die Vormerkung von selbst.
+  **Stock-Tabelle: jede Zeile eigene Flaschen, nichts doppelt** (vom Nutzer: „nichts in 2 Zeilen“): fräi (weiß) · 🚚 eigene Reservierung (gelb) ·
+  📦 vum Lager bzw. fir aner (blau, `.lz`); kleine Legende unter dem Namen nur bei Zeilen mit Reservierung (`stockZelle`, `stockLegende`);
+  unten Fräi + 🚚 res. + 📦 vum Lager = Total; gelber Kasten zusätzlich „📦 Dovun vum Lager: … fir de Jeff“.
   **Tabellen zeigen frei, reserviert darunter** (vom Nutzer, Fassung 16.11. h, Variante A aus drei gezeigten Entwürfen): in Stock
   („Wien huet wat?“, Flaschen und Fässer), Iwwersiicht/Pro Zort („Nach do fräi“) und Pro Persoun („Huet nach fräi“) steht groß, was
   **frei** ist, darunter klein gelb „🚚 n“ = reserviert (`resZeile`, `resAlle`, `mengeText`); Stock unten Fräi / + reservéiert / = Total.
