@@ -360,7 +360,7 @@ beim Verkaufen/Livraison und „Fläsche beweegen“ an, solange jemand welche h
   Verkaf zuerst“. Auch der Einzelknopf ersetzt eine angekündigte Überweisung (`wartWeg`).
 - **Verlauf mit Suchfeld** (vom Nutzer, Fassung 22.11. d): `#vlSuche` bleibt beim Neuaufbau stehen (nur `#vlListe` wird neu gebaut, `renderVerlaufListe`),
   sucht in Text, wer und Zeit (alle Wörter müssen vorkommen), „n fonnt“.
-- **Knopf an geplanter Bestellung heißt „Ze liwweren ✕“** (vom Nutzer, Fassung 26.11. a; vorher „Geliwwert ✓“), bleibt rot; Antippen liefert, danach steht „✓ geliwwert“.
+- **Knopf an geplanter Bestellung heißt „🚚 Ze liwweren“** (vom Nutzer, Fassung 26.11. b; kurz „Ze liwweren ✕“, das ✕ sah aus wie Läschen; vorher „Geliwwert ✓“), bleibt rot; Antippen liefert, danach steht „✓ geliwwert“.
 - **Aktionsknöpfe rot, nicht grün** (vom Nutzer, Fassung 20.11. a): „Geliwwert ✓“, „Bezuelt ✓“, „Alles bezuelt ✓“ und Späicheren
   bei „+ Aufgab“ sind `.knopf.akt` (Millebéier-Rot, weiße Schrift) — grün sah aus, als wäre es schon erledigt. Grün bleibt nur
   für Erledigtes (✓ bezuelt, gewählte Zahlungsart).

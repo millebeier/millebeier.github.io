@@ -434,7 +434,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px}
 <script>
 /* Adresse des Cloudflare-Workers. Leer = Probe-Modus (alles nur auf diesem Handy). */
 const WORKER_URL = "https://millebeier.rjtp6r9s9h.workers.dev/";
-const FASSUNG = "26.11.2026 a";
+const FASSUNG = "26.11.2026 b";
 
 /* === Logik === (kein DOM; test/logik.mjs schneidet diesen Block aus) */
 const LAGER = "Lager";
@@ -2433,7 +2433,7 @@ function renderLListe() {
         ${rechChip(v)}
         ${v.offen <= 0 ? `<span class="chip ok">✓ bezuelt</span>` : `<span class="chip warn">${euro(v.offen)} op</span>`}
         ${(v.wart || []).map(wartHtml).join("")}` : "";
-    const knoepfe = !v ? `<button class="knopf akt" data-geliwwert="${esc(L.id)}">Ze liwweren ✕</button>
+    const knoepfe = !v ? `<button class="knopf akt" data-geliwwert="${esc(L.id)}">🚚 Ze liwweren</button>
         <button class="knopf" data-led="${esc(L.id)}">✎ Änneren</button>
         <button class="knopf" data-lweg="${esc(L.id)}">Läschen</button><button class="knopf gelbk" data-lauf="${esc(L.lid)}">+ Aufgab</button>`
       : `${v.rechnungWunsch && !v.rechnungGemacht ? `<button class="knopf akt" data-rech="${esc(v.id)}">🧾 Rechnung maachen</button>` : rechNachKnopf(v)}
