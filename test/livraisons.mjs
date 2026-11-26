@@ -38,7 +38,9 @@ ist("geplant angezeigt", await p.locator("#lListe").innerText(), s => s.includes
 ist("Reiter zeigt 1 geplante", await p.locator('[data-tab="livraisons"]').innerText(), s => s.includes("1"));
 ist("Lager noch voll", await p.evaluate(() => hat(Z, "Lager", "NEIPA")), 100);
 
+ist("roter Knopf heißt „Ze liwweren ✕“ (vom Nutzer, Fassung 26.11. a)", await p.locator("[data-geliwwert]").first().innerText(), "Ze liwweren ✕");
 await p.click("[data-geliwwert]"); await warte(200);
+ist("danach: ✓ geliwwert", await p.locator("#lListe").innerText(), t => t.includes("✓ geliwwert"));
 ist("geliwwert: aus dem Lager", await p.evaluate(() => [hat(Z, "Lager", "NEIPA"), hat(Z, "Lager", "Brown Porter")]), [76, 38]);
 ist("geliwwert: Rechnung offen, Betrag offen", await p.locator("#lListe").innerText(), s => s.includes("Rechnung nach ze maachen") && s.includes("90 € op"));
 ist("steht unter Ausstoend", await p.evaluate(() => Z.kaeufer.find(k => k.name === "Ferro Forum").offen), 90);
